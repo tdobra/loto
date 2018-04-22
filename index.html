@@ -11,7 +11,8 @@
 		<h1>TrailO Timed Control Map Cards Generator</h1>
         <p class="right">Author: Tom Dobra</p>
 		<noscript>Enable Javascript for this wizard to work.</noscript>
-		<p>This software requires Microsoft Windows XP or newer, although it should work in a virtual Windows machine on Mac or Linux (it does not work under Wine on Mac). You will need a printer capable of a 10 mm margin on all 4 sides for A4 paper.</p>
+		<p>This software requires Microsoft Windows XP or newer, although it should work in a virtual Windows machine on Mac or Linux (it does not work under Wine on Mac). You will need a printer capable of a 10 mm margin on all 4 sides for A4 paper. The wizard sometimes fails in Microsoft Edge, but appears to be reliable in Google Chrome and Safari.</p>
+        <p>You can download the LaTeX source code <a href="TCTemplate.tex" download="TCTemplate.tex">here</a>.</p>
 		<p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
 	</header>
 	<main id="mainView">
@@ -91,7 +92,7 @@
 
 		<section id="compileMaps">
 			<ol start="12">
-				<li>Copy <code>TCTemplate.tex</code> to the same folder as the Purple Pen file.</li>
+				<li>Download <a href="TCTemplate.tex" download="TCTemplate.tex">TCTemplate.tex</a> to the same folder as the Purple Pen file.</li>
 				<li>
 					Compile the LaTeX document, either locally on your computer (try <a href="https://www.tug.org/texlive/" target="TeXLive">TeX Live</a> if you're feeling technologically confident), or online using the <a href="https://www.overleaf.com/" target="Overleaf">Overleaf</a> website. The key steps for using the website are:
 					<ol type="a">
