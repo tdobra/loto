@@ -1,0 +1,24 @@
+body {
+	font-family: sans-serif;
+}
+
+table, th, td {
+	border: 1px solid black;
+	border-collapse: collapse;
+}
+
+td {
+	text-align: center;
+}
+
+input.heading, input.mapScale {
+	width: 8ch;	/*1ch = width of character 0*/
+}
+
+input.mapSize, input.contourInterval {
+	width: 6ch;
+}
+
+.right {
+    text-align: right;
+}

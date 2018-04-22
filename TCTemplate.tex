@@ -1,0 +1,192 @@
+\documentclass{slides}
+
+%Condes PDFs are v1.7
+\pdfminorversion=7
+
+\usepackage[a4paper,portrait,margin=1cm]{geometry}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{rotating}
+\usepackage{anyfontsize}
+\usepackage{forloop}
+
+%Set font to Helvetica
+\renewcommand{\familydefault}{phv}
+
+\input{TemplateParameters}
+
+\begin{document}
+
+\newcounter{StationNumber}
+\newcounter{ProblemNumber}
+\forloop{StationNumber}{0}{\value{StationNumber} < \NumStations}{
+\forloop{ProblemNumber}{0}{\not{\value{ProblemNumber} > \MaxProblemsPerStation}}{
+\begin{tikzpicture}
+\pgfmathsetmacro\SheetNumber{\value{ProblemNumber}}	%Sheet 0 is the cover sheet
+\def\StaNumber{\value{StationNumber}}
+
+%Check whether all problems have already been set for this station - the for loop cannot handle a variable ProblemsPerStation
+\pgfmathsetmacro{\ProblemsPerStation}{\ProblemsPerStationList[\StaNumber]}
+\ifthenelse{\SheetNumber > \ProblemsPerStation}{}{
+
+%Read in arrays of file data
+\pgfmathsetmacro{\MapScale}{\MapScaleList[\StaNumber]}
+\pgfmathsetmacro{\ContourInterval}{\ContourIntervalList[\StaNumber]}
+\pgfmathsetmacro{\CircleRadius}{\CircleRadiusList[\StaNumber]}
+\pgfmathsetmacro{\BriefingWidth}{\BriefingWidthList[\StaNumber]}
+\pgfmathsetmacro{\SquareMap}{\SquareMapList[\StaNumber]}
+\pgfmathsetmacro{\StationID}{\StationIDList[\StaNumber]}
+\pgfmathsetmacro{\StationIDFontSize}{\StationIDFontSizeList[\StaNumber]}
+\pgfmathsetmacro{\NumKites}{\NumKitesList[\StaNumber]}
+\pgfmathsetmacro{\ZeroOption}{\ZeroOptionList[\StaNumber]}
+\pgfmathsetmacro{\MapHeading}{\MapHeadingList[\StaNumber]}
+\pgfmathsetmacro{\CDaFontSize}{\CDaFontSizeList[\StaNumber]}
+\pgfmathsetmacro{\CDbFontSize}{\CDbFontSizeList[\StaNumber]}
+\pgfmathsetmacro{\PointingLetterFontSize}{\PointingLetterFontSizeList[\StaNumber]}
+\pgfmathsetmacro{\PointingPhoneticFontSize}{\PointingPhoneticFontSizeList[\StaNumber]}
+\pgfmathsetmacro{\PointingBoxWidth}{\PointingBoxWidthList[\StaNumber]}
+\pgfmathsetmacro{\PointingBoxHeight}{\PointingBoxHeightList[\StaNumber]}
+\pgfmathsetmacro{\SheetCheckBoxWidth}{\SheetCheckBoxWidthList[\StaNumber]}
+\pgfmathsetmacro{\SheetCheckBoxHeight}{\SheetCheckBoxHeightList[\StaNumber]}
+\pgfmathsetmacro{\RemoveTextFontSize}{\RemoveTextFontSizeList[\StaNumber]}
+\pgfmathsetmacro{\CheckNumberHeight}{\CheckNumberHeightList[\StaNumber]}
+\pgfmathsetmacro{\ShowPointingBoxes}{\ShowPointingBoxesList[\StaNumber]}
+\ifthenelse{\ShowPointingBoxes = 0}{\def\PointingBoxHeight{0}}{\def\PointingBoxHeight{2.5}}
+
+\ifthenelse{\SheetNumber = 0}
+{\pgfmathsetmacro{\DescriptionHeight}{\DescriptionHeightList[\StaNumber][0]}} %Set map position according to size of control descriptions for first problem
+{
+\pgfmathsetmacro{\MapFile}{\MapFileList[\StaNumber][\SheetNumber-1]}
+\pgfmathtruncatemacro{\MapPage}{\MapPageList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\ControlxCoordinate}{\ControlxCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\ControlyCoordinate}{\ControlyCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionFile}{\DescriptionFileList[\StaNumber][\SheetNumber-1]}
+\pgfmathtruncatemacro{\DescriptionPage}{\DescriptionPageList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionxCoordinate}{\DescriptionxCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionyCoordinate}{\DescriptionyCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionHeight}{\DescriptionHeightList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionWidth}{\DescriptionWidthList[\StaNumber][\SheetNumber-1]}}
+
+%Define variables/constants - these are macros, so need brackets when combining
+\newcommand{\CardHalfHeight}{6.75}
+\newcommand{\CardHalfWidth}{9.5}
+
+%Check for adjust mode
+\ifthenelse{\AdjustMode = 1}{\newcommand{\Heading}{0}}{\newcommand{\Heading}{\MapHeading}}
+
+%Pointing boxes
+\ifthenelse{\ShowPointingBoxes = 0}{}{
+\pgfmathsetmacro{\HalfNumPointingBoxes}{0.5*(\NumKites+\ZeroOption)}
+\draw (-\HalfNumPointingBoxes*\PointingBoxWidth,\PointingBoxHeight-\CardHalfHeight) -- (\HalfNumPointingBoxes*\PointingBoxWidth,\PointingBoxHeight-\CardHalfHeight);
+
+\foreach \Boxnumber in {0,...,\NumKites}
+{\pgfmathsetmacro{\xCoord}{(\Boxnumber-\HalfNumPointingBoxes)*\PointingBoxWidth}
+\draw (\xCoord,-\CardHalfHeight) --  (\xCoord,\PointingBoxHeight-\CardHalfHeight);
+%Set labels
+\ifthenelse{\Boxnumber = \NumKites}{}{
+\ifcase \Boxnumber
+\def\BoxLetter{A} \def\BoxPhonetic{Alpha}
+\or \def\BoxLetter{B} \def\BoxPhonetic{Bravo}
+\or \def\BoxLetter{C} \def\BoxPhonetic{Charlie}
+\or \def\BoxLetter{D} \def\BoxPhonetic{Delta}
+\or \def\BoxLetter{E} \def\BoxPhonetic{Echo}
+\else \def\BoxLetter{F} \def\BoxPhonetic{Foxtrot}
+\fi
+\node[anchor=south] at (\xCoord+0.5*\PointingBoxWidth,-\CardHalfHeight) {\fontsize{\PointingLetterFontSize}{\PointingLetterFontSize}\selectfont \BoxLetter};
+\node[anchor=north] at (\xCoord+0.5*\PointingBoxWidth,\PointingBoxHeight-\CardHalfHeight) {\fontsize{\PointingPhoneticFontSize}{\PointingPhoneticFontSize}\selectfont \BoxPhonetic};
+}}
+
+\ifthenelse{\ZeroOption = 1}{
+\def\BoxLetter{Z}
+\def\BoxPhonetic{Zero}
+\pgfmathsetmacro{\xCoord}{(\NumKites-\HalfNumPointingBoxes+1)*\PointingBoxWidth}
+\node[anchor=south] at (\xCoord-0.5*\PointingBoxWidth,-\CardHalfHeight) {\fontsize{\PointingLetterFontSize}{\PointingLetterFontSize}\selectfont \BoxLetter};
+\node[anchor=north] at (\xCoord-0.5*\PointingBoxWidth,\PointingBoxHeight-\CardHalfHeight) {\fontsize{\PointingPhoneticFontSize}{\PointingPhoneticFontSize}\selectfont \BoxPhonetic};
+\draw (\xCoord,-\CardHalfHeight) --  (\xCoord,\PointingBoxHeight-\CardHalfHeight);}{}
+}
+
+%Sheet order check boxes - sheet 0 is the cover sheet
+\pgfmathsetmacro{\CheckBoxLeftEdge}{\CardHalfWidth-\SheetCheckBoxWidth}
+\pgfmathsetmacro{\CheckBoxTopEdge}{0.5*(\PointingBoxHeight+\ProblemsPerStation*\SheetCheckBoxHeight)}
+
+\draw (\CardHalfWidth,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight);
+\foreach \Boxnumber in {1,...,\ProblemsPerStation}
+{\pgfmathsetmacro{\LineBottom}{\CheckBoxTopEdge-\Boxnumber*\SheetCheckBoxHeight}
+\draw (\CheckBoxLeftEdge,\LineBottom) -- (\CardHalfWidth,\LineBottom);
+\ifthenelse{\Boxnumber < \SheetNumber}{
+\draw (\CheckBoxLeftEdge,\LineBottom) -- (\CardHalfWidth,\LineBottom+\SheetCheckBoxHeight);
+\draw (\CheckBoxLeftEdge,\LineBottom+\SheetCheckBoxHeight) -- (\CardHalfWidth,\LineBottom);
+}{
+\ifthenelse{\Boxnumber = \SheetNumber}{
+\node at (\CheckBoxLeftEdge+0.5*\SheetCheckBoxWidth,\LineBottom+0.5*\SheetCheckBoxHeight) {\resizebox{!}{\CheckNumberHeight}{\Boxnumber}};
+}{
+\node at (\CheckBoxLeftEdge+0.5*\SheetCheckBoxWidth,\LineBottom+0.5*\SheetCheckBoxHeight) {\fontsize{\RemoveTextFontSize}{\RemoveTextFontSize}\selectfont Remove};
+}}}
+
+\pgfmathsetmacro{\MapDescriptionSeparation}{1/3*(2*\CardHalfHeight-2*\CircleRadius-\DescriptionHeight-\PointingBoxHeight)} %Amount of vertical white space between top and map, map and descriptions, and descriptions and pointing boxes
+\pgfmathsetmacro{\MapCentreyCoordinate}{\CardHalfHeight-\CircleRadius-\MapDescriptionSeparation}
+\pgfmathsetmacro{\DescriptionBaseyCoordinate}{-\CardHalfHeight+\PointingBoxHeight+\MapDescriptionSeparation}
+\pgfmathsetmacro{\NorthArrowCentrexCoordinate}{-0.5*(\CardHalfWidth+\CircleRadius)}
+
+%Origin is at centre of card - draw bounding lines for cut out
+\draw (-\CardHalfWidth,-\CardHalfHeight) -- (\CardHalfWidth,-\CardHalfHeight) --  (\CardHalfWidth,\CardHalfHeight) --  (-\CardHalfWidth,\CardHalfHeight) -- cycle;
+
+%Print station number
+\node[anchor=north east] at (\CardHalfWidth,\CardHalfHeight) {\fontsize{\StationIDFontSize}{\StationIDFontSize}\selectfont Station: \StationID{}};
+
+%Map excerpt
+\begin{scope}[shift={(0,\MapCentreyCoordinate)}]
+\ifthenelse{\SheetNumber = 0}{
+\pgfmathtruncatemacro{\TimeLimit}{30*\ProblemsPerStation}
+\node at (0,0) {\resizebox{\BriefingWidth}{!}{\parbox{5.1cm}{\centering \fontsize{1cm}{1.2cm}\selectfont \ProblemsPerStation{} tasks \\ Limit: \TimeLimit{}\,s \\ \fontsize{0.8cm}{0.96cm}\selectfont 1:\MapScale \\ \fontsize{0.6cm}{0.72cm}\selectfont \ContourInterval{}\,m contours}}};
+}{
+\ifthenelse{\SquareMap = 1}{\clip (-\CircleRadius, -\CircleRadius) rectangle (\CircleRadius, \CircleRadius);}{\clip (0,0) circle (\CircleRadius cm);}
+{\pgfmathsetmacro{\cliplx}{\ControlxCoordinate-1.5*\CircleRadius}
+\pgfmathsetmacro{\cliprx}{\ControlxCoordinate+1.5*\CircleRadius}
+\pgfmathsetmacro{\cliply}{\ControlyCoordinate-1.5*\CircleRadius}
+\pgfmathsetmacro{\clipry}{\ControlyCoordinate+1.5*\CircleRadius}
+\newcommand{\cliplxc}{\cliplx cm}
+\newcommand{\cliprxc}{\cliprx cm}
+\newcommand{\cliplyc}{\cliply cm}
+\newcommand{\clipryc}{\clipry cm}
+\node at (0,0) {
+\rotatebox{\Heading}{
+\includegraphics[page=\MapPage, clip, viewport=\cliplxc{} \cliplyc{} \cliprxc{} \clipryc{}]{\MapFile}
+}};}
+%Alignment circle
+\ifthenelse{\AdjustMode = 1}{\draw[ultra thick, blue] (0,0) circle (0.4 cm);}{}
+}
+%Border round map
+\ifthenelse{\SquareMap = 1}{\draw[ultra thick] (-\CircleRadius, -\CircleRadius) rectangle (\CircleRadius, \CircleRadius);}{\draw[ultra thick] (0,0) circle (\CircleRadius cm);}
+\end{scope}
+
+%Control descriptions
+\ifthenelse{\SheetNumber = 0}{}{
+\begin{scope}[shift={(-0.5*\DescriptionWidth,\DescriptionBaseyCoordinate)}]
+\clip (0,0) rectangle (\DescriptionWidth,\DescriptionHeight);
+\node[anchor=south west, inner sep=0] at (-\DescriptionxCoordinate,-\DescriptionyCoordinate) {\includegraphics[page=\DescriptionPage]{\DescriptionFile}};
+%Problem number
+\node[anchor=center, inner sep=0cm, minimum size=0.6cm, fill=white] at (0.07*\DescriptionWidth,0.52*\DescriptionHeight) {\fontseries{b}\fontsize{\CDaFontSize}{\CDaFontSize}\selectfont \SheetNumber{}};
+%Number of kites
+\ifcase \NumKites
+\or \def\ColB{A}
+\or \def\ColB{A-B}
+\or \def\ColB{A-C}
+\or \def\ColB{A-D}
+\or \def\ColB{A-E}
+\else \def\ColB{A-F}
+\fi
+\node[anchor=center, inner sep=0cm, minimum size=0.6cm, fill=white] at (0.192*\DescriptionWidth,0.52*\DescriptionHeight) {\fontseries{m}\fontsize{\CDbFontSize}{\CDbFontSize}\selectfont \ColB};
+\end{scope}}
+
+%North arrow
+\begin{scope}[shift={(\NorthArrowCentrexCoordinate,\MapCentreyCoordinate)}, rotate=\Heading]
+\draw[-latex,ultra thick, blue, line width=0.3cm] (0,-1.5) -- (0,1.5);
+\node[blue] at (0,-0.5) {\rotatebox{\Heading}{\resizebox{!}{1.5cm}{\Huge N}}};
+\end{scope}
+
+}	%End ProblemsPerStation if statement
+%\end{tikzpicture}\\[0.5cm]}}
+\end{tikzpicture}\\[-0.1cm]}}
+
+\end{document}
