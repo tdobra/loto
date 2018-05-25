@@ -22,7 +22,7 @@
 \forloop{StationNumber}{0}{\value{StationNumber} < \NumStations}{
 \forloop{ProblemNumber}{0}{\not{\value{ProblemNumber} > \MaxProblemsPerStation}}{
 \begin{tikzpicture}
-\pgfmathsetmacro\SheetNumber{\value{ProblemNumber}}	%Sheet 0 is the cover sheet
+\pgfmathtruncatemacro{\SheetNumber}{\value{ProblemNumber}}	%Sheet 0 is the cover sheet
 \def\StaNumber{\value{StationNumber}}
 
 %Check whether all problems have already been set for this station - the for loop cannot handle a variable ProblemsPerStation
@@ -37,7 +37,7 @@
 \pgfmathsetmacro{\SquareMap}{\SquareMapList[\StaNumber]}
 \pgfmathsetmacro{\StationID}{\StationIDList[\StaNumber]}
 \pgfmathsetmacro{\StationIDFontSize}{\StationIDFontSizeList[\StaNumber]}
-\pgfmathsetmacro{\NumKites}{\NumKitesList[\StaNumber]}
+\pgfmathtruncatemacro{\NumKites}{\NumKitesList[\StaNumber]}
 \pgfmathsetmacro{\ZeroOption}{\ZeroOptionList[\StaNumber]}
 \pgfmathsetmacro{\MapHeading}{\MapHeadingList[\StaNumber]}
 \pgfmathsetmacro{\CDaFontSize}{\CDaFontSizeList[\StaNumber]}
@@ -50,7 +50,7 @@
 \pgfmathsetmacro{\SheetCheckBoxHeight}{\SheetCheckBoxHeightList[\StaNumber]}
 \pgfmathsetmacro{\RemoveTextFontSize}{\RemoveTextFontSizeList[\StaNumber]}
 \pgfmathsetmacro{\CheckNumberHeight}{\CheckNumberHeightList[\StaNumber]}
-\pgfmathsetmacro{\ShowPointingBoxes}{\ShowPointingBoxesList[\StaNumber]}
+\pgfmathtruncatemacro{\ShowPointingBoxes}{\ShowPointingBoxesList[\StaNumber]}
 \ifthenelse{\ShowPointingBoxes = 0}{\def\PointingBoxHeight{0}}{\def\PointingBoxHeight{2.5}}
 
 \ifthenelse{\SheetNumber = 0}

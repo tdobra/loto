@@ -33,7 +33,7 @@ function loadppen(fileInput) {
 	
 	freader = new FileReader();
 	freader.onload = function () {
-		var xmlParser, xmlobj, parsererrorNS, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, selectOptionNode, existingRows, existingRowID, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot;
+		var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, selectOptionNode, existingRows, existingRowID, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot;
 		xmlParser = new DOMParser();
 		xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
 		//Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -54,6 +54,18 @@ function loadppen(fileInput) {
 		existingRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
 		for (existingRowsID = existingRows.length - 1; existingRowsID > 0; existingRowsID--) {
 			document.getElementById("courseTableBody").removeChild(existingRows[existingRowsID]);
+		}
+		
+		//Save map file scale
+		otherNode = xmlobj.getElementsByTagName("map")[0];
+		if (!otherNode) {
+			window.alert("Could not read map scale.");
+			return;
+		}
+		mapFileScale = Number(otherNode.getAttribute("scale"));
+		if (!(mapFileScale > 0)) {
+			window.alert("Could not read map scale.");
+			return;
 		}
 						
 		//Global print scale
@@ -274,8 +286,8 @@ function loadppen(fileInput) {
 						tableColNode.getElementsByClassName("printPage")[0].innerHTML += ",";
 						tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += ",";
 					}
-					tableColNode.getElementsByClassName("circlex")[0].innerHTML += 0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord);
-					tableColNode.getElementsByClassName("circley")[0].innerHTML += 0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord);
+					tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord) * mapFileScale / courseScale).toString();
+					tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord) * mapFileScale / courseScale).toString();
 
 					//Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
 					tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString();
@@ -555,7 +567,7 @@ function readTeX(fileString) {
 
 function generateLaTeX() {
 	//Generates and downloads LaTeX parameters file
-	var tableRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, fileBlob, downloadElement, url, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase;
+	var tableRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, fileBlob, downloadElement, url, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase;
 	
 	tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
 	numTableRows = tableRows.length;
@@ -745,7 +757,7 @@ function generateLaTeX() {
 				CDsyList += "," + CDsyCoord;	//Must match number just above for Purple Pen
 				CDsHeightList += "," + CDsHeightBase;
 				CDsWidthList += "," + CDsWidthBase;   //For a 7mm box
-            }
+			}
 			mapFileList += "}";
 			CDsFileList += "}";
 			CDsxList += "}";
