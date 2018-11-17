@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" type="text/css" href="../WizardStyle.css" />
+	<title>TCTemplate Help: Security</title>
+</head>
+<body>
+	<header>
+		<h1>TCTemplate Help</h1>
+		<h2>Security/Running Offline</h2>
+	</header>
+	<main id="mainView">
+		<h3>Security Statement</h3>
+		<p>TCTemplate is secure, so it is very difficult for a hacker to steal your competition maps. Purple Pen (used for map and control description preparation) is third-party software that is not known to transfer your data across the internet. The TCTemplate web wizard is delivered over the internet using a secure connection and only the author is able to change the version of the software presented, so tampering of the code is very unlikely. Although you select your competition map files from your computer and the web page reads them, all of this is performed locally on your computer and no data is uploaded to the internet. The final step of compiling the LaTeX file is performed using third-party software, either on a secure website (recommended) or locally on your computer (advanced users), so should be secure.</p>
+		<h3>Extra Security/Running Offline</h3>
+		<p>For extra security, it is possible to download all the software to your computer and prepare the map cards locally with your computer disconnected from the internet. Running offline is also useful when assisting with software development. Instructions:</p>
+		<ol>
+			<li>Install Python version 3 or newer:
+				<ul>
+					<li>Windows: Install the latest version from the <a href="https://www.python.org/downloads/" target="python">Python website</a>. Try the Windows x86-64 web-based installer first.</li>
+					<li>MacOS: Python should already be installed, but if it's not, download it from the <a href="https://www.python.org/downloads/" target="python">Python website</a>.</li>
+					<li>Unix systems: You're a computer geek, so should know/be able to find out.</li>
+					<li>Phones (Android/iOS): Have a look some of <a href="https://wiki.python.org/moin/Android" target="python">these options</a>, but I've never tried it.</li>
+				</ul>
+			</li>
+			<li>Download the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">TCTemplate source code</a>, then extract the contents of the ZIP. The location of the folder does not matter.
+				<ul>
+					<li>You will need to repeat this step whenever to install any updates to TCTemplate. The software does not check automatically.</li>
+					<li><em>Software developers:</em> Clone the <a href="https://github.com/tdobra/tctemplate" target="repo">Git repository</a> instead.</li>
+				</ul>
+			</li>
+			<li>Run <code>Start.py</code>.
+				<ul>
+					<li>You may now disconnect your computer from the internet if extra security is required.</li>
+				</ul>
+			</li>
+		</ol>
+	</main>
+	<footer>
+    <p class="right">Last updated (UTC): 17th November 2018 10:25</p>
+		<p class="right">Copyright (c) 2018 Tom Dobra, released with <a href="https://github.com/tdobra/tctemplate/blob/master/LICENSE">MIT license</a></p>
+	</footer>
+</body>
+</html>
