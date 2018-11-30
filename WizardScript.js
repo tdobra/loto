@@ -1,39 +1,30 @@
 //Put script in body of HTML
 
-//Global variables
-var fileNameRoot;
-
 //Prevent sloppy programming and throw more errors
 "use strict";
 
-//Check browser for XML support
-if (window.FileReader && window.DOMParser && window.Blob && window.URL) {
+//Check browser supports required APIs
+if (window.FileReader && window.DOMParser && window.Blob && window.URL && window.fetch) {
 	document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
 } else {
 	document.getElementById("mainView").hidden = true;
 }
 document.getElementById("stationProperties").hidden = true;
-document.getElementById("compileMaps").hidden = true;
+document.getElementById("savePDF").hidden = true;
+document.getElementById("viewLog").hidden = true;
+document.getElementById("printMaps").hidden = true;
 
 function loadppen(fileInput) {
 	//Reads a Purple Pen file
-	var fileobj, freader, testPattern;
+	var fileobj, freader;
 	var courseOrderUsed = [];
 	
 	fileobj = fileInput.files[0];
 	if (!fileobj) { return; }	//Nothing selected
-	fileNameRoot = fileobj.name.slice(0, fileobj.name.lastIndexOf("."));
-	
-	//Check for spaces - throw error if any found, because LaTeX won't like it
-	testPattern = /\s/;
-	if (testPattern.test(fileNameRoot)) {
-		window.alert("File name cannot contain spaces.");
-		return;
-	}
 	
 	freader = new FileReader();
 	freader.onload = function () {
-		var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, selectOptionNode, existingRows, existingRowID, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot;
+		var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
 		xmlParser = new DOMParser();
 		xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
 		//Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -52,8 +43,8 @@ function loadppen(fileInput) {
 			
 		//Reset course table
 		existingRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
-		for (existingRowsID = existingRows.length - 1; existingRowsID > 0; existingRowsID--) {
-			document.getElementById("courseTableBody").removeChild(existingRows[existingRowsID]);
+		for (existingRowID = existingRows.length - 1; existingRowID > 0; existingRowID--) {
+			document.getElementById("courseTableBody").removeChild(existingRows[existingRowID]);
 		}
 		
 		//Save map file scale
@@ -439,27 +430,27 @@ function setAllCourses() {
 function loadTeX(fileInput) {
 	//Loads existing LaTeX file into memory
 	var fileobj, freader, fname;
-	//Check browser for file reading support
-	if (!window.FileReader) {
-		window.alert("Web browser does not support FileReader API. Need to update to newer browser to read files.");
-		return -1;
-	} else {
-		fileobj = fileInput.files[0];
-		if (fileobj) {
-			fname = fileobj.name;
-			freader = new FileReader();
-			freader.onload = function () {
-				readTeX(freader.result);
-			};
-			freader.onerror = function () { window.alert("Could not read file"); };
-			freader.readAsText(fileobj);   //Reads as UTF-8
-		}
+	fileobj = fileInput.files[0];
+	if (fileobj) {
+		fname = fileobj.name;
+		freader = new FileReader();
+		freader.onload = function () {
+			readTeX(freader.result);
+		};
+		freader.onerror = function (err) {
+			if (err.name == undefined) {
+				window.alert("Could not read file due to an unknown error. This occurs on Safari for files containing the % symbol - try deleting all of them.");
+			} else {
+				window.alert("Could not read file: " + err.toString());
+			}
+		};
+		freader.readAsText(fileobj);   //Reads as UTF-8
 	}
 }
 
 function readTeX(fileString) {
 	//Populates station table from previous LaTeX parameters file
-	var startPos, subString, varArray, fields, rowId, numRows;
+	var startPos, endPos, subString, varArray, fields, rowId, numRows;
 	
 	//Number of kites
 	startPos = fileString.indexOf("\\def\\NumKitesList{{");
@@ -471,7 +462,9 @@ function readTeX(fileString) {
 		fields = document.getElementsByClassName("kites");
 		numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
 		for (rowId = 0; rowId < numRows; rowId++) {
-			fields[rowId + 1].value = parseInt(varArray[rowId], 10);
+			if (varArray[rowId] !== "") {
+				fields[rowId + 1].value = parseInt(varArray[rowId], 10);
+			}
 		}
 	}
 	
@@ -504,7 +497,9 @@ function readTeX(fileString) {
 		//No master field for heading
 		numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length);
 		for (rowId = 0; rowId < numRows; rowId++) {
-			fields[rowId].value = Number(varArray[rowId]);
+			if (varArray[rowId] !== "") {
+				fields[rowId].value = Number(varArray[rowId]);
+			}
 		}
 	}
 	
@@ -518,7 +513,9 @@ function readTeX(fileString) {
 		fields = document.getElementsByClassName("mapShape");
 		numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
 		for (rowId = 0; rowId < numRows; rowId++) {
-			fields[rowId + 1].selectedIndex = parseInt(varArray[rowId], 10);
+			if (varArray[rowId] !== "") {
+				fields[rowId + 1].selectedIndex = parseInt(varArray[rowId], 10);
+			}
 		}
 	}
 	
@@ -532,7 +529,9 @@ function readTeX(fileString) {
 		fields = document.getElementsByClassName("mapSize");
 		numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
 		for (rowId = 0; rowId < numRows; rowId++) {
-			fields[rowId + 1].value = Number(varArray[rowId]) * 2;
+			if (varArray[rowId] !== "") {
+				fields[rowId + 1].value = Number(varArray[rowId]) * 2;
+			}
 		}
 	}
 	
@@ -546,7 +545,9 @@ function readTeX(fileString) {
 		fields = document.getElementsByClassName("mapScale");
 		numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
 		for (rowId = 0; rowId < numRows; rowId++) {
-			fields[rowId + 1].value = Number(varArray[rowId]);
+			if (varArray[rowId] !== "") {
+				fields[rowId + 1].value = Number(varArray[rowId]);
+			}
 		}
 	}
 	
@@ -560,20 +561,26 @@ function readTeX(fileString) {
 		fields = document.getElementsByClassName("contourInterval");
 		numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
 		for (rowId = 0; rowId < numRows; rowId++) {
-			fields[rowId + 1].value = Number(varArray[rowId]);
+			if (varArray[rowId] !== "") {
+				fields[rowId + 1].value = Number(varArray[rowId]);
+			}
 		}
 	}
 }
 
 function generateLaTeX() {
-	//Generates and downloads LaTeX parameters file
-	var tableRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, fileBlob, downloadElement, url, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase;
+	//Generates LaTeX parameters file
+	//Returns string with error message or "ok" if no errors
+	
+	var rtnstr, tableRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, parametersBlob;
+	
+	rtnstr = "ok";
 	
 	tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
 	numTableRows = tableRows.length;
 
-    //Define constants
-    //Positioning relative to bottom-left corner and size of control descriptions in source PDF
+  //Define constants
+  //Positioning relative to bottom-left corner and size of control descriptions in source PDF
 	CDsxCoordBase = 1.25;
 	CDsyCoordBase = 26.28;
 	CDsHeightBase = 0.77;
@@ -667,12 +674,12 @@ function generateLaTeX() {
 			//Number of kites
 			contentField = tableRows[tableRowID].getElementsByClassName("kites")[0];
 			if (contentField.checkValidity() == false) {
-				window.alert("The number of kites for station " + stationName + " must be an integer between 1 and 6.");
+				rtnstr = "The number of kites for station " + stationName + " must be an integer between 1 and 6.";
 				contentField.focus();
-				return;
+			} else {
+				numKites = Number(contentField.value);
+				kitesList += numKites;	//Don't add quotes
 			}
-			numKites = Number(contentField.value);
-			kitesList += numKites;	//Don't add quotes
 			
 			if (tableRows[tableRowID].getElementsByClassName("zeroes")[0].checked == true) {
 				zeroesList += "1";
@@ -685,62 +692,60 @@ function generateLaTeX() {
 			//Heading
 			contentField = tableRows[tableRowID].getElementsByClassName("heading")[0];
 			if (contentField.checkValidity() == false) {
-				window.alert("The heading of station " + stationName + " must be a number.");
+				rtnstr = "The heading of station " + stationName + " must be a number.";
 				contentField.focus();
-				return;
+			} else {
+				headingList += contentField.value;	//Don't add quotes
 			}
-			headingList += contentField.value;	//Don't add quotes
 			
 			//Map shape
 			contentField = tableRows[tableRowID].getElementsByClassName("mapShape")[0];
 			if (contentField.checkValidity() == false) {
-				window.alert("The map shape for station " + stationName + " must be specified.");
+				rtnstr = "The map shape for station " + stationName + " must be specified.";
 				contentField.focus();
-				return;
+			} else {
+				shapeList += contentField.selectedIndex;	//Don't add quotes
 			}
-			shapeList += contentField.selectedIndex;	//Don't add quotes
 			
 			//Map size
 			contentField = tableRows[tableRowID].getElementsByClassName("mapSize")[0];
 			if (contentField.checkValidity() == false) {
-				window.alert("The map size for station " + stationName + " must be > 0 and <= 12.");
+				rtnstr = "The map size for station " + stationName + " must be > 0 and <= 12.";
 				contentField.focus();
-				return;
-			}
-			if (contentField.value == 0) {
-				window.alert("The map size for station " + stationName + " must be strictly greater than 0.");
+			}	else if (contentField.value == 0) {
+				rtnstr = "The map size for station " + stationName + " must be strictly greater than 0.";
 				contentField.focus();
-				return;
-			}
-			sizeList += 0.5 * contentField.value;	//Don't add quotes
-			briefingWidthList += "\"" + (0.7 * contentField.value) + "cm\"";
-			//Show pointing boxes only if diameter < 10cm
-			if (contentField.value <= 10) {
-				showPointingBoxesList += "1";
 			} else {
-				showPointingBoxesList += "0";
+				sizeList += 0.5 * contentField.value;	//Don't add quotes
+				briefingWidthList += "\"" + (0.7 * contentField.value) + "cm\"";
+				//Show pointing boxes only if diameter < 10cm
+				if (contentField.value <= 10) {
+					showPointingBoxesList += "1";
+				} else {
+					showPointingBoxesList += "0";
+				}
 			}
 
 			//Map scale
 			contentField = tableRows[tableRowID].getElementsByClassName("mapScale")[0];
 			if (contentField.checkValidity() == false || contentField.value == 0) {
-				window.alert("The map scale for station " + stationName + " must be strictly greater than 0.");
+				rtnstr = "The map scale for station " + stationName + " must be strictly greater than 0.";
 				contentField.focus();
-				return;
+			} else {
+				scaleList += contentField.value;	//Don't add quotes
 			}
-			scaleList += contentField.value;	//Don't add quotes
 			
 			//Map contour interval
 			contentField = tableRows[tableRowID].getElementsByClassName("contourInterval")[0];
 			if (contentField.checkValidity() == false || contentField.value == 0) {
-				window.alert("The contour interval for station " + stationName + " must be strictly greater than 0.");
+				rtnstr = "The contour interval for station " + stationName + " must be strictly greater than 0.";
 				contentField.focus();
-				return;
+			} else {
+				contourList += contentField.value;	//Don't add quotes
 			}
-			contourList += contentField.value;	//Don't add quotes
 			
 			//Map and control description files
-			fileName = "\"" + fileNameRoot + "\"";
+			fileName = "\"Maps\"";
 			mapFileList += "{" + fileName;
 			CDsFileList += "{\"CDs\"";
 			CDsxList += "{" + CDsxCoordBase;
@@ -788,8 +793,8 @@ function generateLaTeX() {
 	//Hide construction circle for lining up maps - not required when using this wizard
 	fileString = "\\def\\AdjustMode{0}\n";
 	
-    //Write to fileString
-    //Insert a comma to introduce an extra element to the array where it contains a string ending in cm, otherwise TikZ parses it incorrectly/doesn't recognise an array of length 1.
+  //Write to fileString
+  //Insert a comma to introduce an extra element to the array where it contains a string ending in cm, otherwise TikZ parses it incorrectly/doesn't recognise an array of length 1.
 	fileString += "\\newcommand{\\NumStations}{" + numStations + "}\n";
 	fileString += "\\newcommand{\\MaxProblemsPerStation}{" + maxProblems + "}\n";
 	fileString += numProblemsList + "}}\n";
@@ -825,17 +830,24 @@ function generateLaTeX() {
 	fileString += checkNumberFontList + ",}}\n";
 	fileString += checkRemoveFontList + ",}}\n";
 	
-	//Create and download file
-	fileBlob = new Blob([fileString], { type: "text/plain" });
+	//Create file
+	parametersBlob = new Blob([fileString], { type: "text/plain" });
+	
+	return {str: rtnstr, file:parametersBlob};
+}
+
+function downloadFile(fileBlob, fileName) {
+	//Downloads a file blob
+	var downloadElement, url;
 	if (window.navigator.msSaveBlob) {
 		//Microsoft
-		window.navigator.msSaveBlob(fileBlob, "TemplateParameters.tex");
+		window.navigator.msSaveBlob(fileBlob, fileName);
 	} else {
 		//Other browsers
 		downloadElement = document.createElement("a");
 		url = URL.createObjectURL(fileBlob);
 		downloadElement.href = url;
-		downloadElement.download = "TemplateParameters.tex";
+		downloadElement.download = fileName;
 		document.body.appendChild(downloadElement);
 		downloadElement.click();
 		setTimeout(function () {
@@ -843,8 +855,113 @@ function generateLaTeX() {
 			URL.revokeObjectURL(url);
 		}, 0);
 	}
+}
+
+function saveParameters() {
+	var rtn;
+	rtn = generateLaTeX();
+	downloadFile(rtn.file, "TemplateParameters.tex");
+}
+
+//var pdf_dataurl = undefined;
+function compileLaTeX(source_code, resourceURLs, resourceNames) {
+	var statusBox, texlive, pdftex;
+	//document.getElementById("output").textContent = "";
+	//showLoadingIndicator(true);
+	//window.location.href = "#running";
+
+	//Update status
+	statusBox = document.getElementById("compileStatus");
+	statusBox.innerHTML = "Preparing map cards. This may take a minute.";
+
+  texlive = new TeXLive("texlive.js/");
+  pdftex = texlive.pdftex;
+
+	pdftex.set_TOTAL_MEMORY(80*1024*1024).then(function() {
+		var promiseArray;
+		
+		//Load resource files into Emscripten file system
+		promiseArray = resourceNames.map(function(name, index) {
+			return pdftex.FS_createLazyFile('/', name, resourceURLs[index], true, false);
+		});
+
+		// 		//pdftex.on_stdout = appendOutput;
+ // 		//pdftex.on_stderr = appendOutput;
+ //
+ // 		//console.time("Execution time");
+ //
+		return pdftex.compile(source_code);
+	}).then(function(pdf_dataurl) {
+		var downloadElement;
+		if (pdf_dataurl === false) {
+			statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
+		} else {
+			downloadElement = document.getElementById("savePDF");
+			downloadElement.href = pdf_dataurl;
+			downloadElement.hidden = false;
+			downloadElement.click();
+			document.getElementById("printMaps").hidden = false;
+			statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
+		}
+		
+		//Save log
+		pdftex.FS_readFile("./input.log").then(logfile => {
+			downloadElement = document.getElementById("viewLog");
+			if (logfile === false) {
+				downloadElement.hidden = true;				
+			} else {
+				downloadElement.href = 'data:text/plain;charset=binary;base64,' + window.btoa(logfile);
+				downloadElement.hidden = false;
+			}
+			texlive.terminate();
+		});
+	});
+}
+
+function generatePDF() {
+	var rtn, resourceNames, resourceFileArray, promiseArray;
 	
-	//Show next stage of instructions
-	document.getElementById("compileMaps").hidden = false;
-	document.getElementById("compileMaps").scrollIntoView();
+	//Make LaTeX parameters file
+	rtn = generateLaTeX();
+	if (rtn.str !== "ok") {
+		window.alert(rtn.str);
+		return;
+	}
+	
+	//Read maps and CDs PDFs
+	resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
+	resourceFileArray = [rtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
+	//Load each resource file and get a URL for each
+	//Read them using promises
+	promiseArray = resourceFileArray.map(function(fileobj) {
+		return new Promise(function(resolve, reject) {
+			var filename = fileobj.name;
+			var freader = new FileReader();
+			freader.onload = function() {
+				resolve(this.result);
+			};
+			freader.onerror = reject;
+			freader.readAsDataURL(fileobj);
+		});
+	});
+	Promise.all(promiseArray).then(result => {
+		var resourceURLs;
+
+		resourceURLs = result.slice(0);
+		
+		//Load LaTeX code
+		fetch("TCTemplate.tex").then(response => {
+			if (response.ok === true) {
+				return response.text();
+			} else {
+				throw response.status;
+			}
+		}).then(sourceText => {
+			compileLaTeX(sourceText, resourceURLs, resourceNames);
+		}, err => {
+			window.alert("Failed to load TCTemplate.tex: " + err);
+		});
+	}, err => {
+		window.alert("Either the course maps PDF or control descriptions PDF file is missing.");
+	});
 }
