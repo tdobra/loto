@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" type="text/css" href="../WizardStyle.css" />
+	<title>TCTemplate Help: LaTeX</title>
+</head>
+<body>
+	<header>
+		<h1>TCTemplate Help</h1>
+		<h2>LaTeX Compilers</h2>
+	</header>
+	<main id="mainView">
+		<p>The PDFs of the map cards are generated using LaTeX. It is recommended that you compile it in the browser using the <em>Generate map cards</em> button, but sometimes you may encounter technical problems, or just prefer to use your own LaTeX compiler anyway. Two methods of compiling are:</p>
+		<h3>Online Using Overleaf</h3>
+		<p>This is the simplest option for getting started, if you are unfamiliar with LaTeX.</p>
+		<ol>
+			<li>Download <a href="../TCTemplate.tex" download="TCTemplate.tex">TCTemplate.tex</a> to an empty folder.</li>
+			<li>Click on the <em>Save station data</em> button and save the produced file (TemplateParameters.tex) to the same folder.</li>
+			<li>Copy the maps PDF file to the folder and rename it to <code>Maps.pdf</code> (case sensitive).</li>
+			<li>Copy the control descriptions PDF file to the folder and rename it to <code>CDs.pdf</code> (case sensitive).</li>
+			<li>Compress the four files into a Zip archive.
+				<ul>
+					<li>Windows: Select all the files, right click, then click <em>Send to->Compressed (zipped) folder</em>.</li>
+					<li>MacOS: Go up one level, right click on the folder, then click <em>Compress</em>.</li>
+				</ul>
+			</li>
+			<li>Create a free <a href="https://www.overleaf.com/" target="Overleaf">Overleaf</a> account and log in.</li>
+			<li>Click on the upload button next to <em>New Project</em> in the top left of the screen, then choose <em>Upload Zip</em>.</li>
+			<li>Upload the Zip archive you just created.</li>
+			<li>Click on <em>PDF</em> on the top row of the screen to create and download the produced map cards, ready for printing.</li>
+		</ol>
+		<h3>Other LaTeX Compilers</h3>
+		<p>Although Overleaf works well, compiling locally on your computer is faster, so is recommended if you're helping to develop TCTemplate. The Javascript version in the browser uses <a href="https://www.tug.org/texlive/" target="TeXLive">TeX Live</a> (ported using Emscripten), so you could try that - it works on all major operating systems. Follow steps 1-4 above, then compile <code>TCTemplate.tex</code>.</p>
+		<h3>Known Issues</h3>
+		<p>The <em>Generate map cards</em> button should work in all major browsers, but there are some known issues, as follows. If you discover any that are not on this list, please <a href="https://github.com/tdobra/tctemplate/issues" target="repo">log an issue</a> or contact the author, stating which browser and operating system you are using, along with any other useful information.</p>
+		<ul>
+			<li>Google Chrome does not work. This appears to be a security bug with making the uploaded PDFs available to the compiler.</li>
+			<li>Safari fails to read certain PDF files. The cause is unknown. Please <a href="https://github.com/tdobra/tctemplate/issues" target="repo">log an issue</a> with any filenames or special features of files that cause trouble.</li>
+		</ul>
+	</main>
+	<footer>
+    <p class="right">Last updated (UTC): 10th December 2018 18:48</p>
+		<p class="right">Copyright (c) 2017-18 Tom Dobra: <a href="license.html">view license</a></p>
+	</footer>
+</body>
+</html>

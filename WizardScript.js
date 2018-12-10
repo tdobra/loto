@@ -363,6 +363,7 @@ function loadppen(fileInput) {
 		
 		//Prepare view
 		document.getElementById("stationProperties").hidden = false;
+		document.getElementById("printMaps").hidden = false;	//Show printing instructions in case compile fails
 		document.getElementById("stationProperties").scrollIntoView();
 	};
 	freader.onerror = function () { window.alert("Could not read Purple Pen file. Try reselecting it, then click Reload."); };
@@ -900,7 +901,6 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
 			downloadElement.href = pdf_dataurl;
 			downloadElement.hidden = false;
 			downloadElement.click();
-			document.getElementById("printMaps").hidden = false;
 			statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
 		}
 		
@@ -919,7 +919,13 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
 }
 
 function generatePDF() {
-	var rtn, resourceNames, resourceFileArray, promiseArray;
+	var statusBox, rtn, resourceNames, resourceFileArray, promiseArray;
+	
+	//Status line
+	statusBox = document.getElementById("compileStatus");
+	statusBox.innerHTML = "Loading files. If this message persists, there is a problem. Seek assistance.";
+	document.getElementById("savePDF").hidden = true;
+	document.getElementById("viewLog").hidden = true;
 	
 	//Make LaTeX parameters file
 	rtn = generateLaTeX();
@@ -959,9 +965,9 @@ function generatePDF() {
 		}).then(sourceText => {
 			compileLaTeX(sourceText, resourceURLs, resourceNames);
 		}, err => {
-			window.alert("Failed to load TCTemplate.tex: " + err);
+			statusBox.innerHTML = "Failed to load TCTemplate.tex: " + err;
 		});
 	}, err => {
-		window.alert("Either the course maps PDF or control descriptions PDF file is missing.");
+		statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
 	});
 }
