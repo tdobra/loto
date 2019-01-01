@@ -897,20 +897,46 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
 		if (pdf_dataurl === false) {
 			statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
 		} else {
-			downloadElement = document.getElementById("savePDF");
-			downloadElement.href = pdf_dataurl;
-			downloadElement.hidden = false;
-			downloadElement.click();
-			statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
+			//Save PDF
+			pdftex.FS_readFile("./input.pdf").then(outfile => {
+				var outBlob, outURL, outLen, outArray, index;
+				downloadElement = document.getElementById("savePDF");
+				//Revoke old URL
+				outURL = downloadElement.href;
+				if (outURL) {
+					URL.revokeObjectURL(outURL);
+				}
+				//Make new one, but first need file stream as array buffer
+				outLen = outfile.length;
+				outArray = new Uint8Array(outLen);
+				for (index = 0; index < outLen; index++) {
+					//Populate array with unicode value of each character
+					outArray[index] = outfile.charCodeAt(index);
+				}
+				outBlob = new Blob([outArray], { type: "application/pdf" });
+				outURL = URL.createObjectURL(outBlob);
+				downloadElement.href = outURL;
+				downloadElement.hidden = false;
+				downloadElement.click();
+				statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
+			});
 		}
 		
 		//Save log
 		pdftex.FS_readFile("./input.log").then(logfile => {
+			var logBlob, logURL;
 			downloadElement = document.getElementById("viewLog");
 			if (logfile === false) {
 				downloadElement.hidden = true;				
 			} else {
-				downloadElement.href = 'data:text/plain;charset=binary;base64,' + window.btoa(logfile);
+				//Revoke old URL
+				logURL = downloadElement.href;
+				if (logURL) {
+					URL.revokeObjectURL(logURL);
+				}
+				logBlob = new Blob([logfile], { type: "text/plain" });
+				logURL = URL.createObjectURL(logBlob);
+				downloadElement.href = logURL;
 				downloadElement.hidden = false;
 			}
 			texlive.terminate();
