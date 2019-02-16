@@ -866,7 +866,7 @@ function saveParameters() {
 
 //var pdf_dataurl = undefined;
 function compileLaTeX(source_code, resourceURLs, resourceNames) {
-	var statusBox, texlive, pdftex, promiseArray;
+	var statusBox, texlive, pdftex;
 	//document.getElementById("output").textContent = "";
 	//showLoadingIndicator(true);
 	//window.location.href = "#running";
@@ -878,6 +878,7 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
   texlive = new TeXLive("texlive.js/");
   pdftex = texlive.pdftex;
 
+	//Use promises of promise.js
 	pdftex.set_TOTAL_MEMORY(80*1024*1024).then(function() {
 		promise.join(resourceNames.map(function(name, index) {
 			return pdftex.FS_createLazyFile('/', name, resourceURLs[index], true, false);
@@ -917,26 +918,26 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
 					statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
 				});
 			}
-		});
 		
-		//Save log
-		pdftex.FS_readFile("./input.log").then(logfile => {
-			var logBlob, logURL;
-			downloadElement = document.getElementById("viewLog");
-			if (logfile === false) {
-				downloadElement.hidden = true;				
-			} else {
-				//Revoke old URL
-				logURL = downloadElement.href;
-				if (logURL) {
-					URL.revokeObjectURL(logURL);
+			//Save log
+			pdftex.FS_readFile("./input.log").then(logfile => {
+				var logBlob, logURL;
+				downloadElement = document.getElementById("viewLog");
+				if (logfile === false) {
+					downloadElement.hidden = true;				
+				} else {
+					//Revoke old URL
+					logURL = downloadElement.href;
+					if (logURL) {
+						URL.revokeObjectURL(logURL);
+					}
+					logBlob = new Blob([logfile], { type: "text/plain" });
+					logURL = URL.createObjectURL(logBlob);
+					downloadElement.href = logURL;
+					downloadElement.hidden = false;
 				}
-				logBlob = new Blob([logfile], { type: "text/plain" });
-				logURL = URL.createObjectURL(logBlob);
-				downloadElement.href = logURL;
-				downloadElement.hidden = false;
-			}
-			texlive.terminate();
+				texlive.terminate();
+			});
 		});
 	});
 }
@@ -961,8 +962,8 @@ function generatePDF() {
 	resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
 	resourceFileArray = [rtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
 	//Load each resource file and get a URL for each
-	//Read them using promises
-	promiseArray = resourceFileArray.map(function(fileobj) {
+	//Read them using promises native in Javascript
+	promiseArray = resourceFileArray.map(fileobj => {
 		return new Promise(function(resolve, reject) {
 			var filename = fileobj.name;
 			var freader = new FileReader();
