@@ -866,7 +866,7 @@ function saveParameters() {
 
 //var pdf_dataurl = undefined;
 function compileLaTeX(source_code, resourceURLs, resourceNames) {
-	var statusBox, texlive, pdftex;
+	var statusBox, texlive, pdftex, promiseArray;
 	//document.getElementById("output").textContent = "";
 	//showLoadingIndicator(true);
 	//window.location.href = "#running";
@@ -879,48 +879,45 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
   pdftex = texlive.pdftex;
 
 	pdftex.set_TOTAL_MEMORY(80*1024*1024).then(function() {
-		var promiseArray;
-		
-		//Load resource files into Emscripten file system
-		promiseArray = resourceNames.map(function(name, index) {
+		promise.join(resourceNames.map(function(name, index) {
 			return pdftex.FS_createLazyFile('/', name, resourceURLs[index], true, false);
-		});
-
+		})).then(function() {
 		// 		//pdftex.on_stdout = appendOutput;
  // 		//pdftex.on_stderr = appendOutput;
  //
  // 		//console.time("Execution time");
  //
-		return pdftex.compile(source_code);
-	}).then(function(pdf_dataurl) {
-		var downloadElement;
-		if (pdf_dataurl === false) {
-			statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
-		} else {
-			//Save PDF
-			pdftex.FS_readFile("./input.pdf").then(outfile => {
-				var outBlob, outURL, outLen, outArray, index;
-				downloadElement = document.getElementById("savePDF");
-				//Revoke old URL
-				outURL = downloadElement.href;
-				if (outURL) {
-					URL.revokeObjectURL(outURL);
-				}
-				//Make new one, but first need file stream as array buffer
-				outLen = outfile.length;
-				outArray = new Uint8Array(outLen);
-				for (index = 0; index < outLen; index++) {
-					//Populate array with unicode value of each character
-					outArray[index] = outfile.charCodeAt(index);
-				}
-				outBlob = new Blob([outArray], { type: "application/pdf" });
-				outURL = URL.createObjectURL(outBlob);
-				downloadElement.href = outURL;
-				downloadElement.hidden = false;
-				downloadElement.click();
-				statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
-			});
-		}
+			return pdftex.compile(source_code);
+		}).then(function(pdf_dataurl) {
+			var downloadElement;
+			if (pdf_dataurl === false) {
+				statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
+			} else {
+				//Save PDF
+				pdftex.FS_readFile("./input.pdf").then(outfile => {
+					var outBlob, outURL, outLen, outArray, index;
+					downloadElement = document.getElementById("savePDF");
+					//Revoke old URL
+					outURL = downloadElement.href;
+					if (outURL) {
+						URL.revokeObjectURL(outURL);
+					}
+					//Make new one, but first need file stream as array buffer
+					outLen = outfile.length;
+					outArray = new Uint8Array(outLen);
+					for (index = 0; index < outLen; index++) {
+						//Populate array with unicode value of each character
+						outArray[index] = outfile.charCodeAt(index);
+					}
+					outBlob = new Blob([outArray], { type: "application/pdf" });
+					outURL = URL.createObjectURL(outBlob);
+					downloadElement.href = outURL;
+					downloadElement.hidden = false;
+					downloadElement.click();
+					statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
+				});
+			}
+		});
 		
 		//Save log
 		pdftex.FS_readFile("./input.log").then(logfile => {
