@@ -876,12 +876,12 @@ function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
 		numEvents = 0;
 		statusBox = document.getElementById("compileStatus");
 		return msg => {
-			var logStr, rowId, logBlob, downloadElement;
-			if (msg) {
-				console.log(msg);
-				logContent.push(msg);
-				numEvents++;
-				if (msg === " ==> Fatal error occurred, no output PDF file produced!") {
+			var logStr, rowId, logBlob, downloadElement, logURL;
+			console.log(msg);
+			logContent.push(msg);
+			numEvents++;
+			if (btn.disabled === true) {
+				if (msg.includes("no output PDF file produced!")) {
 					//TeXLive encountered an error -> handle it
 					if (logContent[numEvents-3] === "!pdfTeX error: /latex (file ./Maps.pdf): PDF inclusion: required page does not ") {
 						statusBox.innerHTML = "Failed to compile map cards. The PDF of maps does not contain enough pages. Please follow the instructions in step 8 carefully and try again.";
@@ -891,7 +891,7 @@ function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
 						statusBox.innerHTML = "Failed to compile map cards due to an unknown error. Please seek assistance.";
 						//Display log
 						logStr = "";
-						for (rowId = 0; rowId < numRows; rowId++) {
+						for (rowId = 0; rowId < numEvents; rowId++) {
 							logStr += logContent[rowId] + '\n';
 						}
 						logBlob = new Blob([logStr], { type: "text/plain" });
@@ -905,7 +905,9 @@ function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
 						downloadElement.href = logURL;
 						downloadElement.hidden = false;
 					}
+					//Cleanup
 					btn.disabled = false;
+					texlive.terminate();
 				} else {
 					statusBox.innerHTML = "Preparing map cards (" + numEvents.toString() + ").";
 				}
@@ -913,10 +915,6 @@ function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
 			return logContent;
 		};
 	}());
-	
-	//document.getElementById("output").textContent = "";
-	//showLoadingIndicator(true);
-	//window.location.href = "#running";
 
 	//Update status
 	statusBox = document.getElementById("compileStatus");
@@ -966,27 +964,6 @@ function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
 					statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
 				});
 			}
-					//
-			// //Save log
-			// pdftex.FS_readFile("./input.log").then(logfile => {
-			// 	var logBlob, logURL;
-			// 	downloadElement = document.getElementById("viewLog");
-			// 	if (logfile === false) {
-			// 		downloadElement.hidden = true;
-			// 	} else {
-			// 		//Revoke old URL
-			// 		logURL = downloadElement.href;
-			// 		if (logURL) {
-			// 			URL.revokeObjectURL(logURL);
-			// 		}
-			// 		logBlob = new Blob([logfile], { type: "text/plain" });
-			// 		logURL = URL.createObjectURL(logBlob);
-			// 		downloadElement.href = logURL;
-			// 		downloadElement.hidden = false;
-			// 	}
-			// 	texlive.terminate();
-			// 	btn.disabled = false;
-			// });
 		});
 	});
 }
