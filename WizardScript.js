@@ -864,9 +864,56 @@ function saveParameters() {
 	downloadFile(rtn.file, "TemplateParameters.tex");
 }
 
+
 //var pdf_dataurl = undefined;
-function compileLaTeX(source_code, resourceURLs, resourceNames) {
-	var statusBox, texlive, pdftex;
+function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
+	var statusBox, texlive, pdftex, texliveEvent;
+
+	texliveEvent = (function(msg) {
+		//Called everytime a status message is outputted by TeXLive. Worker thread will crash shortly after an error, so all handling to be done here.
+		var logContent, numEvents, statusBox;
+		logContent = [];
+		numEvents = 0;
+		statusBox = document.getElementById("compileStatus");
+		return msg => {
+			var logStr, rowId, logBlob, downloadElement;
+			if (msg) {
+				console.log(msg);
+				logContent.push(msg);
+				numEvents++;
+				if (msg === " ==> Fatal error occurred, no output PDF file produced!") {
+					//TeXLive encountered an error -> handle it
+					if (logContent[numEvents-3] === "!pdfTeX error: /latex (file ./Maps.pdf): PDF inclusion: required page does not ") {
+						statusBox.innerHTML = "Failed to compile map cards. The PDF of maps does not contain enough pages. Please follow the instructions in step 8 carefully and try again.";
+					} else if (logContent[numEvents-3] === "!pdfTeX error: /latex (file ./CDs.pdf): PDF inclusion: required page does not e") {
+						statusBox.innerHTML = "Failed to compile map cards. The PDF of control descriptions does not contain enough pages. Please follow the instructions in step 9 carefully and try again.";
+					} else {
+						statusBox.innerHTML = "Failed to compile map cards due to an unknown error. Please seek assistance.";
+						//Display log
+						logStr = "";
+						for (rowId = 0; rowId < numRows; rowId++) {
+							logStr += logContent[rowId] + '\n';
+						}
+						logBlob = new Blob([logStr], { type: "text/plain" });
+						//Revoke old URL
+						downloadElement = document.getElementById("viewLog");
+						logURL = downloadElement.href;
+						if (logURL) {
+							URL.revokeObjectURL(logURL);
+						}
+						logURL = URL.createObjectURL(logBlob);
+						downloadElement.href = logURL;
+						downloadElement.hidden = false;
+					}
+					btn.disabled = false;
+				} else {
+					statusBox.innerHTML = "Preparing map cards (" + numEvents.toString() + ").";
+				}
+			}
+			return logContent;
+		};
+	}());
+	
 	//document.getElementById("output").textContent = "";
 	//showLoadingIndicator(true);
 	//window.location.href = "#running";
@@ -883,11 +930,8 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
 		promise.join(resourceNames.map(function(name, index) {
 			return pdftex.FS_createLazyFile('/', name, resourceURLs[index], true, false);
 		})).then(function() {
-		// 		//pdftex.on_stdout = appendOutput;
- // 		//pdftex.on_stderr = appendOutput;
- //
- // 		//console.time("Execution time");
- //
+			pdftex.on_stdout = texliveEvent;
+	 		pdftex.on_stderr = texliveEvent;
 			return pdftex.compile(source_code);
 		}).then(function(pdf_dataurl) {
 			var downloadElement;
@@ -915,35 +959,43 @@ function compileLaTeX(source_code, resourceURLs, resourceNames) {
 					downloadElement.href = outURL;
 					downloadElement.hidden = false;
 					downloadElement.click();
+					
+					//Final clean
+					texlive.terminate();
+					btn.disabled = false;
 					statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
 				});
 			}
-		
-			//Save log
-			pdftex.FS_readFile("./input.log").then(logfile => {
-				var logBlob, logURL;
-				downloadElement = document.getElementById("viewLog");
-				if (logfile === false) {
-					downloadElement.hidden = true;				
-				} else {
-					//Revoke old URL
-					logURL = downloadElement.href;
-					if (logURL) {
-						URL.revokeObjectURL(logURL);
-					}
-					logBlob = new Blob([logfile], { type: "text/plain" });
-					logURL = URL.createObjectURL(logBlob);
-					downloadElement.href = logURL;
-					downloadElement.hidden = false;
-				}
-				texlive.terminate();
-			});
+					//
+			// //Save log
+			// pdftex.FS_readFile("./input.log").then(logfile => {
+			// 	var logBlob, logURL;
+			// 	downloadElement = document.getElementById("viewLog");
+			// 	if (logfile === false) {
+			// 		downloadElement.hidden = true;
+			// 	} else {
+			// 		//Revoke old URL
+			// 		logURL = downloadElement.href;
+			// 		if (logURL) {
+			// 			URL.revokeObjectURL(logURL);
+			// 		}
+			// 		logBlob = new Blob([logfile], { type: "text/plain" });
+			// 		logURL = URL.createObjectURL(logBlob);
+			// 		downloadElement.href = logURL;
+			// 		downloadElement.hidden = false;
+			// 	}
+			// 	texlive.terminate();
+			// 	btn.disabled = false;
+			// });
 		});
 	});
 }
 
-function generatePDF() {
-	var statusBox, rtn, resourceNames, resourceFileArray, promiseArray;
+function generatePDF(btn) {
+	var statusBox, rtn, resourceNames, resourceFileArray, resourceURLs, promiseArray;
+	
+	//Disable button to avoid double press
+	btn.disabled = true;
 	
 	//Status line
 	statusBox = document.getElementById("compileStatus");
@@ -954,7 +1006,8 @@ function generatePDF() {
 	//Make LaTeX parameters file
 	rtn = generateLaTeX();
 	if (rtn.str !== "ok") {
-		window.alert(rtn.str);
+		statusBox.innerHTML = rtn.str;
+		btn.disabled = false;
 		return;
 	}
 	
@@ -974,24 +1027,26 @@ function generatePDF() {
 			freader.readAsDataURL(fileobj);
 		});
 	});
-	Promise.all(promiseArray).then(result => {
-		var resourceURLs;
-
-		resourceURLs = result.slice(0);
-		
-		//Load LaTeX code
-		fetch("TCTemplate.tex").then(response => {
-			if (response.ok === true) {
-				return response.text();
-			} else {
-				throw response.status;
-			}
-		}).then(sourceText => {
-			compileLaTeX(sourceText, resourceURLs, resourceNames);
-		}, err => {
-			statusBox.innerHTML = "Failed to load TCTemplate.tex: " + err;
-		});
-	}, err => {
+	Promise.all(promiseArray).catch(err => {
 		statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
+		return Promise.reject("handled");
+	}).then(result => {
+		resourceURLs = result.slice(0);
+		//Load LaTeX code
+		return fetch("TCTemplate.tex");
+	}).then(response => {
+		if (response.ok === true) {
+			return response.text();
+		} else {
+			throw response.status;
+		}
+	}).then(sourceCode => {
+		compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
+	}, err => {
+		if (err !== "handled") {
+			statusBox.innerHTML = "Failed to load TCTemplate.tex: " + err;
+		}
+		//Enable generate PDF button
+		btn.disabled = false;
 	});
 }
