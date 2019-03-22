@@ -109,18 +109,28 @@
 \pgfmathsetmacro{\CheckBoxLeftEdge}{\CardHalfWidth-\SheetCheckBoxWidth}
 \pgfmathsetmacro{\CheckBoxTopEdge}{0.5*(\PointingBoxHeight+\ProblemsPerStation*\SheetCheckBoxHeight)}
 
-\draw (\CardHalfWidth,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight);
+\ifthenelse{\SheetNumber = \ProblemsPerStation}{
+\draw (\CheckBoxLeftEdge,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight) -- (\CardHalfWidth,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight);
+}{
+\draw[red] (\CheckBoxLeftEdge,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight) -- (\CardHalfWidth,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight);
+}
+%\draw (\CardHalfWidth,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight);
 \foreach \Boxnumber in {1,...,\ProblemsPerStation}
 {\pgfmathsetmacro{\LineBottom}{\CheckBoxTopEdge-\Boxnumber*\SheetCheckBoxHeight}
-\draw (\CheckBoxLeftEdge,\LineBottom) -- (\CardHalfWidth,\LineBottom);
+%\draw (\CheckBoxLeftEdge,\LineBottom) -- (\CardHalfWidth,\LineBottom);
 \ifthenelse{\Boxnumber < \SheetNumber}{
+%Draw a cross
 \draw (\CheckBoxLeftEdge,\LineBottom) -- (\CardHalfWidth,\LineBottom+\SheetCheckBoxHeight);
 \draw (\CheckBoxLeftEdge,\LineBottom+\SheetCheckBoxHeight) -- (\CardHalfWidth,\LineBottom);
+\draw (\CheckBoxLeftEdge,\LineBottom) -- (\CheckBoxLeftEdge,\LineBottom+\SheetCheckBoxHeight) -- (\CardHalfWidth,\LineBottom+\SheetCheckBoxHeight);
 }{
 \ifthenelse{\Boxnumber = \SheetNumber}{
 \node at (\CheckBoxLeftEdge+0.5*\SheetCheckBoxWidth,\LineBottom+0.5*\SheetCheckBoxHeight) {\resizebox{!}{\CheckNumberHeight}{\Boxnumber}};
+\draw (\CheckBoxLeftEdge,\LineBottom) -- (\CheckBoxLeftEdge,\LineBottom+\SheetCheckBoxHeight) -- (\CardHalfWidth,\LineBottom+\SheetCheckBoxHeight);
 }{
+%Label for removal
 \node at (\CheckBoxLeftEdge+0.5*\SheetCheckBoxWidth,\LineBottom+0.5*\SheetCheckBoxHeight) {\fontsize{\RemoveTextFontSize}{\RemoveTextFontSize}\selectfont Remove};
+\draw[red] (\CheckBoxLeftEdge,\LineBottom) -- (\CheckBoxLeftEdge,\LineBottom+\SheetCheckBoxHeight) -- (\CardHalfWidth,\LineBottom+\SheetCheckBoxHeight);
 }}}
 
 \pgfmathsetmacro{\MapDescriptionSeparation}{1/3*(2*\CardHalfHeight-2*\CircleRadius-\DescriptionHeight-\PointingBoxHeight)} %Amount of vertical white space between top and map, map and descriptions, and descriptions and pointing boxes
@@ -129,7 +139,7 @@
 \pgfmathsetmacro{\NorthArrowCentrexCoordinate}{-0.5*(\CardHalfWidth+\CircleRadius)}
 
 %Origin is at centre of card - draw bounding lines for cut out
-\draw (-\CardHalfWidth,-\CardHalfHeight) -- (\CardHalfWidth,-\CardHalfHeight) --  (\CardHalfWidth,\CardHalfHeight) --  (-\CardHalfWidth,\CardHalfHeight) -- cycle;
+\draw[red] (-\CardHalfWidth,-\CardHalfHeight) -- (\CardHalfWidth,-\CardHalfHeight) --  (\CardHalfWidth,\CardHalfHeight) --  (-\CardHalfWidth,\CardHalfHeight) -- cycle;
 
 %Print station number
 \node[anchor=north east] at (\CardHalfWidth,\CardHalfHeight) {\fontsize{\StationIDFontSize}{\StationIDFontSize}\selectfont Station: \StationID{}};
