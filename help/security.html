@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en-GB">
 <head>
 	<meta charset="utf-8" />
@@ -16,32 +16,54 @@
 		<h3>Extra Security/Running Offline</h3>
 		<p>For extra security, it is possible to download all the software to your computer and prepare the map cards locally with your computer disconnected from the internet. Running offline is also useful when assisting with software development. Instructions:</p>
 		<ol>
-			<li>Install Python version 3 or newer:
-				<ul>
-					<li>Windows: Install the latest version from the <a href="https://www.python.org/downloads/" target="python">Python website</a>. Try the Windows x86-64 web-based installer first.</li>
-					<li>MacOS: Python should already be installed, but if it's not, download it from the <a href="https://www.python.org/downloads/" target="python">Python website</a>.</li>
-					<li>Unix systems: You're a computer geek, so should know/be able to find out.</li>
-					<li>Phones (Android/iOS): Have a look some of <a href="https://wiki.python.org/moin/Android" target="python">these options</a>, but I've never tried it.</li>
-				</ul>
-			</li>
-			<li>Download the source code:
-				<ul>
-					<li><em>Software developers</em> (and those who know about Git): Install <a href="https://githowto.com" target="installGit">Git</a>, then open the terminal, use the <code>cd</code> command to navigate to the target folder and run <code>git clone --recursive https://github.com/tdobra/tctemplate</code>.</li>
-					<li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">main ZIP</a>, then download and extract <a href="https://github.com/tdobra/texlive.js/archive/7709563f3304f6442e9cdfa407b75b3d381328cb.zip" download="texlive.js.zip">TeX Live</a> into the <code>texlive.js</code> folder, and then download and extract <a href="https://github.com/stackp/promisejs/archive/2ac90b7c04cf3095d58659649b98d66a3e5ad2f2.zip" href="promisejs.zip">promisejs</a> into the <code>promisejs</code> folder. Take care to avoid double subfolders. It is necessary to repeat these steps when installing updates.</li>
-				</ul>
-			</li>
+            <li>
+                Download the source code:
+                <ul>
+                    <li>Software developers (and those who know about Git): Install <a href="https://githowto.com" target="installGit">Git</a>, then open the terminal, use the <code>cd</code> command to navigate to the target folder and run <code>git clone --recursive https://github.com/tdobra/tctemplate.git</code>.</li>
+                    <li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">main ZIP</a>, then download and extract <a href="https://github.com/tdobra/texlive.js/archive/master.zip" download="texlive.js.zip">TeX Live</a> into the <code>texlive.js</code> folder, and then download and extract <a href="https://github.com/stackp/promisejs/archive/2ac90b7c04cf3095d58659649b98d66a3e5ad2f2.zip" download="promisejs.zip">promisejs</a> into the <code>promisejs</code> folder. Take care to avoid double subfolders. It is necessary to repeat these steps when installing updates.</li>
+                </ul>
+            </li>
+            <li>Install Web Server for Chrome (if not using the Python option below):
+                <ol>
+                    <li>Install <a href="https://www.google.com/chrome/" target="prerequisites">Google Chrome</a>.</li>
+                    <li>In Chrome, navigate to <a href="https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb" target="prerequisites">https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb</a>.</li>
+                    <li>Click on <em>Add to Chrome</em>.</li>
+                </ol>
+            </li>
 			<li>You may now disconnect your computer from the internet if extra security is required.</li>
-			<li>Run <code>Start.py</code>.
-				<ul>
-					<li>MacOS and other Unix: Open the terminal, change to the correct directory and make <code>Start.py</code> executable using <code>chmod u+x Start.py</code>, then run using <code>./Start.py</code>.
-				</ul>
-			</li>
-			<li>The normal webpage interface will now appear, so follow the instructions.</li>
+            <li>
+                Start the local web server:
+                <ul>
+                    <li>
+                        Easier: Web Server for Chrome
+                        <ol>
+                            <li>Open Web Server for Chrome, either using the <a href="https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb" target="prerequisites">above link</a> in Chrome, or from the Windows Start menu.</li>
+                            <li>Choose the top-level folder where the TCTemplate source code is saved.</li>
+                            <li>Click on the slider so that it turns blue and says <em>Web Server: STARTED</em>.</li>
+                            <li>Navigate to the URL shown.</li>
+                        </ol>
+                    </li>
+                    <li>
+                        Alternative: Python HTTP server
+                        <ol>
+                            <li>Install <a href="https://www.python.org/downloads/" target="prerequisites">Python</a> version 3.</li>
+                            <li>
+                                Run <em>Start.py</em>.
+                                <ul>
+                                    <li>Windows: Double click on <em>Start</em> in the TCTemplate source code (or use the command prompt as below).</li>
+                                    <li>MacOS, Linux and other Unix: Open the terminal, change to the correct directory and make <code>Start.py</code> executable using <code>chmod u+x Start.py</code>, then run using <code>./Start.py</code>.
+                                </ul>
+                            </li>
+                            <li>TCTemplate appears automatically, or navigate to the URL shown.</li>
+                        </ol>
+                    </li>
+                </ul>
+            </li>
 		</ol>
 	</main>
 	<footer>
-    <p class="right">Last updated (UTC): 10th December 2018 20:37</p>
-		<p class="right">Copyright (c) 2017-18 Tom Dobra: <a href="license.html">view license</a></p>
+        <p class="right">Last updated (UTC): 24th March 2019 23:11</p>
+        <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="license.html">view license</a></p>
 	</footer>
 </body>
 </html>
