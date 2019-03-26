@@ -108,22 +108,7 @@ function loadppen(fileInput) {
 				//Create new table row
 				tableRowNode = document.createElement("tr");
 						
-				//Create first column - show + hidden values
-				tableColNode = document.createElement("td");
-				tableRowNode.appendChild(tableColNode);
-				tableContentNode = document.createElement("input");
-				tableContentNode.type = "checkbox";
-				tableContentNode.checked = true;
-				tableContentNode.className = "showStation";
-				tableColNode.appendChild(tableContentNode);
-				//Hidden: Course order
-				tableContentNode = document.createElement("span");
-				tableContentNode.className = "courseOrder"
-				tableContentNode.hidden = true;
-				tableContentNode.innerHTML = courseNodes[courseNodesId].getAttribute("order");
-				tableColNode.appendChild(tableContentNode);
-											
-				//Create second column - station name
+				//Create first column - station name + hidden values
 				tableColNode = document.createElement("td");
 				stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0,-2);
 				tableContentNode = document.createElement("span");
@@ -131,8 +116,14 @@ function loadppen(fileInput) {
 				tableContentNode.innerHTML = stationNameRoot;
 				tableColNode.appendChild(tableContentNode);
 				tableRowNode.appendChild(tableColNode);
-						
-				//Third column - number of kites
+			    //Hidden: Course order
+				tableContentNode = document.createElement("span");
+				tableContentNode.className = "courseOrder"
+				tableContentNode.hidden = true;
+				tableContentNode.innerHTML = courseNodes[courseNodesId].getAttribute("order");
+				tableColNode.appendChild(tableContentNode);
+                
+				//Second column - number of kites
 				tableColNode = document.createElement("td");
 				tableContentNode = document.createElement("input");
 				tableContentNode.type = "number";
@@ -144,7 +135,7 @@ function loadppen(fileInput) {
 				tableColNode.appendChild(tableContentNode);
 				tableRowNode.appendChild(tableColNode);
 						
-				//Fourth column - zeroes allowed?
+				//Third column - zeroes allowed?
 				tableColNode = document.createElement("td");
 				tableRowNode.appendChild(tableColNode);
 				tableContentNode = document.createElement("input");
@@ -152,7 +143,7 @@ function loadppen(fileInput) {
 				tableContentNode.className = "zeroes";
 				tableColNode.appendChild(tableContentNode);
 						
-				//Fifth column - station heading
+				//Fourth column - station heading
 				tableColNode = document.createElement("td");
 				tableContentNode = document.createElement("input");
 				tableContentNode.type = "number";
@@ -164,7 +155,7 @@ function loadppen(fileInput) {
 				tableColNode.appendChild(tableContentNode);
 				tableRowNode.appendChild(tableColNode);
 						
-				//Sixth column - map shape
+				//Fifth column - map shape
 				tableColNode = document.createElement("td");
 				tableContentNode = document.createElement("select");
 				tableContentNode.required = true;
@@ -178,7 +169,7 @@ function loadppen(fileInput) {
 				tableColNode.appendChild(tableContentNode);
 				tableRowNode.appendChild(tableColNode);
 						
-				//Seventh column - map size
+				//Sixth column - map size
 				tableColNode = document.createElement("td");
 				tableContentNode = document.createElement("input");
 				tableContentNode.type = "number";
@@ -192,7 +183,7 @@ function loadppen(fileInput) {
 				tableColNode.appendChild(tableContentNode);
 				tableRowNode.appendChild(tableColNode);
 						
-				//Eigth column - map scale
+				//Seventh column - map scale
 				tableColNode = document.createElement("td");
 				tableContentNode = document.createTextNode("1:");
 				tableColNode.appendChild(tableContentNode);
@@ -211,7 +202,7 @@ function loadppen(fileInput) {
 				}
 				tableContentNode.value = courseScale;
 						
-				//Nineth column - contour interval + hidden values
+				//Eighth column - contour interval + hidden values
 				tableColNode = document.createElement("td");
 				tableContentNode = document.createElement("input");
 				tableContentNode.type = "number";
@@ -624,171 +615,169 @@ function generateLaTeX() {
 	checkRemoveFontList = "\\def\\RemoveTextFontSizeList{{";
 	
 	for (tableRowID = 1; tableRowID < numTableRows; tableRowID++) {
-		if (tableRows[tableRowID].getElementsByClassName("showStation")[0].checked == true) {
-			numStations++;
-			if (numStations > 1) {
-				//Insert commas in lists
-				numProblemsList += ",";
-				stationNameList += ",";
-				kitesList += ",";
-				zeroesList += ",";
-				headingList += ",";			
-				shapeList += ",";			
-				sizeList += ",";
-				briefingWidthList += ",";		
-				scaleList += ",";			
-				contourList += ",";			
-				mapFileList += ",";			
-				mapPageList += ",";			
-				mapxList += ",";			
-				mapyList += ",";			
-				CDsFileList += ",";			
-				CDsPageList += ",";			
-				CDsxList += ",";			
-				CDsyList += ",";
-				CDsHeightList += ",";
-				CDsWidthList += ",";
-				CDsaFontList += ",";
-				CDsbFontList += ",";
-				showPointingBoxesList += ",";
-				pointingBoxWidthList += ",";
-				pointingBoxHeightList += ",";	
-				pointingLetterFontList += ",";	
-				pointingPhoneticFontList += ",";	
-				stationIDFontList += ",";	
-				checkBoxWidthList += ",";	
-				checkBoxHeightList += ",";
-				checkNumberFontList += ",";
-				checkRemoveFontList += ",";
-			}
-			
-			stationName = tableRows[tableRowID].getElementsByClassName("stationName")[0].innerHTML;	//Store it for useful error messages later
-			stationNameList += "\"" + stationName + "\"";
-			
-			//Number of problems at station
-			numProblems = Number(tableRows[tableRowID].getElementsByClassName("numProblems")[0].innerHTML);	//Save for later
-			numProblemsList += numProblems;
-			if (numProblems > maxProblems) {
-				maxProblems = numProblems;
-			}
-			
-			//Number of kites
-			contentField = tableRows[tableRowID].getElementsByClassName("kites")[0];
-			if (contentField.checkValidity() == false) {
-				rtnstr = "The number of kites for station " + stationName + " must be an integer between 1 and 6.";
-				contentField.focus();
-			} else {
-				numKites = Number(contentField.value);
-				kitesList += numKites;	//Don't add quotes
-			}
-			
-			if (tableRows[tableRowID].getElementsByClassName("zeroes")[0].checked == true) {
-				zeroesList += "1";
-				numKites += 1;
-			} else {
-				zeroesList += "0";
-			}
-			pointingBoxWidthList += (18 / numKites);	
-			
-			//Heading
-			contentField = tableRows[tableRowID].getElementsByClassName("heading")[0];
-			if (contentField.checkValidity() == false) {
-				rtnstr = "The heading of station " + stationName + " must be a number.";
-				contentField.focus();
-			} else {
-				headingList += contentField.value;	//Don't add quotes
-			}
-			
-			//Map shape
-			contentField = tableRows[tableRowID].getElementsByClassName("mapShape")[0];
-			if (contentField.checkValidity() == false) {
-				rtnstr = "The map shape for station " + stationName + " must be specified.";
-				contentField.focus();
-			} else {
-				shapeList += contentField.selectedIndex;	//Don't add quotes
-			}
-			
-			//Map size
-			contentField = tableRows[tableRowID].getElementsByClassName("mapSize")[0];
-			if (contentField.checkValidity() == false) {
-				rtnstr = "The map size for station " + stationName + " must be > 0 and <= 12.";
-				contentField.focus();
-			}	else if (contentField.value == 0) {
-				rtnstr = "The map size for station " + stationName + " must be strictly greater than 0.";
-				contentField.focus();
-			} else {
-				sizeList += 0.5 * contentField.value;	//Don't add quotes
-				briefingWidthList += "\"" + (0.7 * contentField.value) + "cm\"";
-				//Show pointing boxes only if diameter < 10cm
-				if (contentField.value <= 10) {
-					showPointingBoxesList += "1";
-				} else {
-					showPointingBoxesList += "0";
-				}
-			}
-
-			//Map scale
-			contentField = tableRows[tableRowID].getElementsByClassName("mapScale")[0];
-			if (contentField.checkValidity() == false || contentField.value == 0) {
-				rtnstr = "The map scale for station " + stationName + " must be strictly greater than 0.";
-				contentField.focus();
-			} else {
-				scaleList += contentField.value;	//Don't add quotes
-			}
-			
-			//Map contour interval
-			contentField = tableRows[tableRowID].getElementsByClassName("contourInterval")[0];
-			if (contentField.checkValidity() == false || contentField.value == 0) {
-				rtnstr = "The contour interval for station " + stationName + " must be strictly greater than 0.";
-				contentField.focus();
-			} else {
-				contourList += contentField.value;	//Don't add quotes
-			}
-			
-			//Map and control description files
-			fileName = "\"Maps\"";
-			mapFileList += "{" + fileName;
-			CDsFileList += "{\"CDs\"";
-			CDsxList += "{" + CDsxCoordBase;
-			controlsSkipped = tableRows[tableRowID].getElementsByClassName("controlsSkipped")[0].innerHTML.split(",");
-			CDsyCoord = CDsyCoordBase - 0.7 * controlsSkipped[0];
-			CDsyList += "{" + CDsyCoord;
-			CDsHeightList += "{" + CDsHeightBase;   //For a 7mm box
-			CDsWidthList += "{" + CDsWidthBase;   //For a 7mm box
-			for (iterNum = 1; iterNum < numProblems; iterNum++) {
-				mapFileList += "," + fileName;
-				CDsFileList += ",\"CDs\"";
-				CDsxList += "," + CDsxCoordBase;	//Must match number just above for Purple Pen
-				CDsyCoord = CDsyCoordBase - 0.7 * controlsSkipped[iterNum];
-				CDsyList += "," + CDsyCoord;	//Must match number just above for Purple Pen
-				CDsHeightList += "," + CDsHeightBase;
-				CDsWidthList += "," + CDsWidthBase;   //For a 7mm box
-			}
-			mapFileList += "}";
-			CDsFileList += "}";
-			CDsxList += "}";
-			CDsyList += "}";
-			CDsHeightList += "}";
-			CDsWidthList += "}";
-			CDsaFontList += "\"0.45cm\"";
-			CDsbFontList += "\"0.39cm\"";
-									
-			//Coordinate map positions in files
-			mapxList += tableRows[tableRowID].getElementsByClassName("circlex")[0].innerHTML;
-			mapyList += tableRows[tableRowID].getElementsByClassName("circley")[0].innerHTML;
-			mapPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
-			CDsPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
-
-			//Layout constant parameters - for A5
-			pointingBoxHeightList += "2.5";
-			pointingLetterFontList += "\"1.8cm\"";
-			pointingPhoneticFontList += "\"0.6cm\"";
-			stationIDFontList += "\"0.7cm\"";
-			checkBoxWidthList += "1.5";	
-			checkBoxHeightList += "1.5";	
-			checkNumberFontList += "\"0.8cm\"";
-			checkRemoveFontList += "\"0.3cm\"";
+		numStations++;
+		if (numStations > 1) {
+			//Insert commas in lists
+			numProblemsList += ",";
+			stationNameList += ",";
+			kitesList += ",";
+			zeroesList += ",";
+			headingList += ",";			
+			shapeList += ",";			
+			sizeList += ",";
+			briefingWidthList += ",";		
+			scaleList += ",";			
+			contourList += ",";			
+			mapFileList += ",";			
+			mapPageList += ",";			
+			mapxList += ",";			
+			mapyList += ",";			
+			CDsFileList += ",";			
+			CDsPageList += ",";			
+			CDsxList += ",";			
+			CDsyList += ",";
+			CDsHeightList += ",";
+			CDsWidthList += ",";
+			CDsaFontList += ",";
+			CDsbFontList += ",";
+			showPointingBoxesList += ",";
+			pointingBoxWidthList += ",";
+			pointingBoxHeightList += ",";	
+			pointingLetterFontList += ",";	
+			pointingPhoneticFontList += ",";	
+			stationIDFontList += ",";	
+			checkBoxWidthList += ",";	
+			checkBoxHeightList += ",";
+			checkNumberFontList += ",";
+			checkRemoveFontList += ",";
 		}
+			
+		stationName = tableRows[tableRowID].getElementsByClassName("stationName")[0].innerHTML;	//Store it for useful error messages later
+		stationNameList += "\"" + stationName + "\"";
+			
+		//Number of problems at station
+		numProblems = Number(tableRows[tableRowID].getElementsByClassName("numProblems")[0].innerHTML);	//Save for later
+		numProblemsList += numProblems;
+		if (numProblems > maxProblems) {
+			maxProblems = numProblems;
+		}
+			
+		//Number of kites
+		contentField = tableRows[tableRowID].getElementsByClassName("kites")[0];
+		if (contentField.checkValidity() == false) {
+			rtnstr = "The number of kites for station " + stationName + " must be an integer between 1 and 6.";
+			contentField.focus();
+		} else {
+			numKites = Number(contentField.value);
+			kitesList += numKites;	//Don't add quotes
+		}
+			
+		if (tableRows[tableRowID].getElementsByClassName("zeroes")[0].checked == true) {
+			zeroesList += "1";
+			numKites += 1;
+		} else {
+			zeroesList += "0";
+		}
+		pointingBoxWidthList += (18 / numKites);	
+			
+		//Heading
+		contentField = tableRows[tableRowID].getElementsByClassName("heading")[0];
+		if (contentField.checkValidity() == false) {
+			rtnstr = "The heading of station " + stationName + " must be a number.";
+			contentField.focus();
+		} else {
+			headingList += contentField.value;	//Don't add quotes
+		}
+			
+		//Map shape
+		contentField = tableRows[tableRowID].getElementsByClassName("mapShape")[0];
+		if (contentField.checkValidity() == false) {
+			rtnstr = "The map shape for station " + stationName + " must be specified.";
+			contentField.focus();
+		} else {
+			shapeList += contentField.selectedIndex;	//Don't add quotes
+		}
+			
+		//Map size
+		contentField = tableRows[tableRowID].getElementsByClassName("mapSize")[0];
+		if (contentField.checkValidity() == false) {
+			rtnstr = "The map size for station " + stationName + " must be > 0 and <= 12.";
+			contentField.focus();
+		}	else if (contentField.value == 0) {
+			rtnstr = "The map size for station " + stationName + " must be strictly greater than 0.";
+			contentField.focus();
+		} else {
+			sizeList += 0.5 * contentField.value;	//Don't add quotes
+			briefingWidthList += "\"" + (0.7 * contentField.value) + "cm\"";
+			//Show pointing boxes only if diameter < 10cm
+			if (contentField.value <= 10) {
+				showPointingBoxesList += "1";
+			} else {
+				showPointingBoxesList += "0";
+			}
+		}
+
+		//Map scale
+		contentField = tableRows[tableRowID].getElementsByClassName("mapScale")[0];
+		if (contentField.checkValidity() == false || contentField.value == 0) {
+			rtnstr = "The map scale for station " + stationName + " must be strictly greater than 0.";
+			contentField.focus();
+		} else {
+			scaleList += contentField.value;	//Don't add quotes
+		}
+			
+		//Map contour interval
+		contentField = tableRows[tableRowID].getElementsByClassName("contourInterval")[0];
+		if (contentField.checkValidity() == false || contentField.value == 0) {
+			rtnstr = "The contour interval for station " + stationName + " must be strictly greater than 0.";
+			contentField.focus();
+		} else {
+			contourList += contentField.value;	//Don't add quotes
+		}
+			
+		//Map and control description files
+		fileName = "\"Maps\"";
+		mapFileList += "{" + fileName;
+		CDsFileList += "{\"CDs\"";
+		CDsxList += "{" + CDsxCoordBase;
+		controlsSkipped = tableRows[tableRowID].getElementsByClassName("controlsSkipped")[0].innerHTML.split(",");
+		CDsyCoord = CDsyCoordBase - 0.7 * controlsSkipped[0];
+		CDsyList += "{" + CDsyCoord;
+		CDsHeightList += "{" + CDsHeightBase;   //For a 7mm box
+		CDsWidthList += "{" + CDsWidthBase;   //For a 7mm box
+		for (iterNum = 1; iterNum < numProblems; iterNum++) {
+			mapFileList += "," + fileName;
+			CDsFileList += ",\"CDs\"";
+			CDsxList += "," + CDsxCoordBase;	//Must match number just above for Purple Pen
+			CDsyCoord = CDsyCoordBase - 0.7 * controlsSkipped[iterNum];
+			CDsyList += "," + CDsyCoord;	//Must match number just above for Purple Pen
+			CDsHeightList += "," + CDsHeightBase;
+			CDsWidthList += "," + CDsWidthBase;   //For a 7mm box
+		}
+		mapFileList += "}";
+		CDsFileList += "}";
+		CDsxList += "}";
+		CDsyList += "}";
+		CDsHeightList += "}";
+		CDsWidthList += "}";
+		CDsaFontList += "\"0.45cm\"";
+		CDsbFontList += "\"0.39cm\"";
+									
+		//Coordinate map positions in files
+		mapxList += tableRows[tableRowID].getElementsByClassName("circlex")[0].innerHTML;
+		mapyList += tableRows[tableRowID].getElementsByClassName("circley")[0].innerHTML;
+		mapPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
+		CDsPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
+
+		//Layout constant parameters - for A5
+		pointingBoxHeightList += "2.5";
+		pointingLetterFontList += "\"1.8cm\"";
+		pointingPhoneticFontList += "\"0.6cm\"";
+		stationIDFontList += "\"0.7cm\"";
+		checkBoxWidthList += "1.5";	
+		checkBoxHeightList += "1.5";	
+		checkNumberFontList += "\"0.8cm\"";
+		checkRemoveFontList += "\"0.3cm\"";
 	}
 	
 	//Hide construction circle for lining up maps - not required when using this wizard

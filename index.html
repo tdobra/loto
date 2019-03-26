@@ -58,8 +58,7 @@
 			<table>
 				<thead>
 					<tr>
-						<th>Show<!--Also include several hidden fields:--></th>
-						<th>Station name</th>
+						<th>Station name<!--Also includes several hidden fields:--></th>
 						<th>Kites</th>
 						<th>Zeroes</th>
 						<th>Heading</th>
@@ -71,7 +70,7 @@
 				</thead>
 				<tbody id="courseTableBody">
 					<tr>
-						<td colspan="2"><input type="button" value="Set all stations" onclick="setAllCourses()" /></td>
+						<td><input type="button" value="Set all stations" onclick="setAllCourses()" /></td>
 						<td><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
 						<td><input class="zeroes" type="checkbox" /></td>
 						<td><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
@@ -92,8 +91,6 @@
 			<ol start="12">
 				<li><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="generatePDF(this)" /><span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
 			</ol>
-			
-			<p><a href="help/latexcompilers.html" target="help">If it fails, click here.</a></p>
 		</section>
 
 		<section id="printMaps">
@@ -106,7 +103,7 @@
 		</section>
 		</main>
 		<footer>
-	        <p class="right">Last updated (UTC): 22nd March 2019 23:06</p>
+	        <p class="right">Last updated (UTC): 26th March 2019 21:24</p>
 			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
 		</footer>
 	</body>
