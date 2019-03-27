@@ -20,7 +20,7 @@
 		<section>
 			<ol>
 				<li>Set up an event in <a href="http://purplepen.golde.org" target="PurplePen">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
-        <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the control circle diameter to 6 mm (current recommended size). Click OK.</li>
+                <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the control circle diameter to 6 mm (current recommended size). Click OK.</li>
 				<li>Mark each question control to be used, cut the circles as required and set the control description. The content of columns A and B does not matter, nor do the control codes.</li>
 				<li>Create a course for each problem. Name it in the format <em>name of station.i</em>, where <em>i</em> is the problem number counting from 1. It is not recommended to include the word <em>station</em> in the name, and it is simplest to be just a number, although it could be <em>warm-up</em>. For example, the 3<sup>rd</sup> problem at the 2<sup>nd</sup> could be be named <em>3.2</em>. Set the course type to score. The stations will be printed in the order of the 1<sup>st</sup> map at each station.</li>
 				<li>Add the (single) control to the course. It doesn't matter whether a start and finished are also added, so long as they are outside the map excerpts.</li>
@@ -51,8 +51,8 @@
 			</ol>
 			
 			<ul>
-				<li>Load saved station data: <input type="file" id="texSelector" accept=".tex" onchange="loadTeX(this)" /><input type="button" value="Reload" onclick="loadTeX(document.getElementById('texSelector'))" /></li>
-				<li><input type="button" value="Save station data" onclick="saveParameters()" /></li>
+				<li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="loadTeX(this)" /><input type="button" value="Reload" onclick="loadTeX(document.getElementById('texSelector'))" /></li>
+				<li><input type="button" value="Save station data" onclick="saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
 			</ul>
 		
 			<table>
@@ -103,7 +103,7 @@
 		</section>
 		</main>
 		<footer>
-	        <p class="right">Last updated (UTC): 26th March 2019 21:32</p>
+	        <p class="right">Last updated (UTC): 27th March 2019 22:10</p>
 			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
 		</footer>
 	</body>

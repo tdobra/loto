@@ -976,6 +976,11 @@ function generatePDF(btn) {
 		btn.disabled = false;
 		return;
 	}
+
+    //Download a copy of parameters file to save for later
+	if (document.getElementById("autoSave").checked === true) {
+	    downloadFile(rtn.file, "TemplateParameters.tex");
+	}
 	
 	//Read maps and CDs PDFs
 	resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
