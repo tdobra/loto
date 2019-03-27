@@ -9,10 +9,15 @@ if (window.FileReader && window.DOMParser && window.Blob && window.URL && window
 } else {
 	document.getElementById("mainView").hidden = true;
 }
+
+//MS Edge doesn't always work - <details> tag not implemented
+if ('open' in document.createElement('details')) {
+    document.getElementById("MSEdgeWarning").hidden = true;
+}
+
 document.getElementById("stationProperties").hidden = true;
 document.getElementById("savePDF").hidden = true;
 document.getElementById("viewLog").hidden = true;
-document.getElementById("printMaps").hidden = true;
 
 function loadppen(fileInput) {
 	//Reads a Purple Pen file
@@ -354,7 +359,6 @@ function loadppen(fileInput) {
 		
 		//Prepare view
 		document.getElementById("stationProperties").hidden = false;
-		document.getElementById("printMaps").hidden = false;	//Show printing instructions in case compile fails
 		document.getElementById("stationProperties").scrollIntoView();
 	};
 	freader.onerror = function () { window.alert("Could not read Purple Pen file. Try reselecting it, then click Reload."); };

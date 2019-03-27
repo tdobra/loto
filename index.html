@@ -12,9 +12,10 @@
 	
 	<header>
 		<h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
-		<p class="right"><a href="help/index.html" target="help">Help</a></p>
 		<noscript>Enable Javascript for this wizard to work.</noscript>
 		<p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
+        <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try <a href="https://www.google.com/chrome/" target="prequisites">Google Chrome</a> instead.</p>
+        <p class="right"><a href="help/index.html" target="help">Help</a></p>
 	</header>
 	<main id="mainView">
 		<section>
@@ -87,14 +88,14 @@
 					</tr>
 				</tbody>
 			</table>
+
+            <br />
+            <details>
+                <summary>Customise layout</summary>
+            </details>
 			
 			<ol start="12">
-				<li><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="generatePDF(this)" /><span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
-			</ol>
-		</section>
-
-		<section id="printMaps">
-			<ol start="13">
+				<li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
 				<li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page.</li>
 				<li>Cut along all of the red lines.</li>
                 <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
@@ -103,7 +104,7 @@
 		</section>
 		</main>
 		<footer>
-	        <p class="right">Last updated (UTC): 27th March 2019 22:10</p>
+	        <p class="right">Last updated (UTC): 27th March 2019 22:56</p>
 			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
 		</footer>
 	</body>
