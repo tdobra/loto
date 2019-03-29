@@ -20,7 +20,7 @@
 	<main id="mainView">
 		<section>
 			<ol>
-				<li>Set up an event in <a href="http://purplepen.golde.org" target="PurplePen">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
+				<li>Set up an event in <a href="http://purplepen.golde.org" target="prequisites">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
                 <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the control circle diameter to 6 mm (current recommended size). Click OK.</li>
 				<li>Mark each question control to be used, cut the circles as required and set the control description. The content of columns A and B does not matter, nor do the control codes.</li>
 				<li>Create a course for each problem. Name it in the format <em>name of station.i</em>, where <em>i</em> is the problem number counting from 1. It is not recommended to include the word <em>station</em> in the name, and it is simplest to be just a number, although it could be <em>warm-up</em>. For example, the 3<sup>rd</sup> problem at the 2<sup>nd</sup> could be be named <em>3.2</em>. Set the course type to score. The stations will be printed in the order of the 1<sup>st</sup> map at each station.</li>
@@ -29,7 +29,7 @@
 				<li>Set the print area for all courses (under the File menu) to have 0 margin, limit the printable area to the page size and define the printable area manually. Select a paper size (custom size if necessary) that is large enough to include all parts of the map that are to be printed. Move the print area to cover all desired parts of the map and click done. (This timed control map generator software does not require each course/map to have the same print area, although the author considers it easier for the user to do so.)</li>
 				<li>Create a single PDF of all the courses using File->Create PDFs and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
 				<li>Create a single PDF of all the control descriptions using File->Print control descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Set the box size to 7 mm. Leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
-				<li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="loadppen(this)" /><input type="button" value="Reload" onclick="loadppen(document.getElementById('ppenSelector'))" /></li>
+				<li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
 			</ol>
 		</section>
 	
@@ -52,8 +52,8 @@
 			</ol>
 			
 			<ul>
-				<li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="loadTeX(this)" /><input type="button" value="Reload" onclick="loadTeX(document.getElementById('texSelector'))" /></li>
-				<li><input type="button" value="Save station data" onclick="saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
+				<li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
+				<li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
 			</ul>
 		
 			<table>
@@ -71,7 +71,7 @@
 				</thead>
 				<tbody id="courseTableBody">
 					<tr>
-						<td><input type="button" value="Set all stations" onclick="setAllCourses()" /></td>
+						<td><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
 						<td><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
 						<td><input class="zeroes" type="checkbox" /></td>
 						<td><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
@@ -95,7 +95,7 @@
             </details>
 			
 			<ol start="12">
-				<li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
+				<li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
 				<li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page.</li>
 				<li>Cut along all of the red lines.</li>
                 <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
@@ -104,7 +104,7 @@
 		</section>
 		</main>
 		<footer>
-	        <p class="right">Last updated (UTC): 27th March 2019 22:56</p>
+	        <p class="right">Last updated (UTC): 29th March 2019 23:01</p>
 			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
 		</footer>
 	</body>
