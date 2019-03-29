@@ -22,10 +22,12 @@ document.getElementById("stationProperties").hidden = true;
 document.getElementById("savePDF").hidden = true;
 document.getElementById("viewLog").hidden = true;
 
-//Keep track of whether an input file has been changed in a table
-
 //Keep all functions private and put those with events in HTML tags in a namespace
 tcTemplate = function() {
+	//Keep track of whether an input file has been changed in a table to disable autosave
+	//TODO: Update this according to various events
+	var paramsSaved = true;
+	
 	function loadppen(fileInput) {
 		//Reads a Purple Pen file
 		var fileobj, freader;
@@ -863,7 +865,7 @@ tcTemplate = function() {
 	}
 
 	function generatePDF(btn) {
-		var statusBox, rtn, resourceNames, resourceFileArray, resourceURLs, promiseArray;
+		var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray;
 
 		function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
 			var statusBox, texlive, pdftex, texliveEvent;
@@ -977,21 +979,16 @@ tcTemplate = function() {
 		document.getElementById("viewLog").hidden = true;
 	
 		//Make LaTeX parameters file
-		rtn = generateLaTeX();
-		if (rtn.str !== "ok") {
-			statusBox.innerHTML = rtn.str;
+		paramRtn = generateLaTeX();
+		if (paramRtn.str !== "ok") {
+			statusBox.innerHTML = paramRtn.str;
 			btn.disabled = false;
 			return;
-		}
-
-		//Download a copy of parameters file to save for later
-		if (document.getElementById("autoSave").checked === true) {
-			downloadFile(rtn.file, "TemplateParameters.tex");
 		}
 	
 		//Read maps and CDs PDFs
 		resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
-		resourceFileArray = [rtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
+		resourceFileArray = [paramRtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
 		//Load each resource file and get a URL for each
 		//Read them using promises native in Javascript
 		promiseArray = resourceFileArray.map(fileobj => {
@@ -1009,6 +1006,11 @@ tcTemplate = function() {
 			statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
 			return Promise.reject("handled");
 		}).then(result => {
+			//Download a copy of parameters file to save for later
+			if (document.getElementById("autoSave").checked === true && paramsSaved === false) {
+				downloadFile(paramRtn.file, "TemplateParameters.tex");
+			}
+			
 			resourceURLs = result.slice(0);
 			//Load LaTeX code
 			return fetch("TCTemplate.tex");
