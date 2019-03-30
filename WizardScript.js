@@ -25,7 +25,6 @@ document.getElementById("viewLog").hidden = true;
 //Keep all functions private and put those with events in HTML tags in a namespace
 tcTemplate = function() {
 	//Keep track of whether an input file has been changed in a table to disable autosave
-	//TODO: Update this according to various events
 	var paramsSaved = true;
 	
 	function loadppen(fileInput) {
@@ -159,6 +158,7 @@ tcTemplate = function() {
 					tableContentNode.step = 1;
 					tableContentNode.required = true;
 					tableContentNode.className = "kites";
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 					tableColNode.appendChild(tableContentNode);
 					tableRowNode.appendChild(tableColNode);
 						
@@ -167,6 +167,7 @@ tcTemplate = function() {
 					tableRowNode.appendChild(tableColNode);
 					tableContentNode = document.createElement("input");
 					tableContentNode.type = "checkbox";
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 					tableContentNode.className = "zeroes";
 					tableColNode.appendChild(tableContentNode);
 						
@@ -177,6 +178,7 @@ tcTemplate = function() {
 					tableContentNode.step = "any";
 					tableContentNode.required = true;
 					tableContentNode.className = "heading";
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 					tableColNode.appendChild(tableContentNode);
 					tableContentNode = document.createTextNode(" " + String.fromCharCode(176));
 					tableColNode.appendChild(tableContentNode);
@@ -193,6 +195,7 @@ tcTemplate = function() {
 					selectOptionNode = document.createElement("option");
 					selectOptionNode.text = "Square";
 					tableContentNode.add(selectOptionNode);
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 					tableColNode.appendChild(tableContentNode);
 					tableRowNode.appendChild(tableColNode);
 						
@@ -205,6 +208,7 @@ tcTemplate = function() {
 					tableContentNode.max = 12;
 					tableContentNode.required = true;
 					tableContentNode.className = "mapSize";
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 					tableColNode.appendChild(tableContentNode);
 					tableContentNode = document.createTextNode(" cm");
 					tableColNode.appendChild(tableContentNode);
@@ -220,14 +224,15 @@ tcTemplate = function() {
 					tableContentNode.min = 0;
 					tableContentNode.required = true;
 					tableContentNode.className = "mapScale";
-					tableColNode.appendChild(tableContentNode);
-					tableRowNode.appendChild(tableColNode);
 					//Populate map scale
 					courseScale = Number(courseNodes[courseNodesId].getElementsByTagName("options")[0].getAttribute("print-scale"));
 					if (!courseScale) {
 						courseScale = globalScale;
 					}
 					tableContentNode.value = courseScale;
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+					tableColNode.appendChild(tableContentNode);
+					tableRowNode.appendChild(tableColNode);
 						
 					//Eighth column - contour interval + hidden values
 					tableColNode = document.createElement("td");
@@ -237,6 +242,7 @@ tcTemplate = function() {
 					tableContentNode.min = 0;
 					tableContentNode.required = true;
 					tableContentNode.className = "contourInterval";
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 					tableColNode.appendChild(tableContentNode);
 					tableContentNode = document.createTextNode(" m");
 					tableColNode.appendChild(tableContentNode);
@@ -408,6 +414,8 @@ tcTemplate = function() {
 					}
 					//Set to indeterminate
 					control.indeterminate = true;
+				    //Flag parameters as changed
+					paramsSaved = false;
 				}
 			} else if (controlClass == "mapShape") {
 				if (control.selectedIndex > 0) {
@@ -417,6 +425,8 @@ tcTemplate = function() {
 						classSet[id].selectedIndex = controlValue - 1;
 					}
 					control.selectedIndex = 0;
+				    //Flag parameters as changed
+					paramsSaved = false;
 				}
 			} else {
 				//Control is required, so invalid if blank
@@ -427,6 +437,8 @@ tcTemplate = function() {
 						classSet[id].value = controlValue;
 					}
 					control.value = "";
+				    //Flag parameters as changed
+					paramsSaved = false;
 				}
 			}
 		}
@@ -444,6 +456,9 @@ tcTemplate = function() {
 				var fileString, startPos, endPos, subString, varArray, fields, rowId, numRows;
 				
 				fileString = freader.result;
+
+			    //Indicate that parameters data is currently saved - unedited opened file
+				paramsSaved = true;
 	
 				//Number of kites
 				startPos = fileString.indexOf("\\def\\NumKitesList{{");
@@ -862,6 +877,9 @@ tcTemplate = function() {
 		var rtn;
 		rtn = generateLaTeX();
 		downloadFile(rtn.file, "TemplateParameters.tex");
+        
+	    //Indicate that parameters data is currently saved - unedited opened file
+		paramsSaved = true;
 	}
 
 	function generatePDF(btn) {
@@ -1008,7 +1026,10 @@ tcTemplate = function() {
 		}).then(result => {
 			//Download a copy of parameters file to save for later
 			if (document.getElementById("autoSave").checked === true && paramsSaved === false) {
-				downloadFile(paramRtn.file, "TemplateParameters.tex");
+			    downloadFile(paramRtn.file, "TemplateParameters.tex");
+                
+			    //Indicate that parameters data is currently saved
+			    paramsSaved = true;
 			}
 			
 			resourceURLs = result.slice(0);
