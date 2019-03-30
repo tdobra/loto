@@ -25,7 +25,19 @@ document.getElementById("viewLog").hidden = true;
 //Keep all functions private and put those with events in HTML tags in a namespace
 tcTemplate = function() {
 	//Keep track of whether an input file has been changed in a table to disable autosave
-	var paramsSaved = true;
+    var paramsSaved = true;
+
+    //Layout default measurements
+    const defaultLayout = {
+        IDFontSize: 0.7,
+        checkWidth: 1.5,
+        checkHeight: 1.5,
+        checkFontSize: 0.8,
+        removeFontSize: 0.3,
+        pointHeight: 2.5,
+        letterFontSize: 1.8,
+        phoneticFontSize: 0.6
+    };
 	
 	function loadppen(fileInput) {
 		//Reads a Purple Pen file
@@ -207,7 +219,7 @@ tcTemplate = function() {
 					tableContentNode.min = 0;
 					tableContentNode.max = 12;
 					tableContentNode.required = true;
-					tableContentNode.className = "mapSize";
+					tableContentNode.className = "mapSize layoutLength";
 					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 					tableColNode.appendChild(tableContentNode);
 					tableContentNode = document.createTextNode(" cm");
@@ -882,6 +894,25 @@ tcTemplate = function() {
 		paramsSaved = true;
 	}
 
+	function resetAllLayout() {
+	    //Inserts the default value into all the layout set all rows fields
+	    const tableRow = document.getElementById("layoutSetAllRow");
+	    for (var btnClass in defaultLayout) {
+	        if (defaultLayout.hasOwnProperty(btnClass)) {
+	            //Do not act on properties inherited from generic object class
+	            tableRow.getElementsByClassName(btnClass)[0].value = defaultLayout[btnClass];
+	        }
+	    }
+	}
+
+	function resetField(btn) {
+	    //Resets the corresponding field to its default value
+        //Get the corresponding input element class of the button
+	    var btnClass = btn.className;
+        //Look up corresponding input element and value
+	    document.getElementById("layoutSetAllRow").getElementsByClassName(btnClass)[0].value = defaultLayout[btnClass];
+	}
+
 	function generatePDF(btn) {
 		var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray;
 
@@ -1058,6 +1089,8 @@ tcTemplate = function() {
 		loadTeX: loadTeX,
 		saveParameters: saveParameters,
 		setAllCourses: setAllCourses,
+        resetAllLayout: resetAllLayout,
+        resetField: resetField,
 		generatePDF: generatePDF
 	};
 }();

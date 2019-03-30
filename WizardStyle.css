@@ -2,20 +2,38 @@ body {
 	font-family: sans-serif;
 }
 
-table, th, td {
-	border: 1px solid black;
-	border-collapse: collapse;
+table {
+    border-collapse: collapse;
 }
 
-td {
+th, td {
+    border-style: solid;
+    border-color: black;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
 	text-align: center;
 }
 
-input.heading, input.mapScale {
-	width: 8ch;	/*1ch = width of character 0*/
+.thickUnderline {
+    border-bottom-width: 3px;
 }
 
-input.mapSize, input.contourInterval {
+input.layoutLength {
+    /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
+    width: 7ch;
+}
+
+input.kites {
+	width: 4ch;
+}
+
+input.heading, input.mapScale {
+	width: 8ch;
+}
+
+input.contourInterval {
 	width: 6ch;
 }
 

@@ -35,21 +35,24 @@
 	
 		<section id="stationProperties">
 			<ol start="11">
-				<li>Fill in the details of each station in the table:
-					<ul>
-						<li>Use the first row to overwrite the values for all stations. The values will update automatically.</li>
-						<li>Untick the box in the show column to exclude the station from the printed output.</li>
-						<li>The station name is read-only; to change it, rename the courses in Purple Pen, then reload the file.</li>
-						<li>The number of kites must be less than or equal to 6, and should be 5 or 6 (rule 16.10, <a href="http://orienteering.org/trail-orienteering/rules/" target="rules">IOF Trail Orienteering Competition Rules 2018</a>).</li>
-						<li>Tick the zeroes box if zero (no kite correct) is a permitted answer. This should be ticked for TempO and unticked for PreO.</li>
-						<li>Heading is the bearing in degrees of the line subtending the left-most and right-most kite from the observation point.</li>
-						<li>The printed map can either be circular or square (IOF rule 15.7).</li>
-						<li>The circle diameter or square side length should be between 5 and 12 cm (IOF rule 15.7). Do not include the unit in the textbox.</li>
-						<li>The map scale is read automatically from the Purple Pen file. It may be changed here if the OCAD map file was set up incorrectly, although it will not change the print scale of the map excerpts. It should be 1:4000 or 1:5000 and be constant across all maps in a competition (IOF rule 15.2).</li>
-						<li>The contour interval must be stated in metres, without typing the unit in the text box.</li>
-					</ul>
-				</li>
-			</ol>
+				<li>Fill in the details of each station in the table:</li>
+            </ol>
+
+            <details>
+                <summary>Instructions and guidelines</summary>
+                <ul>
+                    <li>Use the first row to overwrite the values for all stations. The values will update automatically.</li>
+                    <li>Untick the box in the show column to exclude the station from the printed output.</li>
+                    <li>The station name is read-only; to change it, rename the courses in Purple Pen, then reload the file.</li>
+                    <li>The number of kites must be less than or equal to 6, and should be 5 or 6 (rule 16.10, <a href="http://orienteering.org/trail-orienteering/rules/" target="rules">IOF Trail Orienteering Competition Rules 2018</a>).</li>
+                    <li>Tick the zeroes box if zero (no kite correct) is a permitted answer. This should be ticked for TempO and unticked for PreO.</li>
+                    <li>Heading is the bearing in degrees of the line subtending the left-most and right-most kite from the observation point.</li>
+                    <li>The printed map can either be circular or square (IOF rule 15.7).</li>
+                    <li>The circle diameter or square side length should be between 5 and 12 cm (IOF rule 15.7). Do not include the unit in the textbox.</li>
+                    <li>The map scale is read automatically from the Purple Pen file. It may be changed here if the OCAD map file was set up incorrectly, although it will not change the print scale of the map excerpts. It should be 1:4000 or 1:5000 and be constant across all maps in a competition (IOF rule 15.2).</li>
+                    <li>The contour interval must be stated in metres, without typing the unit in the text box.</li>
+                </ul>
+            </details>
 			
 			<ul>
 				<li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
@@ -71,20 +74,20 @@
 				</thead>
 				<tbody id="courseTableBody">
 					<tr>
-						<td><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
-						<td><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
-						<td><input class="zeroes" type="checkbox" /></td>
-						<td><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
-						<td>
+						<td class="thickUnderline"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
+						<td class="thickUnderline"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
+						<td class="thickUnderline"><input class="zeroes" type="checkbox" /></td>
+						<td class="thickUnderline"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
+						<td class="thickUnderline">
 							<select class="mapShape">
 								<option></option>
 								<option>Circle</option>
 								<option>Square</option>
 							</select>
 						</td>
-						<td><input class="mapSize" type="number" min="0" max="12" step="any" required="required" /> cm</td>
-						<td>1:<input class="mapScale" type="number" min="0" step="any" required="required" /></td>
-						<td><input class="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
+						<td class="thickUnderline"><input class="mapSize layoutLength" type="number" min="0" max="12" step="any" required="required" /> cm</td>
+						<td class="thickUnderline">1:<input class="mapScale" type="number" min="0" step="any" required="required" /></td>
+						<td class="thickUnderline"><input class="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
 					</tr>
 				</tbody>
 			</table>
@@ -92,6 +95,51 @@
             <br />
             <details>
                 <summary>Customise layout</summary>
+                <p>Font sizes are nominally in cm. There are no sanity checks here, so check the output carefully.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="2">Station name</th>
+                            <th colspan="4">Page order boxes</th>
+                            <th colspan="3">Pointing boxes</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th>Font size</th>
+                            <th>Width</th>
+                            <th>Height</th>
+                            <th>Number font size</th>
+                            <th><em>Remove</em> font size</th>
+                            <th>Height</th>
+                            <th>Letter font size</th>
+                            <th>Phonetic font size</th>
+                        </tr>
+                    </thead>
+                    <tbody id="layoutTableBody">
+                        <tr>
+                            <td><input type="button" value="Insert all defaults" onclick="tcTemplate.resetAllLayout()" /></td>
+                            <td><input class="IDFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                            <td><input class="checkWidth" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                            <td><input class="checkHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                            <td><input class="checkFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                            <td><input class="removeFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                            <td><input class="pointHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                            <td><input class="letterFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                            <td><input class="phoneticFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+                        </tr>
+                        <tr id="layoutSetAllRow">
+                            <td class="thickUnderline"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
+                            <td class="thickUnderline"><input class="IDFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="thickUnderline"><input class="checkWidth layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+                            <td class="thickUnderline"><input class="checkHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+                            <td class="thickUnderline"><input class="checkFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="thickUnderline"><input class="removeFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="thickUnderline"><input class="pointHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+                            <td class="thickUnderline"><input class="letterFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="thickUnderline"><input class="phoneticFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                        </tr>
+                    </tbody>
+                </table>
             </details>
 			
 			<ol start="12">
@@ -104,7 +152,7 @@
 		</section>
 		</main>
 		<footer>
-	        <p class="right">Last updated (UTC): 30th March 2019 12:48</p>
+	        <p class="right">Last updated (UTC): 30th March 2019 20:00</p>
 			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
 		</footer>
 	</body>
