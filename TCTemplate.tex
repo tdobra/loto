@@ -51,7 +51,7 @@
 \pgfmathsetmacro{\RemoveTextFontSize}{\RemoveTextFontSizeList[\StaNumber]}
 \pgfmathsetmacro{\CheckNumberHeight}{\CheckNumberHeightList[\StaNumber]}
 \pgfmathtruncatemacro{\ShowPointingBoxes}{\ShowPointingBoxesList[\StaNumber]}
-\ifthenelse{\ShowPointingBoxes = 0}{\def\PointingBoxHeight{0}}{\def\PointingBoxHeight{2.5}}
+\ifthenelse{\ShowPointingBoxes = 0}{\def\PointingBoxHeight{0}}{}
 
 \ifthenelse{\SheetNumber = 0}
 {\pgfmathsetmacro{\DescriptionHeight}{\DescriptionHeightList[\StaNumber][0]}} %Set map position according to size of control descriptions for first problem

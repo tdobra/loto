@@ -62,7 +62,7 @@ tcTemplate = function() {
 	
 		freader = new FileReader();
 		freader.onload = function () {
-			var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
+			var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
 			xmlParser = new DOMParser();
 			xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
 			//Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -79,10 +79,16 @@ tcTemplate = function() {
 				return;
 			}
 			
-			//Reset course table
+			//Reset course table - keep the first row
 			existingRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
 			for (existingRowID = existingRows.length - 1; existingRowID > 0; existingRowID--) {
 				document.getElementById("courseTableBody").removeChild(existingRows[existingRowID]);
+			}
+
+		    //Reset layout table - keep the first two rows
+			existingRows = document.getElementById("layoutTableBody").getElementsByTagName("tr");
+			for (existingRowID = existingRows.length - 1; existingRowID > 1; existingRowID--) {
+			    document.getElementById("layoutTableBody").removeChild(existingRows[existingRowID]);
 			}
 		
 			//Save map file scale
@@ -370,22 +376,51 @@ tcTemplate = function() {
 					tableContentNode.hidden = true;
 					tableContentNode.innerHTML = numProblems;
 					tableColNode.appendChild(tableContentNode);
+
+				    //Populate rows in layout table
+				    //Create new table row
+					layoutRowNode = document.createElement("tr");
 						
-					//Insert row in correct position for course order
+				    //Create first column - station name + hidden values
+					tableColNode = document.createElement("td");
+					tableColNode.innerHTML = stationNameRoot;
+					layoutRowNode.appendChild(tableColNode);
+                
+				    //Other columns
+					for (otherNode in defaultLayout) {
+					    tableColNode = document.createElement("td");
+					    tableContentNode = document.createElement("input");
+					    tableContentNode.type = "number";
+					    tableContentNode.min = 0;
+					    tableContentNode.max = 29.7;
+					    tableContentNode.step = "any";
+					    tableContentNode.required = true;
+					    tableContentNode.value = defaultLayout[otherNode];  //Default value
+					    tableContentNode.className = otherNode + " layoutLength";
+					    tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+					    tableColNode.appendChild(tableContentNode);
+					    layoutRowNode.appendChild(tableColNode);
+					}
+                    						
+				    //Insert row in correct position in tables for course order
 					existingRows = document.getElementById("courseTableBody").getElementsByClassName("courseOrder");
 					existingRowID = 0;
 					for (;;) {
-						existingRowID++;
-						existingRow = existingRows[existingRowID];
-						if (!existingRow) {
-							document.getElementById("courseTableBody").appendChild(tableRowNode);
-							break;	//No more rows to consider
-						}
-						if (Number(existingRow.innerHTML) > Number(courseNodes[courseNodesId].getAttribute("order"))) {
-							document.getElementById("courseTableBody").insertBefore(tableRowNode, existingRow.parentElement);
-							break;	//Current row needs to be inserted before existingRow
-						}
-					}						
+					    existingRowID++;
+					    existingRow = existingRows[existingRowID];
+					    if (!existingRow) {
+					        document.getElementById("courseTableBody").appendChild(tableRowNode);
+					        document.getElementById("layoutTableBody").appendChild(layoutRowNode);
+					        break;	//No more rows to consider
+					    }
+					    if (Number(existingRow.innerHTML) > Number(courseNodes[courseNodesId].getAttribute("order"))) {
+					        document.getElementById("courseTableBody").insertBefore(tableRowNode, existingRow.parentElement);
+					        //Need to update existingRow to match layout table. There is one extra header row in the tbody.
+					        existingRow = document.getElementById("layoutTableBody").getElementsByTagName("tr")[existingRowID + 1];
+					        document.getElementById("layoutTableBody").insertBefore(layoutRowNode, existingRow.parentElement);
+					        break;	//Current row needs to be inserted before existingRow
+					    }
+					}
 				}
 			}
 		
@@ -397,6 +432,10 @@ tcTemplate = function() {
 			document.getElementsByClassName("mapScale")[0].value = "";
 			document.getElementsByClassName("contourInterval")[0].value = "";
 		
+			for (otherNode in defaultLayout) {
+			    document.getElementsByClassName(otherNode)[1].value = "";
+			}
+			    
 			//Prepare view
 			document.getElementById("stationProperties").hidden = false;
 			document.getElementById("stationProperties").scrollIntoView();
@@ -407,7 +446,7 @@ tcTemplate = function() {
 		
 	function setAllCourses() {
 		//Validates then copies value from set all courses into all courses for any fields that have been set
-		var control, controlClass, controlValue, classSet, classSetLength, id, classList;
+		var control, controlValue, classSet, classSetLength, id, classList;
 	
 		classList = ["kites", "zeroes", "mapShape", "mapSize", "mapScale", "contourInterval"];
 		for (const controlClass of classList) {
@@ -456,6 +495,30 @@ tcTemplate = function() {
 		}
 	}
 
+	function setAllLayout() {
+	    //Validates then copies value from set all courses into all courses for any layout fields that have been set
+	    var controlClass, control, controlValue, classSet, classSetLength, id;
+	
+	    for (controlClass in defaultLayout) {
+	        classSet = document.getElementsByClassName(controlClass);
+	        classSetLength = classSet.length;
+            //The first input element is the default button
+	        control = classSet[1];
+		
+	        //Control is required, so invalid if blank
+	        if (control.checkValidity() == true) {
+	            controlValue = control.value;
+	            for (id = 2; id < classSetLength; id++) {
+	                //id = 0 is the master control
+	                classSet[id].value = controlValue;
+	            }
+	            control.value = "";
+	            //Flag parameters as changed
+	            paramsSaved = false;
+	        }
+	    }
+	}
+
 	function loadTeX(fileInput) {
 		//Loads existing LaTeX file into memory
 		var fileobj, freader, fname;
@@ -464,8 +527,8 @@ tcTemplate = function() {
 			fname = fileobj.name;
 			freader = new FileReader();
 			freader.onload = function () {
-				//Populates station table from previous LaTeX parameters file
-				var fileString, startPos, endPos, subString, varArray, fields, rowId, numRows;
+				//Populates station tables from previous LaTeX parameters file
+				var fileString, startPos, endPos, subString, varArray, fields, rowId, numRows, classRoot;
 				
 				fileString = freader.result;
 
@@ -586,6 +649,41 @@ tcTemplate = function() {
 						}
 					}
 				}
+
+			    //Layout customisations
+			    //Root of name in TeX file
+				const layoutTeXNames = {
+				    IDFontSize: "StationIDFontSize",
+				    checkWidth: "SheetCheckBoxWidth",
+				    checkHeight: "SheetCheckBoxHeight",
+				    checkFontSize: "CheckNumberHeight",
+				    removeFontSize: "RemoveTextFontSize",
+				    pointHeight: "PointingBoxHeight",
+				    letterFontSize: "PointingLetterFontSize",
+				    phoneticFontSize: "PointingPhoneticFontSize"
+				}
+				for (classRoot in layoutTeXNames) {
+				    startPos = fileString.indexOf("\\def\\" + layoutTeXNames[classRoot] + "List{{");
+				    if (startPos >= 0) {
+				        endPos = fileString.indexOf("}}", startPos);
+				        startPos = fileString.indexOf("{{", startPos);
+				        subString = fileString.slice(startPos + 2, endPos);
+				        varArray = subString.split(",");
+				        fields = document.getElementsByClassName(classRoot);
+                        //First two rows are not fields
+				        numRows = Math.min(fields.length, document.getElementById("layoutTableBody").getElementsByTagName("tr").length - 2);
+				        for (rowId = 0; rowId < numRows; rowId++) {
+				            if (varArray[rowId] !== "") {
+				                if (varArray[rowId].includes("cm")) {
+				                    //cm unit and quotes added, needs removing
+				                    fields[rowId + 2].value = Number(varArray[rowId].slice(1,-3));
+				                } else {
+				                    fields[rowId + 2].value = Number(varArray[rowId]);
+				                }
+				            }
+				        }
+				    }
+				}
 			};
 			freader.onerror = function (err) {
 				if (err.name == undefined) {
@@ -602,11 +700,12 @@ tcTemplate = function() {
 		//Generates LaTeX parameters file
 		//Returns string with error message or "ok" if no errors
 	
-		var rtnstr, tableRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, parametersBlob;
+		var rtnstr, tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, parametersBlob;
 	
 		rtnstr = "ok";
 	
 		tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
+		layoutRows = document.getElementById("layoutTableBody").getElementsByTagName("tr");
 		numTableRows = tableRows.length;
 
 		//Define constants
@@ -745,14 +844,9 @@ tcTemplate = function() {
 				rtnstr = "The map size for station " + stationName + " must be strictly greater than 0.";
 				contentField.focus();
 			} else {
-				sizeList += 0.5 * contentField.value;	//Don't add quotes
+			    mapSize = Number(contentField.value);
+				sizeList += 0.5 * mapSize;	//Don't add quotes
 				briefingWidthList += "\"" + (0.7 * contentField.value) + "cm\"";
-				//Show pointing boxes only if diameter < 10cm
-				if (contentField.value <= 10) {
-					showPointingBoxesList += "1";
-				} else {
-					showPointingBoxesList += "0";
-				}
 			}
 
 			//Map scale
@@ -807,15 +901,86 @@ tcTemplate = function() {
 			mapPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
 			CDsPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
 
-			//Layout constant parameters - for A5
-			pointingBoxHeightList += "2.5";
-			pointingLetterFontList += "\"1.8cm\"";
-			pointingPhoneticFontList += "\"0.6cm\"";
-			stationIDFontList += "\"0.7cm\"";
-			checkBoxWidthList += "1.5";	
-			checkBoxHeightList += "1.5";	
-			checkNumberFontList += "\"0.8cm\"";
-			checkRemoveFontList += "\"0.3cm\"";
+		    //Layout parameters. Remember to account for extra header row.
+
+            //Station name font size
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("IDFontSize")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The name font size for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    stationIDFontList += "\"" + contentField.value + "cm\"";
+			}
+
+		    //Check box width
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("checkWidth")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The page order box width for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    checkBoxWidthList += contentField.value;
+			}
+
+		    //Check box height
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("checkHeight")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The page order box height for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    checkBoxHeightList += contentField.value;
+			}
+            
+		    //Check box number font size
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("checkFontSize")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The page number font size for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    checkNumberFontList += "\"" + contentField.value + "cm\"";
+			}
+            
+		    //Check box remove text font size
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("removeFontSize")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The <em>Remove</em> font size for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    checkRemoveFontList += "\"" + contentField.value + "cm\"";
+			}
+
+		    //Pointing box height
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("pointHeight")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The pointing box height for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    pointingBoxHeightList += contentField.value;
+                
+			    //Show pointing boxes only if they will fit: Map diameter + Pointing box height <= 12.5cm
+			    if (mapSize + Number(contentField.value) <= 12.5) {
+			        showPointingBoxesList += "1";
+			    } else {
+			        showPointingBoxesList += "0";
+			    }
+			}
+                        
+		    //Pointing box letter font size
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("letterFontSize")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The pointing box letter font size for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    pointingLetterFontList += "\"" + contentField.value + "cm\"";
+			}
+            
+		    //Check box remove text font size
+			contentField = layoutRows[tableRowID + 1].getElementsByClassName("phoneticFontSize")[0];
+			if (contentField.checkValidity() == false) {
+			    rtnstr = "The pointing box phonetic font size for station " + stationName + " must be between 0 and 29.7.";
+			    contentField.focus();
+			} else {
+			    pointingPhoneticFontList += "\"" + contentField.value + "cm\"";
+			}
 		}
 	
 		//Hide construction circle for lining up maps - not required when using this wizard
@@ -1090,6 +1255,7 @@ tcTemplate = function() {
 		saveParameters: saveParameters,
 		setAllCourses: setAllCourses,
         resetAllLayout: resetAllLayout,
+        setAllLayout: setAllLayout,
         resetField: resetField,
 		generatePDF: generatePDF
 	};

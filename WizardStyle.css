@@ -9,15 +9,8 @@ table {
 th, td {
     border-style: solid;
     border-color: black;
-    border-left-width: 1px;
-    border-right-width: 1px;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
+    border-width: 1px;
 	text-align: center;
-}
-
-.thickUnderline {
-    border-bottom-width: 3px;
 }
 
 input.layoutLength {
@@ -39,4 +32,12 @@ input.contourInterval {
 
 .right {
     text-align: right;
+}
+
+details {
+    background-color: #FDDDCC;
+}
+
+summary, .setAll {
+    background-color: #F76D22;
 }

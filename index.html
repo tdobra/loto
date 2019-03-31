@@ -74,20 +74,20 @@
 				</thead>
 				<tbody id="courseTableBody">
 					<tr>
-						<td class="thickUnderline"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
-						<td class="thickUnderline"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
-						<td class="thickUnderline"><input class="zeroes" type="checkbox" /></td>
-						<td class="thickUnderline"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
-						<td class="thickUnderline">
+						<td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
+						<td class="setAll"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
+						<td class="setAll"><input class="zeroes" type="checkbox" /></td>
+						<td class="setAll"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
+						<td class="setAll">
 							<select class="mapShape">
 								<option></option>
 								<option>Circle</option>
 								<option>Square</option>
 							</select>
 						</td>
-						<td class="thickUnderline"><input class="mapSize layoutLength" type="number" min="0" max="12" step="any" required="required" /> cm</td>
-						<td class="thickUnderline">1:<input class="mapScale" type="number" min="0" step="any" required="required" /></td>
-						<td class="thickUnderline"><input class="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
+						<td class="setAll"><input class="mapSize layoutLength" type="number" min="0" max="12" step="any" required="required" /> cm</td>
+						<td class="setAll">1:<input class="mapScale" type="number" min="0" step="any" required="required" /></td>
+						<td class="setAll"><input class="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
 					</tr>
 				</tbody>
 			</table>
@@ -95,7 +95,7 @@
             <br />
             <details>
                 <summary>Customise layout</summary>
-                <p>Font sizes are nominally in cm. There are no sanity checks here, so check the output carefully.</p>
+                <p>All measurements are in cm. There are no sanity checks here, so check the output carefully.</p>
                 <table>
                     <thead>
                         <tr>
@@ -128,15 +128,15 @@
                             <td><input class="phoneticFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
                         </tr>
                         <tr id="layoutSetAllRow">
-                            <td class="thickUnderline"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
-                            <td class="thickUnderline"><input class="IDFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="thickUnderline"><input class="checkWidth layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-                            <td class="thickUnderline"><input class="checkHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-                            <td class="thickUnderline"><input class="checkFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="thickUnderline"><input class="removeFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="thickUnderline"><input class="pointHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-                            <td class="thickUnderline"><input class="letterFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="thickUnderline"><input class="phoneticFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllLayout()" /></td>
+                            <td class="setAll"><input class="IDFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input class="checkWidth layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input class="checkHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input class="checkFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input class="removeFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input class="pointHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input class="letterFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+                            <td class="setAll"><input class="phoneticFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
                         </tr>
                     </tbody>
                 </table>
@@ -152,7 +152,7 @@
 		</section>
 		</main>
 		<footer>
-	        <p class="right">Last updated (UTC): 30th March 2019 20:00</p>
+	        <p class="right">Last updated (UTC): 31st March 2019 22:38</p>
 			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
 		</footer>
 	</body>
