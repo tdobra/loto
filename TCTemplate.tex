@@ -17,13 +17,23 @@
 
 \begin{document}
 
-\newcounter{StationNumber}
-\newcounter{ProblemNumber}
-\forloop{StationNumber}{0}{\value{StationNumber} < \NumStations}{
-\forloop{ProblemNumber}{0}{\not{\value{ProblemNumber} > \MaxProblemsPerStation}}{
+%Reduce line spacing. Need to create a TikZ picture first to set pgflinewidth.
+\begin{tikzpicture}
+\end{tikzpicture}%
+\setlength{\lineskip}{-\pgflinewidth}%
+%Avoid adding any spaces between TikZ pictures
+\newcounter{StationNumber}%
+\newcounter{ProblemNumber}%
+\forloop{StationNumber}{0}{\value{StationNumber} < \NumStations}{%
+\forloop{ProblemNumber}{0}{\not{\value{ProblemNumber} > \MaxProblemsPerStation}}{%
+\linebreak[0]%Can break line here without inserting a horizontal space
 \begin{tikzpicture}
 \pgfmathtruncatemacro{\SheetNumber}{\value{ProblemNumber}}	%Sheet 0 is the cover sheet
 \def\StaNumber{\value{StationNumber}}
+
+%Check whether station is hidden
+\pgfmathtruncatemacro{\ShowStation}{\ShowStationList[\StaNumber]}
+\ifthenelse{\ShowStation = 0}{}{
 
 %Check whether all problems have already been set for this station - the for loop cannot handle a variable ProblemsPerStation
 \pgfmathsetmacro{\ProblemsPerStation}{\ProblemsPerStationList[\StaNumber]}
@@ -198,9 +208,8 @@
 \end{scope}
 
 }	%End ProblemsPerStation if statement
-\end{tikzpicture}%Comments to ensure no spaces are added before vertical space adjustments
-\vspace{-\lineskip}%
-\vspace{-\pgflinewidth}%
+}	%End ShowStation if statement
+\end{tikzpicture}%Comments to ensure no spaces are added between pictures
 }}
 
 \end{document}

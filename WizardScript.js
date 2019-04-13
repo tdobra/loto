@@ -459,13 +459,13 @@ tcTemplate = function() {
 		//Validates then copies value from set all courses into all courses for any fields that have been set
 		var control, controlValue, classSet, classSetLength, id, classList;
 	
-		classList = ["kites", "zeroes", "mapShape", "mapSize", "mapScale", "contourInterval"];
+		classList = ["showStation", "kites", "zeroes", "mapShape", "mapSize", "mapScale", "contourInterval"];
 		for (const controlClass of classList) {
 			classSet = document.getElementsByClassName(controlClass);
 			classSetLength = classSet.length;
 			control = classSet[0];
 		
-			if (controlClass == "zeroes") {
+			if (controlClass == "zeroes" || controlClass == "showStation") {
 				//Check whether control has been set
 				if (control.indeterminate == false) {
 					controlValue = control.checked;
@@ -545,6 +545,24 @@ tcTemplate = function() {
 
 			    //Indicate that parameters data is currently saved - unedited opened file
 				paramsSaved = true;
+
+			    //Show station
+				startPos = fileString.indexOf("\\def\\ShowStationList{{");
+				if (startPos >= 0) {
+				    endPos = fileString.indexOf("}}", startPos);
+				    startPos = fileString.indexOf("{{", startPos);
+				    subString = fileString.slice(startPos + 2, endPos);
+				    varArray = subString.split(",");
+				    fields = document.getElementsByClassName("showStation");
+				    numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
+				    for (rowId = 0; rowId < numRows; rowId++) {
+				        if (parseInt(varArray[rowId], 10) == 1) {
+				            fields[rowId + 1].checked = true;
+				        } else {
+				            fields[rowId + 1].checked = false;
+				        }
+				    }
+				}
 	
 				//Number of kites
 				startPos = fileString.indexOf("\\def\\NumKitesList{{");
@@ -711,7 +729,7 @@ tcTemplate = function() {
 		//Generates LaTeX parameters file
 		//Returns string with error message or "ok" if no errors
 	
-		var rtnstr, tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, parametersBlob;
+		var rtnstr, tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, showStationList, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, parametersBlob;
 	
 		rtnstr = "ok";
 	
@@ -729,6 +747,7 @@ tcTemplate = function() {
 		//Create variables, often strings, to accumulate
 		numStations = 0;
 		maxProblems = 0;
+		showStationList = "\\def\\ShowStationList{{";
 		numProblemsList = "\\def\\ProblemsPerStationList{{";
 		stationNameList = "\\def\\StationIDList{{";
 		kitesList = "\\def\\NumKitesList{{";
@@ -765,7 +784,8 @@ tcTemplate = function() {
 		for (tableRowID = 1; tableRowID < numTableRows; tableRowID++) {
 			numStations++;
 			if (numStations > 1) {
-				//Insert commas in lists
+			    //Insert commas in lists
+			    showStationList += ",";
 				numProblemsList += ",";
 				stationNameList += ",";
 				kitesList += ",";
@@ -802,6 +822,13 @@ tcTemplate = function() {
 			
 			stationName = tableRows[tableRowID].getElementsByClassName("stationName")[0].innerHTML;	//Store it for useful error messages later
 			stationNameList += "\"" + stationName + "\"";
+
+		    //Show station
+			if (tableRows[tableRowID].getElementsByClassName("showStation")[0].checked == true) {
+			    showStationList += "1";
+			} else {
+			    showStationList += "0";
+			}
 			
 			//Number of problems at station
 			numProblems = Number(tableRows[tableRowID].getElementsByClassName("numProblems")[0].innerHTML);	//Save for later
@@ -1001,6 +1028,7 @@ tcTemplate = function() {
 		//Insert a comma to introduce an extra element to the array where it contains a string ending in cm, otherwise TikZ parses it incorrectly/doesn't recognise an array of length 1.
 		fileString += "\\newcommand{\\NumStations}{" + numStations + "}\n";
 		fileString += "\\newcommand{\\MaxProblemsPerStation}{" + maxProblems + "}\n";
+		fileString += showStationList + "}}\n";
 		fileString += numProblemsList + "}}\n";
 		fileString += stationNameList + "}}\n";
 		fileString += kitesList + "}}\n";
