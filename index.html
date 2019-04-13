@@ -63,6 +63,7 @@
 				<thead>
 					<tr>
 						<th>Station name<!--Also includes several hidden fields:--></th>
+                        <th>Show</th>
 						<th>Kites</th>
 						<th>Zeroes</th>
 						<th>Heading</th>
@@ -75,6 +76,7 @@
 				<tbody id="courseTableBody">
 					<tr>
 						<td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
+                        <td class="setAll"><input class="showStation" type="checkbox" /></td>
 						<td class="setAll"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
 						<td class="setAll"><input class="zeroes" type="checkbox" /></td>
 						<td class="setAll"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
@@ -152,7 +154,7 @@
 		</section>
 		</main>
 		<footer>
-	        <p class="right">Last updated (UTC): 13th April 2019 11:52</p>
+	        <p class="right">Last updated (UTC): 13th April 2019 15:54</p>
 			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
 		</footer>
 	</body>

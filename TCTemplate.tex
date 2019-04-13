@@ -114,10 +114,9 @@
 }{
 \draw[red] (\CheckBoxLeftEdge,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight) -- (\CardHalfWidth,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight);
 }
-%\draw (\CardHalfWidth,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge) -- (\CheckBoxLeftEdge,\CheckBoxTopEdge-\ProblemsPerStation*\SheetCheckBoxHeight);
 \foreach \Boxnumber in {1,...,\ProblemsPerStation}
 {\pgfmathsetmacro{\LineBottom}{\CheckBoxTopEdge-\Boxnumber*\SheetCheckBoxHeight}
-%\draw (\CheckBoxLeftEdge,\LineBottom) -- (\CardHalfWidth,\LineBottom);
+
 \ifthenelse{\Boxnumber < \SheetNumber}{
 %Draw a cross
 \draw (\CheckBoxLeftEdge,\LineBottom) -- (\CardHalfWidth,\LineBottom+\SheetCheckBoxHeight);
@@ -139,7 +138,7 @@
 \pgfmathsetmacro{\NorthArrowCentrexCoordinate}{-0.5*(\CardHalfWidth+\CircleRadius)}
 
 %Origin is at centre of card - draw bounding lines for cut out
-\draw[red] (-\CardHalfWidth,-\CardHalfHeight) -- (\CardHalfWidth,-\CardHalfHeight) --  (\CardHalfWidth,\CardHalfHeight) --  (-\CardHalfWidth,\CardHalfHeight) -- cycle;
+\draw[red] (-\CardHalfWidth,-\CardHalfHeight) rectangle (\CardHalfWidth,\CardHalfHeight);
 
 %Print TCTemplate stamp
 \node[anchor=north west] at (-\CardHalfWidth,\CardHalfHeight) {\fontsize{0.35cm}{0.35cm}\selectfont Made in TCTemplate};
@@ -199,7 +198,9 @@
 \end{scope}
 
 }	%End ProblemsPerStation if statement
-%\end{tikzpicture}\\[0.5cm]}}
-\end{tikzpicture}\\[-0.1cm]}}
+\end{tikzpicture}%Comments to ensure no spaces are added before vertical space adjustments
+\vspace{-\lineskip}%
+\vspace{-\pgflinewidth}%
+}}
 
 \end{document}

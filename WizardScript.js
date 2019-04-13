@@ -166,8 +166,18 @@ tcTemplate = function() {
 					tableContentNode.hidden = true;
 					tableContentNode.innerHTML = courseNodes[courseNodesId].getAttribute("order");
 					tableColNode.appendChild(tableContentNode);
+
+				    //Second column - show station?
+					tableColNode = document.createElement("td");
+					tableRowNode.appendChild(tableColNode);
+					tableContentNode = document.createElement("input");
+					tableContentNode.type = "checkbox";
+					tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+					tableContentNode.className = "showStation";
+					tableContentNode.checked = true;
+					tableColNode.appendChild(tableContentNode);
                 
-					//Second column - number of kites
+					//Third column - number of kites
 					tableColNode = document.createElement("td");
 					tableContentNode = document.createElement("input");
 					tableContentNode.type = "number";
@@ -180,7 +190,7 @@ tcTemplate = function() {
 					tableColNode.appendChild(tableContentNode);
 					tableRowNode.appendChild(tableColNode);
 						
-					//Third column - zeroes allowed?
+					//Fourth column - zeroes allowed?
 					tableColNode = document.createElement("td");
 					tableRowNode.appendChild(tableColNode);
 					tableContentNode = document.createElement("input");
@@ -189,7 +199,7 @@ tcTemplate = function() {
 					tableContentNode.className = "zeroes";
 					tableColNode.appendChild(tableContentNode);
 						
-					//Fourth column - station heading
+					//Fifth column - station heading
 					tableColNode = document.createElement("td");
 					tableContentNode = document.createElement("input");
 					tableContentNode.type = "number";
@@ -202,7 +212,7 @@ tcTemplate = function() {
 					tableColNode.appendChild(tableContentNode);
 					tableRowNode.appendChild(tableColNode);
 						
-					//Fifth column - map shape
+					//Sixth column - map shape
 					tableColNode = document.createElement("td");
 					tableContentNode = document.createElement("select");
 					tableContentNode.required = true;
@@ -217,7 +227,7 @@ tcTemplate = function() {
 					tableColNode.appendChild(tableContentNode);
 					tableRowNode.appendChild(tableColNode);
 						
-					//Sixth column - map size
+					//Seventh column - map size
 					tableColNode = document.createElement("td");
 					tableContentNode = document.createElement("input");
 					tableContentNode.type = "number";
@@ -232,7 +242,7 @@ tcTemplate = function() {
 					tableColNode.appendChild(tableContentNode);
 					tableRowNode.appendChild(tableColNode);
 						
-					//Seventh column - map scale
+					//Eighth column - map scale
 					tableColNode = document.createElement("td");
 					tableContentNode = document.createTextNode("1:");
 					tableColNode.appendChild(tableContentNode);
@@ -252,7 +262,7 @@ tcTemplate = function() {
 					tableColNode.appendChild(tableContentNode);
 					tableRowNode.appendChild(tableColNode);
 						
-					//Eighth column - contour interval + hidden values
+					//Nineth column - contour interval + hidden values
 					tableColNode = document.createElement("td");
 					tableContentNode = document.createElement("input");
 					tableContentNode.type = "number";
@@ -425,6 +435,7 @@ tcTemplate = function() {
 			}
 		
 			//Reset update all stations fields
+			document.getElementsByClassName("showStation")[0].indeterminate = true;
 			document.getElementsByClassName("kites")[0].value = "";
 			document.getElementsByClassName("zeroes")[0].indeterminate = true;
 			document.getElementsByClassName("mapShape")[0].selectedIndex = 0;
