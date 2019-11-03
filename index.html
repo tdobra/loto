@@ -1,170 +1,55 @@
 ﻿<!DOCTYPE html>
 <html lang="en-GB">
 <head>
-	<meta charset="utf-8" />
-	<link rel="stylesheet" type="text/css" href="WizardStyle.css" />
-	
-	<!--Favicons-->
-	<link rel="apple-touch-icon" type="image/png" href="favicon/noborder152.png" sizes="152x152" />
-	<link rel="icon" type="image/png" href="favicon/favicon512.png" sizes="512x512" />
-	<link rel="icon" type="image/png" href="favicon/favicon256.png" sizes="256x256" />
-	<link rel="icon" type="image/png" href="favicon/favicon192.png" sizes="192x192" />
-	<link rel="icon" type="image/png" href="favicon/favicon32.png" sizes="32x32" />
-	<link rel="icon" type="image/png" href="favicon/favicon16.png" sizes="16x16" />
-	
-	<title>TCTemplate</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="WizardStyle.css" />
+
+    <!--Favicons-->
+    <link rel="apple-touch-icon" type="image/png" href="favicon/noborder152.png" sizes="152x152" />
+    <link rel="icon" type="image/png" href="favicon/favicon512.png" sizes="512x512" />
+    <link rel="icon" type="image/png" href="favicon/favicon256.png" sizes="256x256" />
+    <link rel="icon" type="image/png" href="favicon/favicon192.png" sizes="192x192" />
+    <link rel="icon" type="image/png" href="favicon/favicon32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="favicon/favicon16.png" sizes="16x16" />
+
+    <title>TCTemplate</title>
 </head>
 <body>
-	<script src="texlive.js/promisejs/promise.js" defer="defer"></script>
-	<script src="texlive.js/pdftex.js" defer="defer"></script>
-	<script src="WizardScript.js" defer="defer"></script>
-	
-	<header>
-		<h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
-		<noscript>Enable Javascript for this wizard to work.</noscript>
-		<p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
-        <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try <a href="https://www.google.com/chrome/" target="prequisites">Google Chrome</a> instead.</p>
+    <header>
+        <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
         <p class="right"><a href="help/index.html" target="help">Help</a></p>
-	</header>
-	<main id="mainView">
-		<section>
-			<ol>
-				<li>Set up an event in <a href="http://purplepen.golde.org" target="prequisites">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
-                <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the <em>Control circle diameter</em> to 6 mm (current recommended size) and <em>Scale item sizes</em> to <em>Do not scale</em>. Click OK.</li>
-				<li>Mark each question control to be used, cut the circles as required and set the control description. The content of columns A and B does not matter, nor do the control codes.</li>
-				<li>Create a course for each problem. Name it in the format <em>name of station.i</em>, where <em>i</em> is the problem number counting from 1. It is not recommended to include the word <em>station</em> in the name, and it is simplest to be just a number, although it could be <em>warm-up</em>. For example, the 3<sup>rd</sup> problem at the 2<sup>nd</sup> could be be named <em>2.3</em>. Set the course type to score. The stations will be printed in the order of the 1<sup>st</sup> map at each station.</li>
-				<li>Add the (single) control to the course. It doesn't matter whether a start and finished are also added, so long as they are outside the map excerpts.</li>
-				<li>Move the purple number labelling the control out of the field of view. (At the time of writing, Purple Pen does not permit this label to be removed, which would be preferable here.)</li>
-				<li>Set the print area for all courses (under the File menu) to have 0 margin, limit the printable area to the page size and untick <em>Set Print Area Automatically</em>. Select a paper size (custom size if necessary) that is large enough to include all parts of the map that are to be printed. Move the print area to cover all desired parts of the map and click done. (Each course/map does not need to have the same print area, although the author considers it easier to do so.)</li>
-				<li>Create a single PDF of all the courses using File->Create PDFs->Courses and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
-				<li>Create a single PDF of all the control descriptions using File->Create PDFs->Descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Set the box size to 7 mm. Leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
-				<li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
-			</ol>
-		</section>
-	
-		<section id="stationProperties">
-			<ol start="11">
-				<li>Fill in the details of each station in the table:</li>
-            </ol>
-
-            <details>
-                <summary>Instructions and guidelines</summary>
-                <ul>
-                    <li>Use the first row to overwrite the values for all stations. The values will update automatically.</li>
-                    <li>Untick the box in the show column to exclude the station from the printed output.</li>
-                    <li>The station name is read-only; to change it, rename the courses in Purple Pen, then reload the file.</li>
-                    <li>The number of kites must be less than or equal to 6, and should be 5 or 6 (rule 16.10, <a href="http://orienteering.org/trail-orienteering/rules/" target="rules">IOF Trail Orienteering Competition Rules 2018</a>).</li>
-                    <li>Tick the zeroes box if zero (no kite correct) is a permitted answer. This should be ticked for TempO and unticked for PreO.</li>
-                    <li>Heading is the bearing in degrees of the line subtending the left-most and right-most kite from the observation point.</li>
-                    <li>The printed map can either be circular or square (IOF rule 15.7).</li>
-                    <li>The circle diameter or square side length should be between 5 and 12 cm (IOF rule 15.7). Do not include the unit in the textbox.</li>
-                    <li>The map scale is read automatically from the Purple Pen file. It may be changed here if the OCAD map file was set up incorrectly, although it will not change the print scale of the map excerpts. It should be 1:4000 or 1:5000 and be constant across all maps in a competition (IOF rule 15.2).</li>
-                    <li>The contour interval must be stated in metres, without typing the unit in the text box.</li>
-                </ul>
-            </details>
-			
-			<ul>
-				<li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
-				<li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
-			</ul>
-		
-			<table>
-				<thead>
-					<tr>
-						<th>Station name<!--Also includes several hidden fields:--></th>
-                        <th>Show</th>
-						<th>Kites</th>
-						<th>Zeroes</th>
-						<th>Heading</th>
-						<th>Map shape</th>
-						<th>Diameter/side length</th>
-						<th>Scale</th>
-						<th>Contour interval</th>
-					</tr>
-				</thead>
-				<tbody id="courseTableBody">
-					<tr>
-						<td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
-                        <td class="setAll"><input class="showStation" type="checkbox" /></td>
-						<td class="setAll"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
-						<td class="setAll"><input class="zeroes" type="checkbox" /></td>
-						<td class="setAll"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
-						<td class="setAll">
-							<select class="mapShape">
-								<option></option>
-								<option>Circle</option>
-								<option>Square</option>
-							</select>
-						</td>
-						<td class="setAll"><input class="mapSize layoutLength" type="number" min="0" max="12" step="any" required="required" /> cm</td>
-						<td class="setAll">1:<input class="mapScale" type="number" min="0" step="any" required="required" /></td>
-						<td class="setAll"><input class="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
-					</tr>
-				</tbody>
-			</table>
-
-            <br />
-            <details>
-                <summary>Customise layout</summary>
-                <p>All measurements are in cm. There are no sanity checks here, so check the output carefully.</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th colspan="2">Station name</th>
-                            <th colspan="4">Page order boxes</th>
-                            <th colspan="3">Pointing boxes</th>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <th>Font size</th>
-                            <th>Width</th>
-                            <th>Height</th>
-                            <th>Number font size</th>
-                            <th><em>Remove</em> font size</th>
-                            <th>Height</th>
-                            <th>Letter font size</th>
-                            <th>Phonetic font size</th>
-                        </tr>
-                    </thead>
-                    <tbody id="layoutTableBody">
-                        <tr>
-                            <td><input type="button" value="Insert all defaults" onclick="tcTemplate.resetAllLayout()" /></td>
-                            <td><input class="IDFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                            <td><input class="checkWidth" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                            <td><input class="checkHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                            <td><input class="checkFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                            <td><input class="removeFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                            <td><input class="pointHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                            <td><input class="letterFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                            <td><input class="phoneticFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                        </tr>
-                        <tr id="layoutSetAllRow">
-                            <td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllLayout()" /></td>
-                            <td class="setAll"><input class="IDFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="setAll"><input class="checkWidth layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="setAll"><input class="checkHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="setAll"><input class="checkFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="setAll"><input class="removeFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="setAll"><input class="pointHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="setAll"><input class="letterFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                            <td class="setAll"><input class="phoneticFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </details>
-			
-			<ol start="12">
-				<li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
-				<li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page.</li>
-				<li>Cut along all of the red lines.</li>
-                <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
-				<li>Have a successful competition!</li>
-			</ol>
-		</section>
-		</main>
-		<footer>
-	        <p class="right">Last updated (UTC): 2nd November 2019 23:20</p>
-			<p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
-		</footer>
-	</body>
+    </header>
+    <main id="mainView">
+        <p>TCTemplate is open-source software for constructing the map cards for timed controls, both TempO and PreO, in TrailO. <a href="https://www.britishorienteering.org.uk/images/uploaded/minisite58/JK19_TempO_TCMapCards_Elite[7463].pdf">View sample output.</a></p>
+        <p><a href="wizard.html">Start TCTemplate</a></p>
+        <h2>Key Advantages Over Other Software</h2>
+        <ul>
+            <li>Depends only on free software.</li>
+            <li>Cut control circles and print them using overprint effect, so that black and contours are visible through the circle.</li>
+            <li>Produces PDFs with vector graphics, ready for beautifully sharp printing.</li>
+            <li>Map card maker runs in your web browser with no installation required, although it does require one third-party program to prepare the maps.</li>
+            <li>Your data never leaves your computer, with all processing done locally. If extra security is required, you can <a href="help/security.html" target="help">run the software disconnected from the internet</a>.</li>
+            <li>Open source, so anybody can contribute and improve TCTemplate.</li>
+        </ul>
+        <h2>Other Advantages</h2>
+        <ul>
+            <li>Prints a sheet ready for cutting and laminating; no glue required.</li>
+            <li>Compliant with the IOF rules of TrailO, so it is difficult for the planner to not follow the rules.</li>
+            <li>Default A5 template with options to customise the layout and the choice of a circular or square map in any permitted size.</li>
+            <li>Prints two cards per A4 sheet, saving paper and ensuring regular printers can be used.</li>
+        </ul>
+        <h2>Previous Use in Competitions</h2>
+        <ul>
+            <li>JK, 19-20<sup>th</sup> April 2019 - ECTO TempO &amp; PreO - <a href="https://www.britishorienteering.org.uk/images/uploaded/minisite58/JK19_TempO_TCMapCards_Elite[7463].pdf">View TempO maps for the elite class</a></li>
+            <li>East Harptree Woods, 2<sup>nd</sup> September 2018 - British Ranking PreO</li>
+            <li>JK, 30<sup>th</sup> March-1<sup>st</sup> April 2018 - TempO &amp; PreO</li>
+        </ul>
+        <p><a href="wizard.html">Start TCTemplate</a></p>
+        <p><a href="help/index.html" target="help">View help files</a></p>
+    </main>
+    <footer>
+        <p class="right">Last updated (UTC): 3<sup>rd</sup> November 2019 20:28</p>
+        <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
+    </footer>
+</body>
 </html>
