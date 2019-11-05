@@ -446,10 +446,16 @@ tcTemplate = function() {
 			for (otherNode in defaultLayout) {
 			    document.getElementsByClassName(otherNode)[1].value = "";
 			}
+			
+			//Disable debug mode
+			tableContentNode = document.getElementById("debugCircle");
+			tableContentNode.checked = false;
+			tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 			    
 			//Prepare view
-			document.getElementById("stationProperties").hidden = false;
-			document.getElementById("stationProperties").scrollIntoView();
+			tableContentNode = document.getElementById("stationProperties");
+			tableContentNode.hidden = false;
+			tableContentNode.scrollIntoView();
 		};
 		freader.onerror = function () { window.alert("Could not read Purple Pen file. Try reselecting it, then click Reload."); };
 		freader.readAsText(fileobj);   //Reads as UTF-8
@@ -712,6 +718,19 @@ tcTemplate = function() {
 				            }
 				        }
 				    }
+				}
+				
+				//Debug circles enabled?
+				startPos = fileString.indexOf("\\def\\AdjustMode{");
+			    if (startPos >= 0) {
+					subString = fileString.substr(startPos + 16, 1);
+					if (subString == "1") {
+						document.getElementById("debugCircle").checked = true;
+					} else {
+						document.getElementById("debugCircle").checked = false;
+					}
+				} else {
+					document.getElementById("debugCircle").checked = false;
 				}
 			};
 			freader.onerror = function (err) {
@@ -1021,8 +1040,12 @@ tcTemplate = function() {
 			}
 		}
 	
-		//Hide construction circle for lining up maps - not required when using this wizard
-		fileString = "\\def\\AdjustMode{0}\n";
+		//Show construction circle for lining up maps? Not required when using this wizard, but still a useful feature.
+		if (document.getElementById("debugCircle").checked == true) {
+			fileString = "\\def\\AdjustMode{1}\n";
+		} else {
+			fileString = "\\def\\AdjustMode{0}\n";
+		}
 	
 		//Write to fileString
 		//Insert a comma to introduce an extra element to the array where it contains a string ending in cm, otherwise TikZ parses it incorrectly/doesn't recognise an array of length 1.
