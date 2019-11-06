@@ -1,9 +1,9 @@
-\documentclass{slides}
+\documentclass{article}
 
 %Condes PDFs are v1.7
 \pdfminorversion=7
 
-\usepackage[a4paper,portrait,margin=1cm]{geometry}
+\usepackage[a4paper, portrait, vmargin=1cm, hmargin=0cm]{geometry}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usepackage{rotating}
@@ -13,13 +13,18 @@
 %Set font to TeX Gyre Heros - very similar to Helvetica
 \renewcommand{\familydefault}{qhv}
 
+%No headers or footers
+\pagestyle{plain}
+
 \input{TemplateParameters}
 
 \begin{document}
 
-%Set global font size as small as possible
-\fontsize{0}{0}\selectfont
+%Make horizontal position independent of page margins - more flexible in future
+\begin{center}
 
+%Remove paragraph indentation
+\noindent
 %Reduce line spacing. Need to create a TikZ picture first to set pgflinewidth.
 \begin{tikzpicture}
 \end{tikzpicture}%
@@ -215,4 +220,5 @@
 \end{tikzpicture}%Comments to ensure no spaces are added between pictures
 }}
 
+\end{center}
 \end{document}
