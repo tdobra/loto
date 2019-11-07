@@ -30,13 +30,13 @@
         <section>
             <ol>
                 <li>Set up an event in <a href="http://purplepen.golde.org" target="prequisites">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
-                <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the <em>Control circle diameter</em> to 6 mm (current recommended size) and <em>Scale item sizes</em> to <em>Do not scale</em>. Click OK.</li>
+                <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the <em>Control circle diameter</em> to 6 mm (current recommended size) and <em>Scale item sizes</em> to <em>Do not scale</em>. Tick <em>Blend purple with underlying map colours</em> and <em>Use overprint effect for colors marked "overprint"</em>. Click OK.</li>
                 <li>Mark each question control to be used, cut the circles as required and set the control description. The content of columns A and B does not matter, nor do the control codes.</li>
                 <li>Create a course for each problem. Name it in the format <em>name of station.i</em>, where <em>i</em> is the problem number counting from 1. It is not recommended to include the word <em>station</em> in the name, and it is simplest to be just a number, although it could be <em>warm-up</em>. For example, the 3<sup>rd</sup> problem at the 2<sup>nd</sup> could be be named <em>2.3</em>. Set the course type to score. The stations will be printed in the order of the 1<sup>st</sup> map at each station.</li>
                 <li>Add the (single) control to the course. It doesn't matter whether a start and finished are also added, so long as they are outside the map excerpts.</li>
                 <li>Move the purple number labelling the control out of the field of view. (At the time of writing, Purple Pen does not permit this label to be removed, which would be preferable here.)</li>
                 <li>Set the print area for all courses (under the File menu) to have 0 margin, limit the printable area to the page size and untick <em>Set Print Area Automatically</em>. Select a paper size (custom size if necessary) that is large enough to include all parts of the map that are to be printed. Move the print area to cover all desired parts of the map and click done. (Each course/map does not need to have the same print area, although the author considers it easier to do so.)</li>
-                <li>Create a single PDF of all the courses using File->Create PDFs->Courses and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
+                <li>Create a single PDF of all the courses using File->Create PDFs->Courses and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Select <em>CMYK</em> as the colour model. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
                 <li>Create a single PDF of all the control descriptions using File->Create PDFs->Descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Set the box size to 7 mm. Leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
                 <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
             </ol>
@@ -156,7 +156,7 @@
 
             <ol start="12">
                 <li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
-                <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page.</li>
+                <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page. See <a href="help/printingadjustments.html" target="help">instructions for professional printing</a>.</li>
                 <li>Cut along all of the red lines.</li>
                 <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
                 <li>Have a successful competition!</li>
@@ -164,7 +164,7 @@
         </section>
     </main>
     <footer>
-        <p class="right">Last updated (UTC): 6<sup>th</sup> November 2019 12:21</p>
+        <p class="right">Last updated (UTC): 7<sup>th</sup> November 2019 23:32</p>
         <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
     </footer>
 </body>
