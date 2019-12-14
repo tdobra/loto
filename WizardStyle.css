@@ -10,24 +10,35 @@ th, td {
     border-style: solid;
     border-color: black;
     border-width: 1px;
+}
+
+th {
 	text-align: center;
 }
 
-input.layoutLength {
+input.layoutLength, input.mapPage {
     /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
     width: 7ch;
 }
 
-input.kites {
+input.coordinate {
+	width: 20ch;
+}
+
+#kites {
 	width: 4ch;
 }
 
-input.heading, input.mapScale {
+#heading, #mapScale {
 	width: 8ch;
 }
 
-input.contourInterval {
+#contourInterval {
 	width: 6ch;
+}
+
+.centre {
+	text-align: center;
 }
 
 .right {

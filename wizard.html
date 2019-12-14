@@ -41,6 +41,144 @@
                 <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
             </ol>
         </section>
+		
+		<!--New interface-->
+		<section>
+			<p>
+				<label><input type="radio" name="editType" value="default" checked="true" />Defaults for all stations</label><br />
+				<label><input type="radio" name="editType" value="station" />Customise individual station</label><br />
+				<select id="stationSelect" size="8" onchange="">
+				</select>
+			</p>
+			
+			<table>
+				<tr>
+					<td>Name</td>
+					<td><input id="stationName" type="text" required="required" readonly="readonly" /></td><!--Plan is to make this editable-->
+				</tr>
+				<tr>
+					<td>Print station?</td>
+					<td><input id="showStation" type="checkbox" checked="checked" /></td>
+					<td><input id="resetShowStation" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllShowStation" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+				<tr>
+					<td>Number of kites</td>
+					<td><input id="kites" type="number" min="1" max="6" step="1" required="required" /></td>
+					<td><input id="resetKites" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllKites" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+				<tr>
+					<td>Zeroes?</td>
+					<td><input id="zeroes" type="checkbox" /></td>
+					<td><input id="resetZeroes" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllZeroes" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+				<tr>
+					<td>Heading</td>
+					<td><input id="heading" type="number" step="any" required="required" />&deg</td><!--Plan: make this automatic-->
+				</tr>
+				<tr>
+					<td>Map shape</td>
+					<td>
+						<select id="mapShape" required="required" onchange""><!--TODO:Update diameter/side length label-->
+							<option>Circle</option>
+							<option>Square</option>
+						</select>
+					</td>
+					<td><input id="resetMapShape" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapShape" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+				<tr>
+					<td>Map <span id="mapSizeType">diameter</span></td>
+					<td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" required="required" /> cm</td>
+					<td><input id="resetMapSize" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+				<tr>
+					<td>Map scale</td>
+					<td>1:<input id="mapScale" type="number" min="0" step="any" required="required" /></td>
+					<td><input id="resetMapScale" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapScale" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+				<tr>
+					<td>Contour interval</td>
+					<td><input id="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
+					<td><input id="resetContourInterval" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllContourInterval" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+			</table>
+			<br />
+			
+			<details>
+				<summary>Map position</summary>
+				<p><label><input id="ppMapPosition" type="checkbox" checked="checked" />Calculate from Purple Pen file</label> <input id="setAllPPMapPosition" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></p>
+				<p><label><input id="debugCircle" type="checkbox" />Show construction marks to verify position of control circle</label></p>
+				<p>Positions of centres of control circles are measured in cm from the bottom-left corner of the page.</p>
+				<table>
+					<thead>
+						<tr>
+							<th>Task</th>
+							<th>Page</th>
+							<th>x</th>
+							<th>y</th>
+						</tr>
+					</thead>
+					<tbody class="centre">
+						<tr>
+							<td>1</td>
+							<td><input class="mapPage" type="number" step="1" min="1" required="required" readonly="readonly" /></td>
+							<td><input class="mapxCoordinate coordinate" type="number" step="any" required="required" readonly="readonly" /></td>
+							<td><input class="mapyCoordinate coordinate" type="number" step="any" required="required" readonly="readonly" /></td>
+						</tr>
+					</tbody>
+				</table>
+			</details><br />
+			
+            <details>
+                <summary>Customise layout</summary>
+                <p>There are no sanity checks here, so check the output carefully.</p>
+				<p><input type="button" value="Reset all to default template" /><input type="button" value="Apply current template to all courses" /></p>
+				<table>
+					<tr>
+						<td>Station name</td>
+						<td>Font size</td>
+						<td><input id="IDFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetIDFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllIDFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+					<tr>
+						<td rowspan="4">Page order boxes</td>
+						<td>Width</td>
+						<td><input id="checkWidth" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetCheckWidth" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckWidth" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+					<tr>
+						<td>Height</td>
+						<td><input id="checkHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetCheckHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+					<tr>
+						<td>Number font size</td>
+						<td><input id="checkFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetCheckFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+					<tr>
+						<td><em>Remove</em> font size</td>
+						<td><input id="removeFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetRemoveFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllRemoveFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+					<tr>
+						<td rowspan="3">Pointing boxes</td>
+						<td>Height</td>
+						<td><input id="pointHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetPointHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPointHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+					<tr>
+						<td>Letter font size</td>
+						<td><input id="letterFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetLetterFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllLetterFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+					<tr>
+						<td>Phonetic font size</td>
+						<td><input id="phoneticFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+						<td><input id="resetPhoneticFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPhoneticFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					</tr>
+				</table>
+            </details>
+		</section>
 
         <section id="stationProperties">
             <ol start="11">
