@@ -54,7 +54,7 @@
 			<table>
 				<tr>
 					<td>Name</td>
-					<td><input id="stationName" type="text" required="required" readonly="readonly" /></td><!--Plan is to make this editable-->
+					<td><input id="stationName" type="text" required="required" /></td>
 				</tr>
 				<tr>
 					<td>Print station?</td>
@@ -70,6 +70,11 @@
 					<td>Zeroes?</td>
 					<td><input id="zeroes" type="checkbox" /></td>
 					<td><input id="resetZeroes" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllZeroes" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+				</tr>
+				<tr>
+					<td>Number of tasks</td>
+					<td><input id="numTasks" type="number" min="1" step="1" required="required" /></td>
+					<td><input id="resetNumTasks" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllNumTasks" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
 				</tr>
 				<tr>
 					<td>Heading</td>
