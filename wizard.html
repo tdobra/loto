@@ -15,10 +15,6 @@
     <title>TCTemplate</title>
 </head>
 <body>
-    <script src="texlive.js/promisejs/promise.js" defer="defer"></script>
-    <script src="texlive.js/pdftex.js" defer="defer"></script>
-    <script src="WizardScript.js" defer="defer"></script>
-
     <header>
         <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
         <noscript>Enable Javascript for this wizard to work.</noscript>
@@ -44,17 +40,29 @@
 		
 		<!--New interface-->
 		<section>
+            <ul>
+                <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
+                <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
+            </ul>
 			<p>
-				<label><input type="radio" name="editType" value="default" checked="true" />Defaults for all stations</label><br />
-				<label><input type="radio" name="editType" value="station" />Customise individual station</label><br />
-				<select id="stationSelect" size="8" onchange="">
-				</select>
+				<label><input type="radio" name="editType" value="default" checked="true" onchange="tcTemplate.changeStationFocus()" />Defaults for all stations</label><br />
+				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus()" />Customise individual station</label><br />
+				<select id="stationSelect" size="2" onchange="tcTemplate.changeStationFocus()">
+					<option value="1" selected="selected">1</option>
+				</select><br />
+			</p>
+			<p class="setOneCourse">
+				Station:
+				<input type="button" value="+ Add" />
+				<input id="deleteStation" type="button" value="X Delete" disabled="disabled" />
+				<input id="moveUpStation" type="button" value="&uarr; Move up" disabled="disabled" />
+				<input id="moveDownStation" type="button" value="&darr; Move down" disabled="disabled" />
 			</p>
 			
 			<table>
 				<tr>
 					<td>Name</td>
-					<td><input id="stationName" type="text" required="required" /></td>
+					<td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" value="1" required="required" /></td>
 				</tr>
 				<tr>
 					<td>Print station?</td>
@@ -310,5 +318,9 @@
         <p class="right">Last updated (UTC): 7<sup>th</sup> November 2019 23:32</p>
         <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
     </footer>
+	
+    <script src="texlive.js/promisejs/promise.js"></script>
+    <script src="texlive.js/pdftex.js"></script>
+    <script src="WizardScript.js"></script>
 </body>
 </html>

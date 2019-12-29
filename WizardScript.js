@@ -26,6 +26,10 @@ document.getElementById("viewLog").hidden = true;
 tcTemplate = function() {
 	//Keep track of whether an input file has been changed in a table to disable autosave
     var paramsSaved = true;
+	
+	//Arrays of station parameters
+	var stationInFocus = 0;	//Which entry in array is currently active; entry 0 is for set all courses
+	var stationName = ["", "1"];
 
     //Layout default measurements
     const defaultLayout = {
@@ -38,6 +42,21 @@ tcTemplate = function() {
         letterFontSize: 1.8,
         phoneticFontSize: 0.6
     };
+	
+	//Dynamic station editing
+	function changeStationFocus() {
+		var contentField;
+		
+		//Validate and save each field
+		
+		//Name
+		contentField = document.getElementById("stationName");
+		if (!contentField.validity.valid) {
+			alert("The station name must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=.");
+			contentField.focus();
+			return 1;
+		}
+	}
 	
 	function loadppen(fileInput) {
 		//Reads a Purple Pen file
@@ -1312,6 +1331,7 @@ tcTemplate = function() {
 	
 	//Make required functions globally visible
 	return {
+		changeStationFocus: changeStationFocus,
 		loadppen: loadppen,
 		loadTeX: loadTeX,
 		saveParameters: saveParameters,
