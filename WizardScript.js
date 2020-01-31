@@ -555,7 +555,7 @@ tcTemplate = function() {
 			    //Show station
 				startPos = fileString.indexOf("\\def\\ShowStationList{{");
 				if (startPos >= 0) {
-				    endPos = fileString.indexOf("}}", startPos);
+				    endPos = fileString.indexOf(",}}", startPos);
 				    startPos = fileString.indexOf("{{", startPos);
 				    subString = fileString.slice(startPos + 2, endPos);
 				    varArray = subString.split(",");
@@ -573,7 +573,7 @@ tcTemplate = function() {
 				//Number of kites
 				startPos = fileString.indexOf("\\def\\NumKitesList{{");
 				if (startPos >= 0) {
-					endPos = fileString.indexOf("}}", startPos);
+					endPos = fileString.indexOf(",}}", startPos);
 					startPos = fileString.indexOf("{{", startPos);
 					subString = fileString.slice(startPos + 2, endPos);
 					varArray = subString.split(",");
@@ -589,7 +589,7 @@ tcTemplate = function() {
 				//Zeroes
 				startPos = fileString.indexOf("\\def\\ZeroOptionList{{");
 				if (startPos >= 0) {
-					endPos = fileString.indexOf("}}", startPos);
+					endPos = fileString.indexOf(",}}", startPos);
 					startPos = fileString.indexOf("{{", startPos);
 					subString = fileString.slice(startPos + 2, endPos);
 					varArray = subString.split(",");
@@ -607,7 +607,7 @@ tcTemplate = function() {
 				//Heading
 				startPos = fileString.indexOf("\\def\\MapHeadingList{{");
 				if (startPos >= 0) {
-					endPos = fileString.indexOf("}}", startPos);
+					endPos = fileString.indexOf(",}}", startPos);
 					startPos = fileString.indexOf("{{", startPos);
 					subString = fileString.slice(startPos + 2, endPos);
 					varArray = subString.split(",");
@@ -624,7 +624,7 @@ tcTemplate = function() {
 				//Map shape
 				startPos = fileString.indexOf("\\def\\SquareMapList{{");
 				if (startPos >= 0) {
-					endPos = fileString.indexOf("}}", startPos);
+					endPos = fileString.indexOf(",}}", startPos);
 					startPos = fileString.indexOf("{{", startPos);
 					subString = fileString.slice(startPos + 2, endPos);
 					varArray = subString.split(",");
@@ -640,7 +640,7 @@ tcTemplate = function() {
 				//Map size
 				startPos = fileString.indexOf("\\def\\CircleRadiusList{{");
 				if (startPos >= 0) {
-					endPos = fileString.indexOf("}}", startPos);
+					endPos = fileString.indexOf(",}}", startPos);
 					startPos = fileString.indexOf("{{", startPos);
 					subString = fileString.slice(startPos + 2, endPos);
 					varArray = subString.split(",");
@@ -656,7 +656,7 @@ tcTemplate = function() {
 				//Map scale
 				startPos = fileString.indexOf("\\def\\MapScaleList{{");
 				if (startPos >= 0) {
-					endPos = fileString.indexOf("}}", startPos);
+					endPos = fileString.indexOf(",}}", startPos);
 					startPos = fileString.indexOf("{{", startPos);
 					subString = fileString.slice(startPos + 2, endPos);
 					varArray = subString.split(",");
@@ -672,7 +672,7 @@ tcTemplate = function() {
 				//Contour interval
 				startPos = fileString.indexOf("\\def\\ContourIntervalList{{");
 				if (startPos >= 0) {
-					endPos = fileString.indexOf("}}", startPos);
+					endPos = fileString.indexOf(",}}", startPos);
 					startPos = fileString.indexOf("{{", startPos);
 					subString = fileString.slice(startPos + 2, endPos);
 					varArray = subString.split(",");
@@ -700,7 +700,7 @@ tcTemplate = function() {
 				for (classRoot in layoutTeXNames) {
 				    startPos = fileString.indexOf("\\def\\" + layoutTeXNames[classRoot] + "List{{");
 				    if (startPos >= 0) {
-				        endPos = fileString.indexOf("}}", startPos);
+				        endPos = fileString.indexOf(",}}", startPos);
 				        startPos = fileString.indexOf("{{", startPos);
 				        subString = fileString.slice(startPos + 2, endPos);
 				        varArray = subString.split(",");
@@ -802,43 +802,6 @@ tcTemplate = function() {
 	
 		for (tableRowID = 1; tableRowID < numTableRows; tableRowID++) {
 			numStations++;
-			if (numStations > 1) {
-			    //Insert commas in lists
-			    showStationList += ",";
-				numProblemsList += ",";
-				stationNameList += ",";
-				kitesList += ",";
-				zeroesList += ",";
-				headingList += ",";			
-				shapeList += ",";			
-				sizeList += ",";
-				briefingWidthList += ",";		
-				scaleList += ",";			
-				contourList += ",";			
-				mapFileList += ",";			
-				mapPageList += ",";			
-				mapxList += ",";			
-				mapyList += ",";			
-				CDsFileList += ",";			
-				CDsPageList += ",";			
-				CDsxList += ",";			
-				CDsyList += ",";
-				CDsHeightList += ",";
-				CDsWidthList += ",";
-				CDsaFontList += ",";
-				CDsbFontList += ",";
-				showPointingBoxesList += ",";
-				pointingBoxWidthList += ",";
-				pointingBoxHeightList += ",";	
-				pointingLetterFontList += ",";	
-				pointingPhoneticFontList += ",";	
-				stationIDFontList += ",";	
-				checkBoxWidthList += ",";	
-				checkBoxHeightList += ",";
-				checkNumberFontList += ",";
-				checkRemoveFontList += ",";
-			}
-			
 			stationName = tableRows[tableRowID].getElementsByClassName("stationName")[0].innerHTML;	//Store it for useful error messages later
 			stationNameList += "\"" + stationName + "\"";
 
@@ -925,23 +888,23 @@ tcTemplate = function() {
 			}
 			
 			//Map and control description files
-			fileName = "\"Maps\"";
-			mapFileList += "{" + fileName;
-			CDsFileList += "{\"CDs\"";
-			CDsxList += "{" + CDsxCoordBase;
 			controlsSkipped = tableRows[tableRowID].getElementsByClassName("controlsSkipped")[0].innerHTML.split(",");
-			CDsyCoord = CDsyCoordBase - 0.7 * controlsSkipped[0];
-			CDsyList += "{" + CDsyCoord;
-			CDsHeightList += "{" + CDsHeightBase;   //For a 7mm box
-			CDsWidthList += "{" + CDsWidthBase;   //For a 7mm box
-			for (iterNum = 1; iterNum < numProblems; iterNum++) {
-				mapFileList += "," + fileName;
-				CDsFileList += ",\"CDs\"";
-				CDsxList += "," + CDsxCoordBase;	//Must match number just above for Purple Pen
+			fileName = "\"Maps\"";
+			mapFileList += "{";
+			CDsFileList += "{";
+			CDsxList += "{";
+			CDsyList += "{";
+			CDsHeightList += "{";
+			CDsWidthList += "{";
+			//Add a comma after all elements including the last one. A scalar without comma is misinterpreted by LaTeX.
+			for (iterNum = 0; iterNum < numProblems; iterNum++) {
+				mapFileList += fileName + ",";
+				CDsFileList += "\"CDs\",";
+				CDsxList += CDsxCoordBase + ",";	//Must match number just above for Purple Pen
 				CDsyCoord = CDsyCoordBase - 0.7 * controlsSkipped[iterNum];
-				CDsyList += "," + CDsyCoord;	//Must match number just above for Purple Pen
-				CDsHeightList += "," + CDsHeightBase;
-				CDsWidthList += "," + CDsWidthBase;   //For a 7mm box
+				CDsyList += CDsyCoord + ",";	//Must match number just above for Purple Pen
+				CDsHeightList += CDsHeightBase + ",";   //For a 7mm box
+				CDsWidthList += CDsWidthBase + ",";   //For a 7mm box
 			}
 			mapFileList += "}";
 			CDsFileList += "}";
@@ -953,10 +916,10 @@ tcTemplate = function() {
 			CDsbFontList += "\"0.39cm\"";
 									
 			//Coordinate map positions in files
-			mapxList += tableRows[tableRowID].getElementsByClassName("circlex")[0].innerHTML;
-			mapyList += tableRows[tableRowID].getElementsByClassName("circley")[0].innerHTML;
-			mapPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
-			CDsPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
+			mapxList += tableRows[tableRowID].getElementsByClassName("circlex")[0].innerHTML + ",";
+			mapyList += tableRows[tableRowID].getElementsByClassName("circley")[0].innerHTML + ",";
+			mapPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML + ",";
+			CDsPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML + ",";
 
 		    //Layout parameters. Remember to account for extra header row.
 
@@ -1038,6 +1001,41 @@ tcTemplate = function() {
 			} else {
 			    pointingPhoneticFontList += "\"" + contentField.value + "cm\"";
 			}
+			
+			//Add a comma after all elements including the last one. A scalar without comma is misinterpreted by LaTeX.
+			showStationList += ",";
+			numProblemsList += ",";
+			stationNameList += ",";
+			kitesList += ",";
+			zeroesList += ",";
+			headingList += ",";
+			shapeList += ",";
+			sizeList += ",";
+			briefingWidthList += ",";
+			scaleList += ",";
+			contourList += ",";
+			mapFileList += ",";			
+			mapPageList += ",";			
+			mapxList += ",";			
+			mapyList += ",";			
+			CDsFileList += ",";			
+			CDsPageList += ",";			
+			CDsxList += ",";			
+			CDsyList += ",";
+			CDsHeightList += ",";
+			CDsWidthList += ",";
+			CDsaFontList += ",";
+			CDsbFontList += ",";
+			showPointingBoxesList += ",";
+			pointingBoxWidthList += ",";
+			pointingBoxHeightList += ",";	
+			pointingLetterFontList += ",";	
+			pointingPhoneticFontList += ",";	
+			stationIDFontList += ",";	
+			checkBoxWidthList += ",";	
+			checkBoxHeightList += ",";
+			checkNumberFontList += ",";
+			checkRemoveFontList += ",";
 		}
 	
 		//Show construction circle for lining up maps? Not required when using this wizard, but still a useful feature.
@@ -1059,7 +1057,7 @@ tcTemplate = function() {
 		fileString += headingList + "}}\n";
 		fileString += shapeList + "}}\n";
 		fileString += sizeList + "}}\n";
-		fileString += briefingWidthList + ",}}\n";
+		fileString += briefingWidthList + "}}\n";
 		fileString += scaleList + "}}\n";
 		fileString += contourList + "}}\n";
 		fileString += mapFileList + "}}\n";
@@ -1072,18 +1070,18 @@ tcTemplate = function() {
 		fileString += CDsyList + "}}\n";
 		fileString += CDsHeightList + "}}\n";
 		fileString += CDsWidthList + "}}\n";
-		fileString += CDsaFontList + ",}}\n";
-		fileString += CDsbFontList + ",}}\n";
+		fileString += CDsaFontList + "}}\n";
+		fileString += CDsbFontList + "}}\n";
 		fileString += showPointingBoxesList + "}}\n";
 		fileString += pointingBoxWidthList + "}}\n";
 		fileString += pointingBoxHeightList + "}}\n";
 		fileString += pointingLetterFontList + ",}}\n";
-		fileString += pointingPhoneticFontList + ",}}\n";
-		fileString += stationIDFontList + ",}}\n";
+		fileString += pointingPhoneticFontList + "}}\n";
+		fileString += stationIDFontList + "}}\n";
 		fileString += checkBoxWidthList + "}}\n";
 		fileString += checkBoxHeightList + "}}\n";
-		fileString += checkNumberFontList + ",}}\n";
-		fileString += checkRemoveFontList + ",}}\n";
+		fileString += checkNumberFontList + "}}\n";
+		fileString += checkRemoveFontList + "}}\n";
 	
 		//Create file
 		parametersBlob = new Blob([fileString], { type: "text/plain" });
