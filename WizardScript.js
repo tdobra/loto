@@ -321,20 +321,16 @@ tcTemplate = function() {
 							courseControlNode = getNodeByID(xmlobj, "course-control", courseControlNode.getAttribute("course-control"));
 							controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
 						}
+						
+						//Append comma to lists - always have a trailing comma
 						//Circle position in cm with origin in bottom left corner
-						if (numProblems > 1) {
-							//Insert comma in list
-							tableColNode.getElementsByClassName("circlex")[0].innerHTML += ",";
-							tableColNode.getElementsByClassName("circley")[0].innerHTML += ",";
-							tableColNode.getElementsByClassName("printPage")[0].innerHTML += ",";
-							tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += ",";
-						}
-						tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord) * mapFileScale / courseScale).toString();
-						tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord) * mapFileScale / courseScale).toString();
+						tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord) * mapFileScale / courseScale).toString() + ",";
+						tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord) * mapFileScale / courseScale).toString() + ",";
 
 						//Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
-						tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString();
-						tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped;
+						tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
+						tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped + ",";
+						
 						//Find next control at station
 						otherNode = stationNameRoot + "." + (numProblems + 1);
 						for (existingRowID = 0; existingRowID < courseNodesNum; existingRowID++) {
@@ -916,10 +912,10 @@ tcTemplate = function() {
 			CDsbFontList += "\"0.39cm\"";
 									
 			//Coordinate map positions in files
-			mapxList += tableRows[tableRowID].getElementsByClassName("circlex")[0].innerHTML + ",";
-			mapyList += tableRows[tableRowID].getElementsByClassName("circley")[0].innerHTML + ",";
-			mapPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML + ",";
-			CDsPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML + ",";
+			mapxList += tableRows[tableRowID].getElementsByClassName("circlex")[0].innerHTML;
+			mapyList += tableRows[tableRowID].getElementsByClassName("circley")[0].innerHTML;
+			mapPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
+			CDsPageList += tableRows[tableRowID].getElementsByClassName("printPage")[0].innerHTML;
 
 		    //Layout parameters. Remember to account for extra header row.
 
