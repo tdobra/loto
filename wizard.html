@@ -45,9 +45,9 @@
                 <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
             </ul>
 			<p>
-				<label><input type="radio" name="editType" value="default" checked="true" onchange="tcTemplate.changeStationFocus()" />Defaults for all stations</label><br />
-				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus()" />Customise individual station</label><br />
-				<select id="stationSelect" size="2" onchange="tcTemplate.changeStationFocus()">
+				<label><input id="defaultSelect" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus()" />Set defaults for all stations</label><br />
+				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus()" />Customise individual station:</label><br /><br />
+				<select id="stationSelect" size="5" onchange="tcTemplate.changeStationFocus()">
 					<option value="1" selected="selected">1</option>
 				</select><br />
 			</p>
@@ -62,7 +62,7 @@
 			<table>
 				<tr>
 					<td>Name</td>
-					<td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" value="1" required="required" /></td>
+					<td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" required="required" /></td>
 				</tr>
 				<tr>
 					<td>Print station?</td>

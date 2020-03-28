@@ -49,13 +49,29 @@ tcTemplate = function() {
 		
 		//Validate and save each field
 		
-		//Name
-		contentField = document.getElementById("stationName");
-		if (!contentField.validity.valid) {
-			alert("The station name must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=.");
-			contentField.focus();
-			return 1;
+	    //Name - not for setting defaults
+		if (stationInFocus > 0) {
+		    contentField = document.getElementById("stationName");
+		    if (!contentField.validity.valid) {
+		        alert("The station name must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=.");
+		        contentField.focus();
+		        return 1;
+		    }
+		    stationName[stationInFocus] = contentField.value;
 		}
+
+	    //Which station is now in focus?
+		if (document.getElementById("defaultSelect").checked == true) {
+		    //Setting defaults for all stations
+		    stationInFocus = 0;
+		} else {
+		    stationInFocus = document.getElementById("stationSelect").selectedIndex + 1;
+		}
+
+	    //Populate with values for new selected station
+
+	    //Name
+		document.getElementById("stationName").value = stationName[stationInFocus];
 	}
 	
 	function loadppen(fileInput) {
