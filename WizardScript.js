@@ -117,6 +117,17 @@ tcTemplate = function() {
 						
 			courseNodes = xmlobj.getElementsByTagName("course");
 			courseNodesNum = courseNodes.length;
+
+		    //Purple symbols such as first aid points are stored as a course with no child element name. Remove these.
+		    //Iterate backwards as we are removing elements on the fly
+			for (courseNodesId = courseNodesNum - 1; courseNodesId >= 0; courseNodesId--) {
+			    if (courseNodes[courseNodesId].getElementsByTagName("name").length == 0) {
+			        courseNodes[courseNodesId].parentNode.removeChild(courseNodes[courseNodesId]);
+			    }
+			}
+			courseNodes = xmlobj.getElementsByTagName("course");
+			courseNodesNum = courseNodes.length;
+            
 			//Make list of all course order attributes used - to determine print page, so must be completed before rest of file reading
 			for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {	
 				courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
