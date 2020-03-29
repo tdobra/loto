@@ -66,43 +66,18 @@ tcTemplate = function() {
         phoneticFontSize: 0.6
     };
 	
-	//Dynamic station editing
-	function changeStationFocus() {
+    function changeStationFocus(storeValues) {
+        //Dynamic station editing. storeValues is a boolean stating whether to commit values in form fields to variables in memory.
 		var contentField;
 		
-		//Validate and save each field
+		if (storeValues == true) {
+		    //Validate and save each field
+		    stationParams[stationInFocus].stationName = document.getElementById("stationName").value;
+		    stationParams[stationInFocus].showStation = document.getElementById("showStation").checked;
+		    stationParams[stationInFocus].numKites = document.getElementById("kites").value;        
+        }
 		
-	    //Name - not for setting defaults
-		if (stationInFocus > 0) {
-		    contentField = document.getElementById("stationName");
-		    if (!contentField.validity.valid) {
-		        alert("The station name must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=.");
-		        contentField.focus();
-		        return 1;
-		    }
-		    stationParams[stationInFocus].stationName = contentField.value;
-		}
-
-	    //Show station
-		stationParams[stationInFocus].showStation = document.getElementById("showStation").checked;
-
-	    //Number of kites
-		contentField = document.getElementById("kites");
-		if (!contentField.validity.valid) {
-		    alert("The number of kites must be an integer between 1 and 6, and must be 6 to comply with IOF rules.");
-		    contentField.focus();
-		    return 1;
-		}
-		stationParams[stationInFocus].numKites = contentField.value;        
-
-        //Read in new values from memory
-		changeStationWriteHTMLElements();
-	}
-
-	function changeStationWriteHTMLElements() {
-	    //Show/hide or enable/disable HTML elements according to selected station, populate them with values
-	    var contentField;
-
+	    //Show/hide or enable/disable HTML elements according to selected station
 	    if (document.getElementById("defaultSelect").checked == true) {
 	        //Setting defaults for all stations
 	        stationInFocus = 0;
@@ -166,25 +141,40 @@ tcTemplate = function() {
 
         //Highlight any invalid input
 	    checkFields();   //Is the value valid?
-
 	}
 
 	function checkFields() {
 	    //Checks whether all fields for the current station contain valid input
 	    var contentField;
 
+	    //Mark this station as valid then change to invalid if any faults are found
+	    stationParams[stationInFocus].valid = true;
+
+	    //Name - not for setting defaults
+	    contentField = document.getElementById("stationName");
+	    if (stationInFocus > 0 && contentField.validity.valid == false) {
+	        stationParams[stationInFocus].valid = false;
+	        contentField.className = "error";
+	        document.getElementById("nameError").style = "";
+	    } else {
+	        contentField.className = "";
+	        document.getElementById("nameError").style.display = "none";
+	    }
+
         //Number of kites
 	    contentField = document.getElementById("kites");
-	    if (contentField.validity.valid == true || (stationInFocus == 0 && contentField.value == "")) {
+	    if (Number(contentField.value) == 6 || (stationInFocus == 0 && contentField.value == "")) {
             //Field valid
-	        contentField.className = "none";
+	        contentField.className = "";
 	        document.getElementById("kitesPermitted").style.display = "none";
 	        document.getElementById("kitesRule").style.display = "none";
-	    } else if (Number(contentField.value) != 6) {
+	    } else if (contentField.validity.valid == true) {
+            //Displaying a number less than 6 - not compliant with IOF rules
 	        contentField.className = "warning";
 	        document.getElementById("kitesPermitted").style.display = "none";
 	        document.getElementById("kitesRule").style = "";
 	    } else {
+	        stationParams[stationInFocus].valid = false;
 	        contentField.className = "error";
 	        document.getElementById("kitesPermitted").style = "";
 	        document.getElementById("kitesRule").style = "";
@@ -1465,7 +1455,6 @@ tcTemplate = function() {
 	//Make required functions globally visible
 	return {
 	    changeStationFocus: changeStationFocus,
-	    changeStationWriteHTMLElements: changeStationWriteHTMLElements,
         checkFields: checkFields,
 		loadppen: loadppen,
 		loadTeX: loadTeX,
@@ -1479,4 +1468,4 @@ tcTemplate = function() {
 }();
 
 //Initiate all variables on page. Do it this way rather than in HTML to avoid multiple hardcodings of the same initial values.
-tcTemplate.changeStationWriteHTMLElements();
+tcTemplate.changeStationFocus(false);

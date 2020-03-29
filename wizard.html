@@ -49,9 +49,9 @@
                 <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
             </ul>
 			<p>
-				<label><input id="defaultSelect" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus()" />Set defaults for all stations</label><br />
-				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus()" />Customise individual station:</label><br /><br />
-				<select id="stationSelect" size="5" disabled="disabled" onchange="tcTemplate.changeStationFocus()">
+				<label><input id="defaultSelect" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus(true)" />Set defaults for all stations</label><br />
+				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus(true)" />Customise individual station:</label><br /><br />
+				<select id="stationSelect" size="5" disabled="disabled" onchange="tcTemplate.changeStationFocus(true)">
 					<option selected="selected"></option>
 				</select><br />
 			</p>
@@ -66,7 +66,8 @@
 			<table>
 				<tr>
 					<td>Name</td>
-					<td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" required="required" /></td>
+					<td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" required="required" oninput="tcTemplate.checkFields()" /></td>
+                    <td id="nameError" colspan="3">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</td>
 				</tr>
 				<tr>
 					<td>Print station?</td>
