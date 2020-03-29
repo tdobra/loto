@@ -13,7 +13,7 @@ if (window.FileReader && window.DOMParser && window.Blob && window.URL && window
 	document.getElementById("mainView").hidden = true;
 }
 
-//MS Edge doesn't always work - <details> tag not implemented
+//MS Edge/IE doesn't always work - <details> tag not implemented
 if ('open' in document.createElement('details')) {
 	document.getElementById("MSEdgeWarning").hidden = true;
 }
@@ -29,8 +29,31 @@ tcTemplate = function() {
 	
 	//Arrays of station parameters
 	var stationInFocus = 0;	//Which entry in array is currently active; entry 0 is for set all courses
-	var stationName = ["", "1"];
-
+	var stationParams = [{
+        valid: true, //Defaults should be marked as valid unless it would cause LaTeX to crash when reading but not using values: permitted values and empty strings are valid
+	    stationName: "",
+	    showStation: true,
+	    numKites: 6,
+	    zeroes: false,
+	    numTasks: "",
+	    heading: "",
+	    shape: "Circle",
+	    mapSize: "",
+	    scale: "",
+	    contours: ""
+	},{
+        valid: false,   //Do not mark as valid if some fields are empty
+	    stationName: "",
+	    showStation: true,
+	    numKites: 6,
+	    zeroes: false,
+	    numTasks: "",
+	    heading: "",
+	    shape: "Circle",
+	    mapSize: "",
+	    scale: "",
+	    contours: ""
+	}];
     //Layout default measurements
     const defaultLayout = {
         IDFontSize: 0.7,
@@ -57,21 +80,115 @@ tcTemplate = function() {
 		        contentField.focus();
 		        return 1;
 		    }
-		    stationName[stationInFocus] = contentField.value;
+		    stationParams[stationInFocus].stationName = contentField.value;
 		}
 
-	    //Which station is now in focus?
-		if (document.getElementById("defaultSelect").checked == true) {
-		    //Setting defaults for all stations
-		    stationInFocus = 0;
-		} else {
-		    stationInFocus = document.getElementById("stationSelect").selectedIndex + 1;
+	    //Show station
+		stationParams[stationInFocus].showStation = document.getElementById("showStation").checked;
+
+	    //Number of kites
+		contentField = document.getElementById("kites");
+		if (!contentField.validity.valid) {
+		    alert("The number of kites must be an integer between 1 and 6, and must be 6 to comply with IOF rules.");
+		    contentField.focus();
+		    return 1;
 		}
+		stationParams[stationInFocus].numKites = contentField.value;        
+
+        //Read in new values from memory
+		changeStationWriteHTMLElements();
+	}
+
+	function changeStationWriteHTMLElements() {
+	    //Show/hide or enable/disable HTML elements according to selected station, populate them with values
+	    var contentField;
+
+	    if (document.getElementById("defaultSelect").checked == true) {
+	        //Setting defaults for all stations
+	        stationInFocus = 0;
+
+	        //Show/hide any buttons as required
+	        document.getElementById("showSetAllCSS").innerHTML = ".resetCourse{display: none;}";
+
+	        //Some fields need disabling
+	        document.getElementById("stationSelect").disabled = true;
+	        document.getElementById("addStation").disabled = true;
+	        document.getElementById("deleteStation").disabled = true;
+	        document.getElementById("moveUpStation").disabled = true;
+	        document.getElementById("moveDownStation").disabled = true;
+	        document.getElementById("stationName").disabled = true;
+	        document.getElementById("heading").disabled = true;
+        } else {
+	        stationInFocus = document.getElementById("stationSelect").selectedIndex + 1;
+
+	        //Show/hide any buttons as required
+	        document.getElementById("showSetAllCSS").innerHTML = ".setAllCourses{display: none;}";
+
+	        //Some fields may need enabling
+	        contentField = document.getElementById("stationSelect");
+	        contentField.disabled = false;
+	        document.getElementById("addStation").disabled = false;
+	        if (contentField.length > 1) {
+	            document.getElementById("deleteStation").disabled = false;
+	            if (contentField.selectedIndex == 0) {
+	                //First station, so can't move it up
+	                document.getElementById("moveUpStation").disabled = true;
+	                document.getElementById("moveDownStation").disabled = false;
+	            } else if (contentField.selectedIndex == contentField.length - 1) {
+	                //Last station, so can't move it down
+	                document.getElementById("moveUpStation").disabled = false;
+	                document.getElementById("moveDownStation").disabled = true;
+	            } else {
+	                //Can move in both directions
+	                document.getElementById("moveUpStation").disabled = false;
+	                document.getElementById("moveDownStation").disabled = false;
+	            }
+	        } else {
+	            document.getElementById("deleteStation").disabled = true;
+	            document.getElementById("moveUpStation").disabled = true;
+	            document.getElementById("moveDownStation").disabled = true;
+	        }
+	        document.getElementById("stationName").disabled = false;
+	        document.getElementById("heading").disabled = false;
+        }
 
 	    //Populate with values for new selected station
+	    document.getElementById("stationName").value = stationParams[stationInFocus].stationName;
+	    document.getElementById("showStation").checked = stationParams[stationInFocus].showStation;
+	    document.getElementById("kites").value = stationParams[stationInFocus].numKites;
+	    document.getElementById("zeroes").checked = stationParams[stationInFocus].zeroes;
+	    document.getElementById("numTasks").value = stationParams[stationInFocus].numTasks;
+	    document.getElementById("heading").value = stationParams[stationInFocus].heading;
+	    document.getElementById("mapShape").value = stationParams[stationInFocus].shape;
+	    document.getElementById("mapSize").value = stationParams[stationInFocus].mapSize;
+	    document.getElementById("mapScale").value = stationParams[stationInFocus].scale;
+	    document.getElementById("contourInterval").value = stationParams[stationInFocus].contours;
 
-	    //Name
-		document.getElementById("stationName").value = stationName[stationInFocus];
+        //Highlight any invalid input
+	    checkFields();   //Is the value valid?
+
+	}
+
+	function checkFields() {
+	    //Checks whether all fields for the current station contain valid input
+	    var contentField;
+
+        //Number of kites
+	    contentField = document.getElementById("kites");
+	    if (contentField.validity.valid == true || (stationInFocus == 0 && contentField.value == "")) {
+            //Field valid
+	        contentField.className = "none";
+	        document.getElementById("kitesPermitted").style.display = "none";
+	        document.getElementById("kitesRule").style.display = "none";
+	    } else if (Number(contentField.value) != 6) {
+	        contentField.className = "warning";
+	        document.getElementById("kitesPermitted").style.display = "none";
+	        document.getElementById("kitesRule").style = "";
+	    } else {
+	        contentField.className = "error";
+	        document.getElementById("kitesPermitted").style = "";
+	        document.getElementById("kitesRule").style = "";
+	    }
 	}
 	
 	function loadppen(fileInput) {
@@ -1347,7 +1464,9 @@ tcTemplate = function() {
 	
 	//Make required functions globally visible
 	return {
-		changeStationFocus: changeStationFocus,
+	    changeStationFocus: changeStationFocus,
+	    changeStationWriteHTMLElements: changeStationWriteHTMLElements,
+        checkFields: checkFields,
 		loadppen: loadppen,
 		loadTeX: loadTeX,
 		saveParameters: saveParameters,
@@ -1358,3 +1477,6 @@ tcTemplate = function() {
 		generatePDF: generatePDF
 	};
 }();
+
+//Initiate all variables on page. Do it this way rather than in HTML to avoid multiple hardcodings of the same initial values.
+tcTemplate.changeStationWriteHTMLElements();

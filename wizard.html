@@ -3,6 +3,10 @@
 <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" type="text/css" href="WizardStyle.css" />
+    <style id="showSetAllCSS">
+        /*Reserved for editing in Javascript to show/hide all elements within a class*/
+        .resetCourse{display: none;}
+    </style>
 
     <!--Favicons-->
     <link rel="apple-touch-icon" type="image/png" href="favicon/noborder152.png" sizes="152x152" />
@@ -47,16 +51,16 @@
 			<p>
 				<label><input id="defaultSelect" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus()" />Set defaults for all stations</label><br />
 				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus()" />Customise individual station:</label><br /><br />
-				<select id="stationSelect" size="5" onchange="tcTemplate.changeStationFocus()">
-					<option value="1" selected="selected">1</option>
+				<select id="stationSelect" size="5" disabled="disabled" onchange="tcTemplate.changeStationFocus()">
+					<option selected="selected"></option>
 				</select><br />
 			</p>
 			<p class="setOneCourse">
 				Station:
-				<input type="button" value="+ Add" />
-				<input id="deleteStation" type="button" value="X Delete" disabled="disabled" />
-				<input id="moveUpStation" type="button" value="&uarr; Move up" disabled="disabled" />
-				<input id="moveDownStation" type="button" value="&darr; Move down" disabled="disabled" />
+				<input id="addStation" type="button" value="+ Add" />
+				<input id="deleteStation" type="button" value="X Delete" />
+				<input id="moveUpStation" type="button" value="&uarr; Move up" />
+				<input id="moveDownStation" type="button" value="&darr; Move down" />
 			</p>
 			
 			<table>
@@ -66,13 +70,15 @@
 				</tr>
 				<tr>
 					<td>Print station?</td>
-					<td><input id="showStation" type="checkbox" checked="checked" /></td>
+					<td><input id="showStation" type="checkbox" /></td>
 					<td><input id="resetShowStation" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllShowStation" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
 				</tr>
 				<tr>
 					<td>Number of kites</td>
-					<td><input id="kites" type="number" min="1" max="6" step="1" required="required" /></td>
+					<td><input id="kites" type="number" min="1" max="6" step="1" required="required" oninput="tcTemplate.checkFields()" /></td>
 					<td><input id="resetKites" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllKites" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+                    <td id="kitesPermitted">Number of kites must be an integer between 1 and 6</td>
+                    <td id="kitesRule">IOF rule: number of kites = 6</td>
 				</tr>
 				<tr>
 					<td>Zeroes?</td>

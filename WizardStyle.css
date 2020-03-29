@@ -45,10 +45,10 @@ input.coordinate {
     text-align: right;
 }
 
-details {
+details, .warning {
 	background-color: #F5D2B8;
 }
 
-summary, .setAll {
+summary, .setAll, .error {
     background-color: #F56600;
 }
