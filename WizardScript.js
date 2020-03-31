@@ -167,6 +167,10 @@ tcTemplate = function() {
 	        contentField.className = "";
 	        document.getElementById("nameError").style.display = "none";
 	    }
+		//Update station list
+		if (stationInFocus > 0) {
+			document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].innerHTML = contentField.value;
+		}
 
         //Number of kites
 	    contentField = document.getElementById("numKites");
@@ -226,6 +230,12 @@ tcTemplate = function() {
 		} else {
 			contentField.className = "warning";
 			document.getElementById("mapShapeRule").style = "";
+		}
+		//Also update labels for map size description
+		if (contentField.value == "Circle") {
+			document.getElementById("mapSizeType").innerHTML = "diameter";
+		} else {
+			document.getElementById("mapSizeType").innerHTML = "side length";
 		}
 		
 		//Map size
@@ -308,6 +318,20 @@ tcTemplate = function() {
 	        document.getElementById("contourIntervalPermitted").style = "";
 	        document.getElementById("contourIntervalRule").style = "";
 	    }
+		
+		//Highlight in station list if there are errors
+		if (stationInFocus > 0) {
+			if (stationParams[stationInFocus].valid == false) {
+				document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].className = "error";
+			} else {
+				document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].className = "";
+			}
+		}
+	}
+	
+	//Manipulate station order
+	function addStation() {
+		
 	}
 	
 	function loadppen(fileInput) {
@@ -1585,6 +1609,7 @@ tcTemplate = function() {
 	return {
 	    changeStationFocus: changeStationFocus,
         checkFields: checkFields,
+		addStation: addStation,
 		loadppen: loadppen,
 		loadTeX: loadTeX,
 		saveParameters: saveParameters,

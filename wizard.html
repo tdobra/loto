@@ -51,13 +51,13 @@
 			<p>
 				<label><input id="defaultSelect" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus(true)" />Set defaults for all stations</label><br />
 				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus(true)" />Customise individual station:</label><br /><br />
-				<select id="stationSelect" size="5" disabled="disabled" onchange="tcTemplate.changeStationFocus(true)">
+				<select id="stationSelect" size="5" onchange="tcTemplate.changeStationFocus(true)">
 					<option selected="selected"></option>
 				</select><br />
 			</p>
 			<p class="setOneCourse">
 				Station:
-				<input id="addStation" type="button" value="+ Add" />
+				<input id="addStation" type="button" value="+ Add" onclick="tcTemplate.addStation()" />
 				<input id="deleteStation" type="button" value="X Delete" />
 				<input id="moveUpStation" type="button" value="&uarr; Move up" />
 				<input id="moveDownStation" type="button" value="&darr; Move down" />
@@ -100,7 +100,7 @@
 				<tr>
 					<td>Map shape</td>
 					<td>
-						<select id="mapShape" required="required" onchange""><!--TODO:Update diameter/side length label-->
+						<select id="mapShape" required="required" onchange="tcTemplate.checkFields()" ><!--TODO:Update diameter/side length label-->
 							<option>Circle</option>
 							<option>Square</option>
 						</select>
