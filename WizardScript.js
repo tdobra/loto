@@ -37,10 +37,10 @@ tcTemplate = function() {
 	    zeroes: false,
 	    numTasks: "",
 	    heading: "",
-	    shape: "Circle",
+	    mapShape: "Circle",
 	    mapSize: "",
-	    scale: "",
-	    contours: ""
+	    mapScale: "",
+	    contourInterval: ""
 	},{
         valid: false,   //Do not mark as valid if some fields are empty
 	    stationName: "",
@@ -49,10 +49,10 @@ tcTemplate = function() {
 	    zeroes: false,
 	    numTasks: "",
 	    heading: "",
-	    shape: "Circle",
+	    mapShape: "Circle",
 	    mapSize: "",
-	    scale: "",
-	    contours: ""
+	    mapScale: "",
+	    contourInterval: ""
 	}];
     //Layout default measurements
     const defaultLayout = {
@@ -74,7 +74,14 @@ tcTemplate = function() {
 		    //Validate and save each field
 		    stationParams[stationInFocus].stationName = document.getElementById("stationName").value;
 		    stationParams[stationInFocus].showStation = document.getElementById("showStation").checked;
-		    stationParams[stationInFocus].numKites = document.getElementById("kites").value;        
+		    stationParams[stationInFocus].numKites = document.getElementById("numKites").value;
+			stationParams[stationInFocus].zeroes = document.getElementById("zeroes").checked;
+			stationParams[stationInFocus].numTasks = document.getElementById("numTasks").value;
+			stationParams[stationInFocus].heading = document.getElementById("heading").value;
+			stationParams[stationInFocus].mapShape = document.getElementById("mapShape").value;
+			stationParams[stationInFocus].mapSize = document.getElementById("mapSize").value;
+			stationParams[stationInFocus].mapScale = document.getElementById("mapScale").value;
+			stationParams[stationInFocus].contourInterval = document.getElementById("contourInterval").value;
         }
 		
 	    //Show/hide or enable/disable HTML elements according to selected station
@@ -130,14 +137,14 @@ tcTemplate = function() {
 	    //Populate with values for new selected station
 	    document.getElementById("stationName").value = stationParams[stationInFocus].stationName;
 	    document.getElementById("showStation").checked = stationParams[stationInFocus].showStation;
-	    document.getElementById("kites").value = stationParams[stationInFocus].numKites;
+	    document.getElementById("numKites").value = stationParams[stationInFocus].numKites;
 	    document.getElementById("zeroes").checked = stationParams[stationInFocus].zeroes;
 	    document.getElementById("numTasks").value = stationParams[stationInFocus].numTasks;
 	    document.getElementById("heading").value = stationParams[stationInFocus].heading;
-	    document.getElementById("mapShape").value = stationParams[stationInFocus].shape;
+	    document.getElementById("mapShape").value = stationParams[stationInFocus].mapShape;
 	    document.getElementById("mapSize").value = stationParams[stationInFocus].mapSize;
-	    document.getElementById("mapScale").value = stationParams[stationInFocus].scale;
-	    document.getElementById("contourInterval").value = stationParams[stationInFocus].contours;
+	    document.getElementById("mapScale").value = stationParams[stationInFocus].mapScale;
+	    document.getElementById("contourInterval").value = stationParams[stationInFocus].contourInterval;
 
         //Highlight any invalid input
 	    checkFields();   //Is the value valid?
@@ -162,7 +169,7 @@ tcTemplate = function() {
 	    }
 
         //Number of kites
-	    contentField = document.getElementById("kites");
+	    contentField = document.getElementById("numKites");
 	    if (Number(contentField.value) == 6 || (stationInFocus == 0 && contentField.value == "")) {
             //Field valid
 	        contentField.className = "";
@@ -178,6 +185,128 @@ tcTemplate = function() {
 	        contentField.className = "error";
 	        document.getElementById("kitesPermitted").style = "";
 	        document.getElementById("kitesRule").style = "";
+	    }
+		
+        //Number of tasks
+	    contentField = document.getElementById("numTasks");
+		if (contentField.validity.valid == true) {
+	        contentField.className = "";
+	        document.getElementById("numTasksError").style.display = "none";
+	    } else {
+	        stationParams[stationInFocus].valid = false;
+	        contentField.className = "error";
+	        document.getElementById("numTasksError").style = "";
+	    }
+		
+	    //Heading - not for setting defaults
+	    contentField = document.getElementById("heading");
+	    if (stationInFocus > 0 && contentField.validity.valid == false) {
+	        stationParams[stationInFocus].valid = false;
+	        contentField.className = "error";
+	        document.getElementById("headingError").style = "";
+	    } else {
+	        contentField.className = "";
+	        document.getElementById("headingError").style.display = "none";
+	    }
+		
+		//Map shape
+		contentField = document.getElementById("mapShape");
+		//Update stored array to test values
+		stationParams[stationInFocus].mapShape = contentField.value;
+		if (stationParams.every(function (val, index) {
+			if (index == 0) {
+				//Defaults don't need to match other stations
+				return true;
+			} else {
+				return val.mapShape == stationParams[1].mapShape;
+			}
+		}) == true) {
+			contentField.className = "";
+			document.getElementById("mapShapeRule").style.display = "none";
+		} else {
+			contentField.className = "warning";
+			document.getElementById("mapShapeRule").style = "";
+		}
+		
+		//Map size
+	    contentField = document.getElementById("mapSize");
+		if (contentField.validity.valid == true && Number(contentField.value) > 0) {
+	        document.getElementById("mapSizePermitted").style.display = "none";
+			//Update stored array to test values
+			stationParams[stationInFocus].mapSize = contentField.value;
+			if (Number(contentField.value) >= 5 && stationParams.every(function (val, index) {
+				if (index == 0) {
+					//Defaults don't need to match other stations
+					return true;
+				} else {
+					return val.mapSize == stationParams[1].mapSize;
+				}
+			}) == true) {
+		        contentField.className = "layoutLength";
+		        document.getElementById("mapSizeRule").style.display = "none";
+			} else {
+		        contentField.className = "layoutLength warning";
+		        document.getElementById("mapSizeRule").style = "";
+			}
+	    } else {
+	        stationParams[stationInFocus].valid = false;
+	        contentField.className = "layoutLength error";
+	        document.getElementById("mapSizePermitted").style = "";
+	        document.getElementById("mapSizeRule").style = "";
+	    }
+		
+		//Map scale
+	    contentField = document.getElementById("mapScale");
+		if (contentField.validity.valid == true && Number(contentField.value) > 0) {
+	        document.getElementById("mapScalePermitted").style.display = "none";
+			//Update stored array to test values
+			stationParams[stationInFocus].mapScale = contentField.value;
+			if ((Number(contentField.value) == 4000 || Number(contentField.value) == 5000) && stationParams.every(function (val, index) {
+				if (index == 0) {
+					//Defaults don't need to match other stations
+					return true;
+				} else {
+					return val.mapScale == stationParams[1].mapScale;
+				}
+			}) == true) {
+		        contentField.className = "";
+		        document.getElementById("mapScaleRule").style.display = "none";
+			} else {
+		        contentField.className = "warning";
+		        document.getElementById("mapScaleRule").style = "";
+			}
+	    } else {
+	        stationParams[stationInFocus].valid = false;
+	        contentField.className = "error";
+	        document.getElementById("mapScalePermitted").style = "";
+	        document.getElementById("mapScaleRule").style = "";
+	    }
+		
+		//Contour interval
+	    contentField = document.getElementById("contourInterval");
+		if (contentField.validity.valid == true && Number(contentField.value) > 0) {
+	        document.getElementById("contourIntervalPermitted").style.display = "none";
+			//Update stored array to test values
+			stationParams[stationInFocus].contourInterval = contentField.value;
+			if (stationParams.every(function (val, index) {
+				if (index == 0) {
+					//Defaults don't need to match other stations
+					return true;
+				} else {
+					return val.contourInterval == stationParams[1].contourInterval;
+				}
+			}) == true) {
+		        contentField.className = "";
+		        document.getElementById("contourIntervalRule").style.display = "none";
+			} else {
+		        contentField.className = "warning";
+		        document.getElementById("contourIntervalRule").style = "";
+			}
+	    } else {
+	        stationParams[stationInFocus].valid = false;
+	        contentField.className = "error";
+	        document.getElementById("contourIntervalPermitted").style = "";
+	        document.getElementById("contourIntervalRule").style = "";
 	    }
 	}
 	
