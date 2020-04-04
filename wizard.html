@@ -23,7 +23,7 @@
         <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
         <noscript>Enable Javascript for this wizard to work.</noscript>
         <p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
-        <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try <a href="https://www.google.com/chrome/" target="prequisites">Google Chrome</a> instead.</p>
+        <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try updating your browser to the latest version or use a different one.</p>
         <p class="right"><a href="help/index.html" target="help">Help</a>&emsp;<a href="index.html">Home</a></p>
     </header>
     <main id="mainView">
@@ -66,8 +66,9 @@
 			<table>
 				<tr>
 					<td>Name</td>
-					<td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" required="required" oninput="tcTemplate.checkFields()" /></td>
-                    <td id="nameError" colspan="3">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</td>
+					<td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" required="required" oninput="tcTemplate.checkSave.stationName()" /></td>
+                    <td id="nameSyntax" colspan="2">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</td>
+					<td id="nameUniqueness">Must be unique</td>
 				</tr>
 				<tr>
 					<td>Print station?</td>
@@ -85,12 +86,14 @@
 					<td>Zeroes?</td>
 					<td><input id="zeroes" type="checkbox" /></td>
 					<td><input id="resetZeroes" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllZeroes" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+					<td id="zeroesWarning" colspan="2">Not the same for all stations</td>
 				</tr>
 				<tr>
 					<td>Number of tasks</td>
 					<td><input id="numTasks" type="number" min="1" step="1" required="required" oninput="tcTemplate.checkFields()" /></td>
 					<td><input id="resetNumTasks" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllNumTasks" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-					<td id="numTasksError" colspan="2">Must be a positive integer</td>
+					<td id="numTasksError">Must be a strictly positive integer</td>
+					<td id="numTasksRule">IOF rule: must be the same for all stations</td>
 				</tr>
 				<tr>
 					<td>Heading</td>
@@ -119,14 +122,14 @@
 					<td>Map scale</td>
 					<td>1:<input id="mapScale" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkFields()" /></td>
 					<td><input id="resetMapScale" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapScale" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-                    <td id="mapScalePermitted">Must be a positive number</td>
+                    <td id="mapScalePermitted">Must be a strictly positive number</td>
                     <td id="mapScaleRule">IOF rules: normally 1:4000 or 1:5000; must be the same for all stations</td>
 				</tr>
 				<tr>
 					<td>Contour interval</td>
 					<td><input id="contourInterval" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkFields()" /> m</td>
 					<td><input id="resetContourInterval" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllContourInterval" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-                    <td id="contourIntervalPermitted">Must be a positive number</td>
+                    <td id="contourIntervalPermitted">Must be a strictly positive number</td>
                     <td id="contourIntervalRule">IOF rule: must be the same for all stations</td>
 				</tr>
 			</table>

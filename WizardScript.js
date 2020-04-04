@@ -3,9 +3,6 @@
 //Prevent sloppy programming and throw more errors
 "use strict";
 
-//Define variables
-var tcTemplate;	//Namespace
-
 //Check browser supports required APIs
 if (window.FileReader && window.DOMParser && window.Blob && window.URL && window.fetch) {
 	document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
@@ -14,7 +11,7 @@ if (window.FileReader && window.DOMParser && window.Blob && window.URL && window
 }
 
 //MS Edge/IE doesn't always work - <details> tag not implemented
-if ('open' in document.createElement('details')) {
+if ("open" in document.createElement("details")) {
 	document.getElementById("MSEdgeWarning").hidden = true;
 }
 
@@ -23,7 +20,7 @@ document.getElementById("savePDF").hidden = true;
 document.getElementById("viewLog").hidden = true;
 
 //Keep all functions private and put those with events in HTML tags in a namespace
-tcTemplate = function() {
+const tcTemplate = function() {
 	//Keep track of whether an input file has been changed in a table to disable autosave
     var paramsSaved = true;
 	
@@ -35,24 +32,24 @@ tcTemplate = function() {
 	    showStation: true,
 	    numKites: 6,
 	    zeroes: false,
-	    numTasks: "",
-	    heading: "",
+	    numTasks: NaN,
+	    heading: NaN,
 	    mapShape: "Circle",
-	    mapSize: "",
-	    mapScale: "",
-	    contourInterval: ""
+	    mapSize: NaN,
+	    mapScale: NaN,
+	    contourInterval: NaN
 	},{
-        valid: false,   //Do not mark as valid if some fields are empty
-	    stationName: "",
+        valid: false,   //Do not mark as valid if some fields are empty unless showStation is false
+	    stationName: "1",
 	    showStation: true,
 	    numKites: 6,
 	    zeroes: false,
-	    numTasks: "",
-	    heading: "",
+	    numTasks: NaN,
+	    heading: NaN,
 	    mapShape: "Circle",
-	    mapSize: "",
-	    mapScale: "",
-	    contourInterval: ""
+	    mapSize: NaN,
+	    mapScale: NaN,
+	    contourInterval: NaN
 	}];
     //Layout default measurements
     const defaultLayout = {
@@ -149,6 +146,314 @@ tcTemplate = function() {
         //Highlight any invalid input
 	    checkFields();   //Is the value valid?
 	}
+	
+	//Check and save fields
+	const checkSave = function() {
+		function stationName() {
+			const contentField = document.getElementById("stationName");
+			const contentFieldValue = contentField.value;
+		
+			//Check for updates
+			if (stationParams[stationInFocus].stationName !== contentFieldValue) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].stationName = contentFieldValue;
+			}
+		
+			//Mark as no errors, then change if an error is found
+			contentField.className = "";
+
+			//Check uniqueness - don't bother if station is hidden or is the defaults
+			if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every(function (val, index) {
+				if (index === 0 || index === stationInFocus || stationParams[index].showStation === false) {
+					//Defaults and not in use don't check. Don't check current station against itself!
+					return true;
+				} else {
+					return val.stationName !== contentFieldValue;
+				}
+			}) === false) {
+				contentField.className = "error";
+				document.getElementById("nameUniqueness").style = "";
+			} else {
+				document.getElementById("nameUniqueness").style.display = "none";
+			}
+	
+			//Check syntax even if hidden to avoid dodgy strings getting into LaTeX
+			if (stationInFocus > 0 && contentField.validity.valid === false) {
+				contentField.className = "error";
+				document.getElementById("nameSyntax").style = "";
+			} else {
+				document.getElementById("nameSyntax").style.display = "none";
+			}
+		
+			//Update station list
+			if (stationInFocus > 0) {
+				document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].innerHTML = contentFieldValue;
+			}
+		}
+		
+		function showStation() {
+			const contentField = document.getElementById("showStation");
+			const contentFieldChecked = contentField.checked;
+		
+			//Check for updates
+			if (stationParams[stationInFocus].showStation !== contentFieldChecked) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].showStation = contentFieldChecked;
+			}
+		}
+		
+		function numKites() {
+			const contentField = document.getElementById("numKites");
+			const contentFieldValue = contentField.value;
+			const contentFieldNum = Number(contentFieldValue);
+		
+			//Check for updates
+			if (stationParams[stationInFocus].numKites !== contentFieldNum) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].numKites = contentFieldNum;
+			}
+			
+			//Check validity
+		    if (contentFieldNum === 6 || (stationInFocus === 0 && contentFieldValue === "") || (stationInFocus > 0 && stationParams[stationInFocus].showStation === false)) {
+	            //Field valid, or empty if defaults, or non-defaults station not displayed
+		        contentField.className = "";
+		        document.getElementById("kitesPermitted").style.display = "none";
+		        document.getElementById("kitesRule").style.display = "none";
+		    } else if (contentField.validity.valid == true) {
+	            //Displaying a number less than 6 - not compliant with IOF rules
+		        contentField.className = "warning";
+		        document.getElementById("kitesPermitted").style.display = "none";
+		        document.getElementById("kitesRule").style = "";
+		    } else {
+		        contentField.className = "error";
+		        document.getElementById("kitesPermitted").style = "";
+		        document.getElementById("kitesRule").style = "";
+		    }
+		}
+		
+		function zeroes() {
+			const contentField = document.getElementById("zeroes");
+			const contentFieldChecked = contentField.checked;
+		
+			//Check for updates
+			if (stationParams[stationInFocus].zeroes !== contentFieldChecked) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].zeroes = contentFieldChecked;
+			}
+			
+			//Check all values the same - don't bother if station is hidden or is defaults
+			if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every(function (val, index) {
+				if (index === 0 || stationParams[index].showStation === false) {
+					//Defaults and not in use don't need to match other stations
+					return true;
+				} else {
+					return val.zeroes === contentFieldChecked;
+				}
+			}) === false) {
+				contentField.className = "warning";
+				document.getElementById("zeroesWarning").style = "";
+			} else {
+				document.getElementById("zeroesWarning").style.display = "none";
+			}
+		}
+		
+		function numTasks() {
+			const contentField = document.getElementById("numTasks");
+			const contentFieldValue = contentField.value;
+			const contentFieldNum = Number(contentFieldValue);
+		
+			//Check for updates
+			if (stationParams[stationInFocus].numTasks !== contentFieldNum) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].numTasks = contentFieldNum;
+			}
+			
+			//Mark as no errors, then change if an error is found
+			contentField.className = "";
+			
+			//Check all values the same - don't bother if station is hidden or is the defaults
+			if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every(function (val, index) {
+				if (index === 0 || stationParams[index].showStation === false) {
+					//Defaults and not in use don't check
+					return true;
+				} else {
+					return val.numTasks === contentFieldNum;
+				}
+			}) === false) {
+				contentField.className = "warning";
+				document.getElementById("numTasksRule").style = "";
+			} else {
+				document.getElementById("numTasksRule").style.display = "none";
+			}
+			
+			//Check validity. Ignore hidden stations, and empty if defaults
+			if (contentField.validity.valid === true || (stationInFocus === 0 && contentField.value === "") || (stationInFocus > 0 && stationParams[stationInFocus].showStation === false)) {
+		        document.getElementById("numTasksError").style.display = "none";
+		    } else {
+		        contentField.className = "error";
+		        document.getElementById("numTasksError").style = "";
+		    }
+		}
+		
+		function heading() {
+			const contentField = document.getElementById("heading");
+			const contentFieldNum = Number(contentField.value);
+		
+			//Check for updates
+			if (stationParams[stationInFocus].heading !== contentFieldNum) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].heading = contentFieldNum;
+			}
+			
+			//Check validity - ignore defaults and hidden stations
+		    if (stationInFocus > 0 && stationParams[stationInFocus].showStation === false && contentField.validity.valid === false) {
+		        contentField.className = "error";
+		        document.getElementById("headingError").style = "";
+		    } else {
+		        contentField.className = "";
+		        document.getElementById("headingError").style.display = "none";
+		    }
+		}
+		
+		function mapShape() {
+			const contentField = document.getElementById("mapShape");
+			const contentFieldValue = contentField.value;
+		
+			//Check for updates
+			if (stationParams[stationInFocus].mapShape !== contentFieldValue) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].mapShape = contentFieldValue;
+			}
+			
+			//Check all values the same - don't bother if station is hidden or is the defaults
+			//No warning if station hidden or Defaults or all stations same
+			if (stationParams[stationInFocus].showStation === false || stationInFocus === 0 || stationParams.every(function (val, index) {
+				if (index === 0 || stationParams[index].showStation === false) {
+					//Defaults don't need to match other stations and ignore hidden stations
+					return true;
+				} else {
+					return val.mapShape === contentFieldValue;
+				}
+			}) === true) {
+				contentField.className = "";
+				document.getElementById("mapShapeRule").style.display = "none";
+			} else {
+				contentField.className = "warning";
+				document.getElementById("mapShapeRule").style = "";
+			}
+			
+			//Update labels for map size description
+			if (contentFieldValue === "Circle") {
+				document.getElementById("mapSizeType").innerHTML = "diameter";
+			} else {
+				document.getElementById("mapSizeType").innerHTML = "side length";
+			}
+		}
+		
+		function mapSize() {
+			const contentField = document.getElementById("mapSize");
+			const contentFieldValue = contentField.value;
+			const contentFieldNum = Number(contentFieldValue);
+					
+			//Check for updates
+			if (stationParams[stationInFocus].mapSize !== contentFieldNum) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].mapSize = contentFieldNum;
+			}
+			
+			//Check validity - don't bother if station is hidden or is empty default
+			if (stationParams[stationInFocus].showStation === false || (stationInFocus === 0 && contentFieldValue === "") || (contentField.validity.valid === true && contentFieldNum > 0)) {
+		        document.getElementById("mapSizePermitted").style.display = "none";
+				//Check whether all values are the same
+				//No warning if station hidden or value empty or (size >= 5 and (Defaults or all stations same))
+				if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || (contentFieldNum >= 5 && (stationInFocus === 0 || stationParams.every(function (val, index) {
+					if (index == 0 || stationParams[index].showStation === false) {
+					//Defaults don't need to match other stations and ignore hidden stations
+						return true;
+					} else {
+						return val.mapSize === contentFieldNum;
+					}
+				}) === true))) {
+			        contentField.className = "layoutLength";
+			        document.getElementById("mapSizeRule").style.display = "none";
+				} else {
+			        contentField.className = "layoutLength warning";
+			        document.getElementById("mapSizeRule").style = "";
+				}
+		    } else {
+		        contentField.className = "layoutLength error";
+		        document.getElementById("mapSizePermitted").style = "";
+		        document.getElementById("mapSizeRule").style = "";
+		    }
+		}
+		
+		function mapScale() {
+			const contentField = document.getElementById("mapScale");
+			const contentFieldValue = contentField.value;
+			const contentFieldNum = Number(contentFieldValue);
+		
+			//Check for updates
+			if (stationParams[stationInFocus].mapScale !== contentFieldNum) {
+				//Flag value as changed
+				paramsSaved = false;
+				//Write new value to memory
+				stationParams[stationInFocus].mapScale = contentFieldNum;
+			}
+			
+			//Check validity - don't bother if station is hidden or is empty default
+			if (stationParams[stationInFocus].showStation === false || (stationInFocus === 0 && contentFieldValue === "") || (contentField.validity.valid === true && contentFieldNum > 0)) {
+		        document.getElementById("mapScalePermitted").style.display = "none";
+				//Check whether all values are the same
+				//No warning if station hidden or value empty or ((scale = 4000 or 5000) and (Defaults or all stations same))
+				if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || ((contentFieldNum === 4000 || contentFieldNum === 5000) && (stationInFocus === 0 || stationParams.every(function (val, index) {
+					if (index === 0 || stationParams[index].showStation === false) {
+					//Defaults don't need to match other stations and ignore hidden stations
+						return true;
+					} else {
+						return val.mapScale === contentFieldNum;
+					}
+				}) === true))) {
+			        contentField.className = "";
+			        document.getElementById("mapScaleRule").style.display = "none";
+				} else {
+			        contentField.className = "warning";
+			        document.getElementById("mapScaleRule").style = "";
+				}
+		    } else {
+		        contentField.className = "error";
+		        document.getElementById("mapScalePermitted").style = "";
+		        document.getElementById("mapScaleRule").style = "";
+		    }
+		}
+		
+		return {
+			stationName: stationName,
+			showStation: showStation,
+			numKites: numKites,
+			zeroes: zeroes,
+			numTasks: numTasks,
+			heading: heading,
+			mapShape: mapShape,
+			mapSize: mapSize,
+			mapScale: mapScale
+		};
+	}();
 
 	function checkFields() {
 	    //Checks whether all fields for the current station contain valid input
@@ -157,113 +462,113 @@ tcTemplate = function() {
 	    //Mark this station as valid then change to invalid if any faults are found
 	    stationParams[stationInFocus].valid = true;
 
-	    //Name - not for setting defaults
-	    contentField = document.getElementById("stationName");
-	    if (stationInFocus > 0 && contentField.validity.valid == false) {
-	        stationParams[stationInFocus].valid = false;
-	        contentField.className = "error";
-	        document.getElementById("nameError").style = "";
-	    } else {
-	        contentField.className = "";
-	        document.getElementById("nameError").style.display = "none";
-	    }
-		//Update station list
-		if (stationInFocus > 0) {
-			document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].innerHTML = contentField.value;
-		}
+		// 	    //Name - not for setting defaults
+		// 	    contentField = document.getElementById("stationName");
+		// 	    if (stationInFocus > 0 && contentField.validity.valid == false) {
+		// 	        stationParams[stationInFocus].valid = false;
+		// 	        contentField.className = "error";
+		// 	        document.getElementById("nameError").style = "";
+		// 	    } else {
+		// 	        contentField.className = "";
+		// 	        document.getElementById("nameError").style.display = "none";
+		// 	    }
+		// //Update station list
+		// if (stationInFocus > 0) {
+		// 	document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].innerHTML = contentField.value;
+		// }
 
-        //Number of kites
-	    contentField = document.getElementById("numKites");
-	    if (Number(contentField.value) == 6 || (stationInFocus == 0 && contentField.value == "")) {
-            //Field valid
-	        contentField.className = "";
-	        document.getElementById("kitesPermitted").style.display = "none";
-	        document.getElementById("kitesRule").style.display = "none";
-	    } else if (contentField.validity.valid == true) {
-            //Displaying a number less than 6 - not compliant with IOF rules
-	        contentField.className = "warning";
-	        document.getElementById("kitesPermitted").style.display = "none";
-	        document.getElementById("kitesRule").style = "";
-	    } else {
-	        stationParams[stationInFocus].valid = false;
-	        contentField.className = "error";
-	        document.getElementById("kitesPermitted").style = "";
-	        document.getElementById("kitesRule").style = "";
-	    }
+	    //         //Number of kites
+	    // contentField = document.getElementById("numKites");
+	    // if (Number(contentField.value) == 6 || (stationInFocus == 0 && contentField.value == "")) {
+	    //             //Field valid
+	    //     contentField.className = "";
+	    //     document.getElementById("kitesPermitted").style.display = "none";
+	    //     document.getElementById("kitesRule").style.display = "none";
+	    // } else if (contentField.validity.valid == true) {
+	    //             //Displaying a number less than 6 - not compliant with IOF rules
+	    //     contentField.className = "warning";
+	    //     document.getElementById("kitesPermitted").style.display = "none";
+	    //     document.getElementById("kitesRule").style = "";
+	    // } else {
+	    //     stationParams[stationInFocus].valid = false;
+	    //     contentField.className = "error";
+	    //     document.getElementById("kitesPermitted").style = "";
+	    //     document.getElementById("kitesRule").style = "";
+	    // }
 		
-        //Number of tasks
-	    contentField = document.getElementById("numTasks");
-		if (contentField.validity.valid == true) {
-	        contentField.className = "";
-	        document.getElementById("numTasksError").style.display = "none";
-	    } else {
-	        stationParams[stationInFocus].valid = false;
-	        contentField.className = "error";
-	        document.getElementById("numTasksError").style = "";
-	    }
+		//         //Number of tasks
+		// 	    contentField = document.getElementById("numTasks");
+		// if (contentField.validity.valid == true) {
+		// 	        contentField.className = "";
+		// 	        document.getElementById("numTasksError").style.display = "none";
+		// 	    } else {
+		// 	        stationParams[stationInFocus].valid = false;
+		// 	        contentField.className = "error";
+		// 	        document.getElementById("numTasksError").style = "";
+		// 	    }
 		
-	    //Heading - not for setting defaults
-	    contentField = document.getElementById("heading");
-	    if (stationInFocus > 0 && contentField.validity.valid == false) {
-	        stationParams[stationInFocus].valid = false;
-	        contentField.className = "error";
-	        document.getElementById("headingError").style = "";
-	    } else {
-	        contentField.className = "";
-	        document.getElementById("headingError").style.display = "none";
-	    }
+	    // //Heading - not for setting defaults
+	    // contentField = document.getElementById("heading");
+	    // if (stationInFocus > 0 && contentField.validity.valid == false) {
+	    //     stationParams[stationInFocus].valid = false;
+	    //     contentField.className = "error";
+	    //     document.getElementById("headingError").style = "";
+	    // } else {
+	    //     contentField.className = "";
+	    //     document.getElementById("headingError").style.display = "none";
+	    // }
 		
-		//Map shape
-		contentField = document.getElementById("mapShape");
-		//Update stored array to test values
-		stationParams[stationInFocus].mapShape = contentField.value;
-		if (stationParams.every(function (val, index) {
-			if (index == 0) {
-				//Defaults don't need to match other stations
-				return true;
-			} else {
-				return val.mapShape == stationParams[1].mapShape;
-			}
-		}) == true) {
-			contentField.className = "";
-			document.getElementById("mapShapeRule").style.display = "none";
-		} else {
-			contentField.className = "warning";
-			document.getElementById("mapShapeRule").style = "";
-		}
-		//Also update labels for map size description
-		if (contentField.value == "Circle") {
-			document.getElementById("mapSizeType").innerHTML = "diameter";
-		} else {
-			document.getElementById("mapSizeType").innerHTML = "side length";
-		}
+		// //Map shape
+		// contentField = document.getElementById("mapShape");
+		// //Update stored array to test values
+		// stationParams[stationInFocus].mapShape = contentField.value;
+		// if (stationParams.every(function (val, index) {
+		// 	if (index == 0) {
+		// 		//Defaults don't need to match other stations
+		// 		return true;
+		// 	} else {
+		// 		return val.mapShape == stationParams[1].mapShape;
+		// 	}
+		// }) == true) {
+		// 	contentField.className = "";
+		// 	document.getElementById("mapShapeRule").style.display = "none";
+		// } else {
+		// 	contentField.className = "warning";
+		// 	document.getElementById("mapShapeRule").style = "";
+		// }
+		// //Also update labels for map size description
+		// if (contentField.value == "Circle") {
+		// 	document.getElementById("mapSizeType").innerHTML = "diameter";
+		// } else {
+		// 	document.getElementById("mapSizeType").innerHTML = "side length";
+		// }
 		
-		//Map size
-	    contentField = document.getElementById("mapSize");
-		if (contentField.validity.valid == true && Number(contentField.value) > 0) {
-	        document.getElementById("mapSizePermitted").style.display = "none";
-			//Update stored array to test values
-			stationParams[stationInFocus].mapSize = contentField.value;
-			if (Number(contentField.value) >= 5 && stationParams.every(function (val, index) {
-				if (index == 0) {
-					//Defaults don't need to match other stations
-					return true;
-				} else {
-					return val.mapSize == stationParams[1].mapSize;
-				}
-			}) == true) {
-		        contentField.className = "layoutLength";
-		        document.getElementById("mapSizeRule").style.display = "none";
-			} else {
-		        contentField.className = "layoutLength warning";
-		        document.getElementById("mapSizeRule").style = "";
-			}
-	    } else {
-	        stationParams[stationInFocus].valid = false;
-	        contentField.className = "layoutLength error";
-	        document.getElementById("mapSizePermitted").style = "";
-	        document.getElementById("mapSizeRule").style = "";
-	    }
+		// //Map size
+		// 	    contentField = document.getElementById("mapSize");
+		// if (contentField.validity.valid == true && Number(contentField.value) > 0) {
+		// 	        document.getElementById("mapSizePermitted").style.display = "none";
+		// 	//Update stored array to test values
+		// 	stationParams[stationInFocus].mapSize = contentField.value;
+		// 	if (Number(contentField.value) >= 5 && stationParams.every(function (val, index) {
+		// 		if (index == 0) {
+		// 			//Defaults don't need to match other stations
+		// 			return true;
+		// 		} else {
+		// 			return val.mapSize == stationParams[1].mapSize;
+		// 		}
+		// 	}) == true) {
+		//         contentField.className = "layoutLength";
+		//         document.getElementById("mapSizeRule").style.display = "none";
+		// 	} else {
+		//         contentField.className = "layoutLength warning";
+		//         document.getElementById("mapSizeRule").style = "";
+		// 	}
+		// 	    } else {
+		// 	        stationParams[stationInFocus].valid = false;
+		// 	        contentField.className = "layoutLength error";
+		// 	        document.getElementById("mapSizePermitted").style = "";
+		// 	        document.getElementById("mapSizeRule").style = "";
+		// 	    }
 		
 		//Map scale
 	    contentField = document.getElementById("mapScale");
@@ -1608,6 +1913,7 @@ tcTemplate = function() {
 	//Make required functions globally visible
 	return {
 	    changeStationFocus: changeStationFocus,
+		checkSave: checkSave,
         checkFields: checkFields,
 		addStation: addStation,
 		loadppen: loadppen,
