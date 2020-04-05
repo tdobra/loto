@@ -49,8 +49,8 @@
                 <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
             </ul>
 			<p>
-				<label><input id="defaultSelect" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus(true)" />Set defaults for all stations</label><br />
-				<label><input type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus(true)" />Customise individual station:</label><br /><br />
+				<label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus(true)" />Set defaults for all stations</label><br />
+				<label><input id="stationRadio" type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus(true)" />Customise individual station:</label><br /><br />
 				<select id="stationSelect" size="5" onchange="tcTemplate.changeStationFocus(true)">
 					<option selected="selected"></option>
 				</select><br />
@@ -72,38 +72,38 @@
 				</tr>
 				<tr>
 					<td>Print station?</td>
-					<td><input id="showStation" type="checkbox" /></td>
+					<td><input id="showStation" type="checkbox" onchange="tcTemplate.checkSave.showStation()" /></td>
 					<td><input id="resetShowStation" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllShowStation" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
 				</tr>
 				<tr>
 					<td>Number of kites</td>
-					<td><input id="numKites" type="number" min="1" max="6" step="1" required="required" oninput="tcTemplate.checkFields()" /></td>
+					<td><input id="numKites" type="number" min="1" max="6" step="1" required="required" oninput="tcTemplate.checkSave.numKites()" /></td>
 					<td><input id="resetKites" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllKites" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
                     <td id="kitesPermitted">Number of kites must be an integer between 1 and 6</td>
                     <td id="kitesRule">IOF rule: number of kites = 6</td>
 				</tr>
 				<tr>
 					<td>Zeroes?</td>
-					<td><input id="zeroes" type="checkbox" /></td>
+					<td><input id="zeroes" type="checkbox" onchange="tcTemplate.checkSave.zeroes()" /></td>
 					<td><input id="resetZeroes" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllZeroes" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
 					<td id="zeroesWarning" colspan="2">Not the same for all stations</td>
 				</tr>
 				<tr>
 					<td>Number of tasks</td>
-					<td><input id="numTasks" type="number" min="1" step="1" required="required" oninput="tcTemplate.checkFields()" /></td>
+					<td><input id="numTasks" type="number" min="1" step="1" required="required" oninput="tcTemplate.checkSave.numTasks()" /></td>
 					<td><input id="resetNumTasks" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllNumTasks" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
 					<td id="numTasksError">Must be a strictly positive integer</td>
 					<td id="numTasksRule">IOF rule: must be the same for all stations</td>
 				</tr>
 				<tr>
 					<td>Heading</td>
-					<td><input id="heading" type="number" step="any" required="required" oninput="tcTemplate.checkFields()" />&deg</td><!--Plan: make this automatic-->
+					<td><input id="heading" type="number" step="any" required="required" oninput="tcTemplate.checkSave.heading()" />&deg</td><!--Plan: make this automatic-->
 					<td id="headingError" colspan="3">Must be a number</td>
 				</tr>
 				<tr>
 					<td>Map shape</td>
 					<td>
-						<select id="mapShape" required="required" onchange="tcTemplate.checkFields()" ><!--TODO:Update diameter/side length label-->
+						<select id="mapShape" required="required" onchange="tcTemplate.checkSave.mapShape()" ><!--TODO:Update diameter/side length label-->
 							<option>Circle</option>
 							<option>Square</option>
 						</select>
@@ -113,21 +113,21 @@
 				</tr>
 				<tr>
 					<td>Map <span id="mapSizeType">diameter</span></td>
-					<td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" required="required" oninput="tcTemplate.checkFields()" /> cm</td>
+					<td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" required="required" oninput="tcTemplate.checkSave.mapSize()" /> cm</td>
 					<td><input id="resetMapSize" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
                     <td id="mapSizePermitted">0 &lt; size &le; 12</td>
                     <td id="mapSizeRule">IOF rules: 5 &le; size &le; 12; must be the same for all stations</td>
 				</tr>
 				<tr>
 					<td>Map scale</td>
-					<td>1:<input id="mapScale" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkFields()" /></td>
+					<td>1:<input id="mapScale" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkSave.mapScale()" /></td>
 					<td><input id="resetMapScale" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapScale" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
                     <td id="mapScalePermitted">Must be a strictly positive number</td>
                     <td id="mapScaleRule">IOF rules: normally 1:4000 or 1:5000; must be the same for all stations</td>
 				</tr>
 				<tr>
 					<td>Contour interval</td>
-					<td><input id="contourInterval" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkFields()" /> m</td>
+					<td><input id="contourInterval" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkSave.contourInterval()" /> m</td>
 					<td><input id="resetContourInterval" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllContourInterval" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
                     <td id="contourIntervalPermitted">Must be a strictly positive number</td>
                     <td id="contourIntervalRule">IOF rule: must be the same for all stations</td>
