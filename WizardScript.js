@@ -62,6 +62,42 @@ const tcTemplate = (() => {
     letterFontSize: 1.8,
     phoneticFontSize: 0.6
   };
+  
+  const showHideMoveUpDown = (optionSelect) => {
+    //Shows or hides the move up and move down buttons according to the selected option in list
+    var upBtn, downBtn;
+    
+    if (optionSelect === undefined) {
+      throw "Need to specify corresponding select element";
+    }
+    
+    //Identify up and down buttons
+    switch (optionSelect.id) {
+    case "stationSelect":
+      upBtn = document.getElementById("moveUpStation");
+      downBtn = document.getElementById("moveDownStation");
+      break;
+    default:
+      throw "Select element not recognised";
+    }
+    
+    switch (optionSelect.selectedIndex) {
+    case 0:
+      //First station, so can't move it up
+      upBtn.disabled = true;
+      downBtn.disabled = false;
+      break;
+    case (optionSelect.length - 1):
+      //Last station, so can't move it down
+      upBtn.disabled = false;
+      downBtn.disabled = true;
+      break;
+    default:
+      //Can move in both directions
+      upBtn.disabled = false;
+      downBtn.disabled = false;
+    }
+  };
 	
   const changeStationFocus = (storeValues = false) => {
     //Dynamic station editing. storeValues is a boolean stating whether to commit values in form fields to variables in memory.
@@ -84,7 +120,7 @@ const tcTemplate = (() => {
       }
 			
       //Are we saving any errors? All values have already been saved by onChange events.
-      if (document.getElementsByClassName("error")) {
+      if (document.getElementById("coreProperties").getElementsByClassName("error").length) {
         stationParams[stationInFocus].valid = false;
         //Highlight error option in station selector
         if (stationInFocus > 0) {
@@ -98,12 +134,10 @@ const tcTemplate = (() => {
       }
     } else {
       //Loading brand new data, so update station list
-      //Remove all existing options
-      for (contentField of document.getElementById("stationSelect").getElementsByTagName("option")) {
-        contentField.remove();
-      }
-      //Add new options according to values in memory
       contentField = document.getElementById("stationSelect");
+      //Remove all existing options
+      contentField.innerHTML = "";
+      //Add new options according to values in memory
       let stationData, newNode;
       for (stationData of stationParams) {
         //Station name empty => list of defaults, so ignore
@@ -145,19 +179,7 @@ const tcTemplate = (() => {
       document.getElementById("addStation").disabled = false;
       if (contentField.length > 1) {
         document.getElementById("deleteStation").disabled = false;
-        if (contentField.selectedIndex == 0) {
-          //First station, so can't move it up
-          document.getElementById("moveUpStation").disabled = true;
-          document.getElementById("moveDownStation").disabled = false;
-        } else if (contentField.selectedIndex == contentField.length - 1) {
-          //Last station, so can't move it down
-          document.getElementById("moveUpStation").disabled = false;
-          document.getElementById("moveDownStation").disabled = true;
-        } else {
-          //Can move in both directions
-          document.getElementById("moveUpStation").disabled = false;
-          document.getElementById("moveDownStation").disabled = false;
-        }
+        showHideMoveUpDown(contentField);
       } else {
         document.getElementById("deleteStation").disabled = true;
         document.getElementById("moveUpStation").disabled = true;
@@ -219,8 +241,6 @@ const tcTemplate = (() => {
   //Check and save fields
   const checkSave = (() => {
     const stationName = () => {
-      var stationError = false;
-			
       const contentField = document.getElementById("stationName");
       const contentFieldValue = contentField.value;
       const contentFieldClass = contentField.classList;
@@ -232,17 +252,20 @@ const tcTemplate = (() => {
         //Write new value to memory
         stationParams[stationInFocus].stationName = contentFieldValue;
       }
+      
+      //Remove error flag then reapply below as appropriate
+      contentFieldClass.remove("error");
 		
       //Check uniqueness - don't bother if station is the defaults
-      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every(function (val, index) {
-        if (index === 0 || index === stationInFocus || stationParams[index].showStation === false) {
-          //Defaults and not in use don't check. Don't check current station against itself!
+      if (stationInFocus > 0 && stationParams.every((val, index) => {
+        if (index === 0 || index === stationInFocus) {
+          //Defaults: don't check. Don't check current station against itself!
           return true;
         } else {
           return val.stationName !== contentFieldValue;
         }
       }) === false) {
-        stationError = true;
+        contentFieldClass.add("error");
         document.getElementById("nameUniqueness").style = "";
       } else {
         document.getElementById("nameUniqueness").style.display = "none";
@@ -250,16 +273,10 @@ const tcTemplate = (() => {
 	
       //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
       if (stationInFocus > 0 && contentField.validity.valid === false) {
-        stationError = true;
+        contentFieldClass.add("error");
         document.getElementById("nameSyntax").style = "";
       } else {
         document.getElementById("nameSyntax").style.display = "none";
-      }
-			
-      if (stationError) {
-        contentFieldClass.add("error");
-      } else {
-        contentFieldClass.remove("error");
       }
 		
       //Update station list
@@ -338,7 +355,7 @@ const tcTemplate = (() => {
       }
 			
       //Check all values the same - don't bother if station is hidden or is defaults
-      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every(function (val, index) {
+      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every((val, index) => {
         if (index === 0 || stationParams[index].showStation === false) {
           //Defaults and not in use don't need to match other stations
           return true;
@@ -376,7 +393,7 @@ const tcTemplate = (() => {
       }
 			
       //Check all values the same - don't bother if station is hidden or is the defaults
-      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every(function (val, index) {
+      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every((val, index) => {
         if (index === 0 || stationParams[index].showStation === false) {
           //Defaults and not in use don't check
           return true;
@@ -424,7 +441,7 @@ const tcTemplate = (() => {
       }
 			
       //Check validity - ignore defaults and hidden stations
-      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === false && contentField.validity.valid === false) {
+      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && contentField.validity.valid === false) {
         contentFieldClass.add("error");
         document.getElementById("headingError").style = "";
       } else {
@@ -448,7 +465,7 @@ const tcTemplate = (() => {
 			
       //Check all values the same - don't bother if station is hidden or is the defaults
       //No warning if station hidden or Defaults or all stations same
-      if (stationParams[stationInFocus].showStation === false || stationInFocus === 0 || stationParams.every(function (val, index) {
+      if (stationParams[stationInFocus].showStation === false || stationInFocus === 0 || stationParams.every((val, index) => {
         if (index === 0 || stationParams[index].showStation === false) {
           //Defaults don't need to match other stations and ignore hidden stations
           return true;
@@ -498,7 +515,7 @@ const tcTemplate = (() => {
         contentFieldClass.remove("error");
         //Check whether all values are the same
         //No warning if station hidden or value empty or (size >= 5 and (Defaults or all stations same))
-        if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || (contentFieldNum >= 5 && (stationInFocus === 0 || stationParams.every(function (val, index) {
+        if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || (contentFieldNum >= 5 && (stationInFocus === 0 || stationParams.every((val, index) => {
           if (index == 0 || stationParams[index].showStation === false) {
             //Defaults don't need to match other stations and ignore hidden stations
             return true;
@@ -547,7 +564,7 @@ const tcTemplate = (() => {
         contentFieldClass.remove("error");
         //Check whether all values are the same
         //No warning if station hidden or value empty or ((scale = 4000 or 5000) and (Defaults or all stations same))
-        if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || ((contentFieldNum === 4000 || contentFieldNum === 5000) && (stationInFocus === 0 || stationParams.every(function (val, index) {
+        if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || ((contentFieldNum === 4000 || contentFieldNum === 5000) && (stationInFocus === 0 || stationParams.every((val, index) => {
           if (index === 0 || stationParams[index].showStation === false) {
             //Defaults don't need to match other stations and ignore hidden stations
             return true;
@@ -596,7 +613,7 @@ const tcTemplate = (() => {
         contentFieldClass.remove("error");
         //Check whether all values are the same
         //No warning if station hidden or [value empty <= defaults] or Defaults or all stations same
-        if (stationParams[stationInFocus].showStation === false || stationInFocus === 0 || stationParams.every(function (val, index) {
+        if (stationParams[stationInFocus].showStation === false || stationInFocus === 0 || stationParams.every((val, index) => {
           if (index === 0 || stationParams[index].showStation === false) {
             //Defaults don't need to match other stations and ignore hidden stations
             return true;
@@ -633,9 +650,67 @@ const tcTemplate = (() => {
   })();
 
   //Manipulate station order
-  function addStation() {
-		
-  }
+  const addStation = () => {
+    //New station initially takes default values
+    //Make a copy of the values, otherwise will reference same memory
+    //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
+    const newStation = { ...stationParams[0] };
+    
+    //Name the new station
+    newStation.stationName = stationParams.length.toString();
+    
+    //Add to the end
+		stationParams.push(newStation);
+    const stationSelector = document.getElementById("stationSelect");
+    const newNode = document.createElement("option");
+    newNode.innerHTML = newStation.stationName;
+    stationSelector.appendChild(newNode);
+    
+    //Try to change to new station. The add station button is disabled when on defaults.
+    newNode.selected = true;
+    changeStationFocus(true);
+  };
+  
+  const deleteStation = () => {
+    //Deletes the current station
+    stationParams.splice(stationInFocus, 1);
+    stationInFocus = 1;
+    //Don't save deleted values then redo station list
+    changeStationFocus(false);
+  };
+  
+  const moveStation = (offset = 0) => {
+    //Moves the current station
+    
+    //Check target is in bounds
+    const newPos = stationInFocus + offset;
+    if (newPos < 1 || newPos >= stationParams.length) {
+      throw "Moving station to position beyond bounds of array";
+    }
+    if (!Number.isInteger(newPos)) {
+      throw "Station position offset is not an integer";
+    }
+    
+    //Rearrange data array
+    stationParams.splice(newPos, 0, stationParams.splice(stationInFocus, 1)[0]);
+    
+    //Rearrange station selector
+    const stationSelector = document.getElementById("stationSelect");
+    const currentOption = stationSelector.getElementsByTagName("option")[stationInFocus - 1];
+    currentOption.remove();
+    if (newPos === stationParams.length - 1) {
+      stationSelector.insertBefore(currentOption, null);
+    } else {
+      //Make sure to get a new element list, as it will have changed
+      stationSelector.insertBefore(currentOption, stationSelector.getElementsByTagName("option")[newPos - 1]);
+    }
+    
+    //Update active station number
+    stationInFocus = newPos;
+    
+    //Enable/disable move up/down buttons
+    showHideMoveUpDown(stationSelector);
+  };
 	
   function loadppen(fileInput) {
     //Reads a Purple Pen file
@@ -1913,6 +1988,8 @@ const tcTemplate = (() => {
     changeStationFocus: changeStationFocus,
     checkSave: checkSave,
     addStation: addStation,
+    deleteStation: deleteStation,
+    moveStation: moveStation,
     loadppen: loadppen,
     loadTeX: loadTeX,
     saveParameters: saveParameters,
