@@ -1,9 +1,10 @@
 # top-most EditorConfig file
 root = true
 
-# Newline ending every file
+# Newline ending and strip EOL whitespace on every file
 [*]
 insert_final_newline = true
+trim_trailing_whitespace = true
 charset = utf-8
 
 # Indenting
