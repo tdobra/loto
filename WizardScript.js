@@ -3,55 +3,691 @@
 //Prevent sloppy programming and throw more errors
 "use strict";
 
-//Check browser supports required APIs
-if (window.FileReader && window.DOMParser && window.Blob && window.URL && window.fetch) {
-  document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
-} else {
-  document.getElementById("mainView").hidden = true;
-}
-
-//MS Edge/IE doesn't always work - <details> tag not implemented
-if ("open" in document.createElement("details")) {
-  document.getElementById("MSEdgeWarning").hidden = true;
-}
-
-document.getElementById("stationProperties").hidden = true;
-document.getElementById("savePDF").hidden = true;
-document.getElementById("viewLog").hidden = true;
+//Script to call on page load is below the namespace definition
 
 //Keep all functions private and put those with events in HTML tags in a namespace
 const tcTemplate = (() => {
   //Keep track of whether an input file has been changed in a table to disable autosave
   var paramsSaved = true;
-	
-  //Arrays of station parameters
-  var stationInFocus = 0;	//Which entry in array is currently active; entry 0 is for set all courses
-  var stationParams = [{
-    valid: true, //Defaults should be marked as valid unless it would cause LaTeX to crash when reading but not using values: permitted values and empty strings are valid
-    stationName: "",
-    showStation: true,
-    numKites: 6,
-    zeroes: false,
-    numTasks: NaN,
-    heading: NaN,
-    mapShape: "Circle",
-    mapSize: NaN,
-    mapScale: NaN,
-    contourInterval: NaN
-  },{
-    valid: false,   //Do not mark as valid if some fields are empty unless showStation is false
-    stationName: "1",
-    showStation: true,
-    numKites: 6,
-    zeroes: false,
-    numTasks: NaN,
-    heading: NaN,
-    mapShape: "Circle",
-    mapSize: NaN,
-    mapScale: NaN,
-    contourInterval: NaN
-  }];
+
+  //Object structure: Reorderable list->Station list-array of>Station->(Field->Specialised field->)Named field
+
+  //Classes are not hoisted, so declare them first
+  class IterableList {
+    constructor(obj) {
+      this.selector = obj.selector;
+      this.addBtn = obj.addBtn;
+      this.deleteBtn = obj.deleteBtn;
+      this.upBtn = obj.upBtn;
+      this.downBtn = obj.downBtn;
+      if (typeof(obj.itemInFocus) === undefined) { obj.itemInFocus = 0; };
+      this.itemInFocus = obj.itemInFocus;
+      this.items = [];
+      this.refresh = obj.refresh;
+      this.add = obj.add;
+    }
+
+    deleteItem(index = this.itemInFocus) {
+      //Deletes an item
+      //Check first
+      if (confirm("Are you sure you want to delete? This cannot be undone.")) {
+        this.items.splice(index, 1);
+        this.iteminFocus = 0;
+        //Don't save deleted values then redo station list
+        this.refresh(false);
+      }
+    }
+
+    moveItem(offset = 0) {
+      //Moves the active item
+
+      //Check target is in bounds
+      const newPos = this.itemInFocus + offset;
+      const arrayLength = this.items.length
+      if (newPos < 0 || newPos >= arrayLength) {
+        throw "Moving station to position beyond bounds of array";
+      }
+      if (!Number.isInteger(newPos)) {
+        throw "Station position offset is not an integer";
+      }
+
+      //Rearrange data array
+      this.items.splice(newPos, 0, this.items.splice(this.itemInFocus, 1)[0]);
+
+      //Rearrange selector
+      const currentOption = this.selector.getElementsByTagName("option")[this.itemInFocus];
+      currentOption.remove();
+      if (newPos === arrayLength - 1) {
+        this.selector.insertBefore(currentOption, null);
+      } else {
+        //Make sure to get a new element list, as it will have changed
+        this.selector.insertBefore(currentOption, this.selector.getElementsByTagName("option")[newPos]);
+      }
+
+      //Update active station number
+      this.itemInFocus = newPos;
+
+      //Enable/disable move up/down buttons
+      this.showHideMoveBtns();
+    }
+
+    showHideMoveBtns() {
+      //Show the delete button only if more than one option
+      if (this.selector.length > 1) {
+        this.deleteBtn.disabled = false;
+      } else {
+        this.deleteBtn.disabled = true;
+      }
+
+      //Shows or hides the move up and move down buttons
+      switch (this.selector.selectedIndex) {
+      case 0:
+        //First station, so can't move it up
+        this.upBtn.disabled = true;
+        this.downBtn.disabled = false;
+        break;
+      case (this.selector.length - 1):
+        //Last station, so can't move it down
+        this.upBtn.disabled = false;
+        this.downBtn.disabled = true;
+        break;
+      default:
+        //Can move in both directions
+        this.upBtn.disabled = false;
+        this.downBtn.disabled = false;
+      }
+    }
+  }
+
+  class Station {
+    //May need to create a more general class to inherit from
+    constructor(parentObj, copyStation) {
+      this.stationList = parentObj;
+      this.valid = false;
+
+      //Fields - populate with values given in copyStation, if present
+      this.fieldNames = [
+        "stationName",
+        "showStation",
+        "numKites",
+        "zeroes",
+        "numTasks",
+        "heading",
+        "mapShape",
+        "mapSize",
+        "mapScale",
+        "contourInterval"
+      ];
+      if (copyStation === undefined) {
+        //Create an object to pass undefined parameters => triggers default values specified in class
+        copyStation = {};
+        let field;
+        for (field of this.fieldNames) {
+          copyStation[field] = { value: undefined };
+        }
+      }
+      //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
+      this.stationName = new StationName(this, copyStation.stationName.value);
+      this.showStation = new ShowStation(this, copyStation.showStation.value);
+      this.numKites = new NumKites(this, copyStation.numKites.value);
+      this.zeroes = new Zeroes(this, copyStation.zeroes.value);
+      this.numTasks = new NumTasks(this, copyStation.numTasks.value);
+      this.heading = new Heading(this, copyStation.heading.value);
+      this.mapShape = new MapShape(this, copyStation.mapShape.value);
+      this.mapSize = new MapSize(this, copyStation.mapSize.value);
+      this.mapScale = new MapScale(this, copyStation.mapScale.value);
+      this.contourInterval = new ContourInterval(this, copyStation.contourInterval.value);
+    }
+
+    isNonDefaultHidden() {
+      //Returns true if the station is hidden and the default station is not in focus
+      return !(this.showStation.value || this.stationList.defaultInFocus);
+    }
+
+    refreshAllInput() {
+      let field;
+      for (field of this.fieldNames) {
+        this[field].refreshInput();
+      }
+    }
+  }
+
+  //Fields
+  class Field {
+    //Generic field: string or select
+    constructor(parentObj, value, fieldName, inputElement) {
+      this.station = parentObj;
+      this.stationList = this.station.stationList; //Shortcut
+      this.value = value;
+      this.fieldName = fieldName;
+      this.inputElement = inputElement;
+    }
+
+    get inputValue() {
+      return this.inputElement.value;
+    }
+
+    set inputValue(val) {
+      this.inputElement.value = val;
+    }
+
+    isDuplicate(ignoreHidden = false) {
+      //Determines whether this value is duplicated at another station. Ignores hidden stations on request.
+
+      //Return false if the tested index is ignored
+      if (ignoreHidden && this.station.showStation.value === false) { return false; }
+
+      if (ignoreHidden) {
+        return this.stationList.items.some(station => (station[this.fieldName].value === this.value && station !== this.station && station.showStation.value === true));
+      } else {
+        return this.stationList.items.some(station => (station[this.fieldName].value === this.value && station !== this.station));
+      }
+    }
+
+    matchesAll(ignoreHidden = false) {
+      //Returns true if this field matches those on all other stations, excluding number fields set to NaN. Ignores NaN if number. Ignores hidden stations on request.
+
+      //Return true if the tested index is ignored
+      if (ignoreHidden && this.station.showStation.value === false) { return true; }
+
+      if (ignoreHidden) {
+        return this.stationList.items.every(station => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value) || station.showStation.value === false));
+      } else {
+        return this.stationList.items.every(station => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value)));
+      }
+    }
+
+    checkSave() {
+      this.saveInput();
+      this.check();
+    }
+
+    refreshInput() {
+      //Updates input element value - no user input
+      this.inputValue = this.value;
+      this.check();
+    }
+
+    resetValue() {
+      //Resets to current default value
+      this.inputValue = this.stationList.default[this.fieldName].value;
+      this.checkSave();
+    }
+
+    saveInput() {
+      const inputFieldValue = this.inputValue;
+      if (this.value !== inputFieldValue) {
+        //Flag value as changed
+        paramsSaved = false;
+        //Write new value to memory
+        this.value = inputFieldValue;
+      }
+    }
+  }
+
+  class BooleanField extends Field {
+    //Same constructor and saveInput as Field
+
+    get inputValue() {
+      return this.inputElement.checked;
+    }
+
+    set inputValue(ticked) {
+      this.inputElement.checked = ticked;
+    }
+  }
+
+  class NumberField extends Field {
+    //Same constructor as Field
+
+    get inputValue() {
+      const textValue = this.inputElement.value;
+      if (textValue === "") {
+        return NaN;
+      } else {
+        return Number(textValue);
+      }
+    }
+
+    set inputValue(val) {
+      //Val needs to be a number
+      if (Number.isNaN(val)) {
+        this.inputElement.value = "";
+      } else {
+        this.inputElement.value = val.toString();
+      }
+    }
+
+    saveInput() {
+      const inputFieldNum = this.inputValue;
+      //New & saved values not equal and at least one of them not NaN (NaN === NaN is false)
+      if (this.value !== inputFieldNum && (Number.isNaN(this.value) === false || Number.isNaN(inputFieldNum) === false)) {
+        //Flag value as changed
+        paramsSaved = false;
+        //Write new value to memory
+        this.value = inputFieldNum;
+      }
+    }
+  }
+
+  class StationName extends Field {
+    constructor(parentObj, value = "") {
+      super(parentObj, value, "stationName", document.getElementById("stationName"));
+    }
+
+    check() {
+      const contentFieldClass = this.inputElement.classList;
+      const syntaxMsgStyle = document.getElementById("nameSyntax").style;
+      const uniquenessMsgStyle = document.getElementById("nameUniqueness").style;
+
+      //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
+      if (this.stationList.defaultInFocus === false && this.inputElement.validity.valid === false) {
+        //Invalid syntax
+        contentFieldClass.add("error");
+        syntaxMsgStyle.display = "";
+        uniquenessMsgStyle.display = "none";
+      } else {
+        syntaxMsgStyle.display = "none";
+        //Check uniqueness - don't bother if station is the defaults
+        if (this.stationList.defaultInFocus === false && this.isDuplicate(false)) {
+          //Duplicate station name
+          contentFieldClass.add("error");
+          uniquenessMsgStyle.display = "";
+        } else {
+          contentFieldClass.remove("error");
+          uniquenessMsgStyle.display = "none";
+        }
+      }
+
+      //Update station list
+      if (this.stationList.defaultInFocus === false) {
+        this.stationList.selector.getElementsByTagName("option")[this.stationList.itemInFocus].innerHTML = this.value;
+      }
+    }
+  }
+
+  class ShowStation extends BooleanField {
+    constructor(parentObj, value = true) {
+      super(parentObj, value, "showStation", document.getElementById("showStation"));
+    }
+
+    check () {
+      //Do nothing: always ok
+    }
+  }
+
+  class NumKites extends NumberField {
+    constructor(parentObj, value = 6) {
+      super(parentObj, value, "numKites", document.getElementById("numKites"));
+    }
+
+    check() {
+      const contentField = this.inputElement;
+      const contentFieldClass = contentField.classList;
+      const errorMsgStyle = document.getElementById("kitesPermitted").style;
+      const ruleMsgStyle = document.getElementById("kitesRule").style;
+
+      //Check validity
+      if (this.value === 6 || this.station.isNonDefaultHidden()) {
+        //Field valid, or non-defaults station not displayed
+        contentFieldClass.remove("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "none";
+        ruleMsgStyle.display = "none";
+      } else if (contentField.validity.valid) {
+        //Displaying a number less than 6 - not compliant with IOF rules
+        contentFieldClass.remove("error");
+        contentFieldClass.add("warning");
+        contentField.className = "warning";
+        errorMsgStyle.display = "none";
+        ruleMsgStyle.display = "";
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
+      }
+    }
+  }
+
+  class Zeroes extends BooleanField {
+    constructor(parentObj, value = false) {
+      super(parentObj, value, "zeroes", document.getElementById("zeroes"));
+    }
+
+    check() {
+      const ruleMsgStyle = document.getElementById("zeroesWarning").style;
+      const contentFieldClass = this.inputElement.classList;
+
+      //Check all values the same - don't bother if station is hidden or is defaults
+      if (this.matchesAll(true) || this.stationList.defaultInFocus){
+        contentFieldClass.remove("warning");
+        ruleMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("warning");
+        ruleMsgStyle.display = "";
+      }
+    }
+  }
+
+  class NumTasks extends NumberField {
+    constructor(parentObj, value = NaN) {
+      super(parentObj, value, "numTasks", document.getElementById("numTasks"));
+    }
+
+    check() {
+      const contentField = this.inputElement;
+      const contentFieldClass = contentField.classList;
+      const errorMsgStyle = document.getElementById("numTasksError").style;
+      const ruleMsgStyle = document.getElementById("numTasksRule").style;
+
+      //Check all values the same - don't bother if station is hidden or is the defaults
+      if (this.matchesAll(true) || this.stationList.defaultInFocus) {
+        contentFieldClass.remove("warning");
+        ruleMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("warning");
+        ruleMsgStyle.display = "";
+      }
+
+      //Check validity. Ignore non-default hidden stations
+      if (contentField.validity.valid || this.station.isNonDefaultHidden()) {
+        contentFieldClass.remove("error");
+        errorMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+      }
+    }
+  }
+
+  class Heading extends NumberField {
+    constructor(parentObj, value = NaN) {
+      super(parentObj, value, "heading", document.getElementById("heading"));
+    }
+
+    check() {
+      const contentField = this.inputElement;
+      const contentFieldClass = contentField.classList;
+      const errorMsgStyle = document.getElementById("headingError").style;
+
+      //Check validity - ignore defaults and hidden stations
+      if (contentField.validity.valid === false && !(this.station.isNonDefaultHidden())) {
+        contentFieldClass.add("error");
+        errorMsgStyle.dispaly = "";
+      } else {
+        contentFieldClass.remove("error");
+        errorMsgStyle.display = "none";
+      }
+    }
+  }
+
+  class MapShape extends Field {
+    constructor(parentObj, value = "Circle") {
+      super(parentObj, value, "mapShape", document.getElementById("mapShape"));
+    }
+
+    check() {
+      const contentFieldClass = this.inputElement.classList;
+      const ruleMsgStyle = document.getElementById("mapShapeRule").style;
+      const sizeTypeElement = document.getElementById("mapSizeType");
+
+      //Check all values the same - don't bother if station is hidden or is the defaults
+      //No warning if station hidden or Defaults or all stations same
+      if (this.matchesAll(true) || this.stationList.defaultInFocus === true) {
+        contentFieldClass.remove("warning");
+        ruleMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("warning");
+        ruleMsgStyle.display = "";
+      }
+
+      //Update labels for map size description
+      if (this.value === "Circle") {
+        sizeTypeElement.innerHTML = "diameter";
+      } else {
+        sizeTypeElement.innerHTML = "side length";
+      }
+    }
+  }
+
+  class MapSize extends NumberField {
+    constructor(parentObj, value = NaN) {
+      super(parentObj, value, "mapSize", document.getElementById("mapSize"));
+    }
+
+    check() {
+      const contentField = this.inputElement;
+      const contentFieldClass = contentField.classList;
+      const errorMsgStyle = document.getElementById("mapSizePermitted").style;
+      const ruleMsgStyle = document.getElementById("mapSizeRule").style;
+
+      //Check validity - don't bother for non-default hidden station
+      if ((contentField.validity.valid === true && this.value > 0) || this.station.isNonDefaultHidden()) {
+        errorMsgStyle.display = "none";
+        contentFieldClass.remove("error");
+        //Check whether all values are the same and >= 5
+        //No warning if non-default hidden station or (size >= 5 and (default or all stations same))
+        if (this.station.isNonDefaultHidden() || (this.value >= 5 && (this.stationList.defaultInFocus || this.matchesAll(true)))) {
+          contentFieldClass.remove("warning");
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
+          ruleMsgStyle.display = "";
+        }
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
+      }
+    }
+  }
+
+  class MapScale extends NumberField {
+    constructor(parentObj, value = NaN) {
+      super(parentObj, value, "mapScale", document.getElementById("mapScale"));
+    }
+
+    check() {
+      const contentField = this.inputElement;
+      const contentFieldClass = contentField.classList;
+      const errorMsgStyle = document.getElementById("mapScalePermitted").style;
+      const ruleMsgStyle = document.getElementById("mapScaleRule").style;
+
+      //Check validity - don't bother if station is non-default hidden
+      if ((contentField.validity.valid === true && this.value > 0) || this.station.isNonDefaultHidden()) {
+        errorMsgStyle.display = "none";
+        contentFieldClass.remove("error");
+        //Check whether all values are the same and (equal 4000 or 5000)
+        //No warning if non-default hidden station or (4000/5000 and (default or all stations same))
+        if (this.station.isNonDefaultHidden() || ((this.value === 4000 || this.value === 5000) && (this.stationList.defaultInFocus || this.matchesAll(true)))) {
+          contentFieldClass.remove("warning");
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
+          ruleMsgStyle.display = "";
+        }
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
+      }
+    }
+  }
+
+  class ContourInterval extends NumberField {
+    constructor(parentObj, value = NaN) {
+      super(parentObj, value, "contourInterval", document.getElementById("contourInterval"));
+    }
+
+    check() {
+      const contentField = this.inputElement;
+      const contentFieldClass = contentField.classList;
+      const errorMsgStyle = document.getElementById("contourIntervalPermitted").style;
+      const ruleMsgStyle = document.getElementById("contourIntervalRule").style;
+
+      //Check validity - don't bother if station is non-default hidden
+      if ((contentField.validity.valid === true && this.value > 0) || this.station.isNonDefaultHidden()) {
+        errorMsgStyle.display = "none";
+        contentFieldClass.remove("error");
+        //Check whether all values are the same
+        //No warning if non-default hidden station or defaults or all stations same
+        if (this.stationList.defaultInFocus || this.matchesAll(true)) {
+          contentFieldClass.remove("warning");
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
+          ruleMsgStyle.display = "";
+        }
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
+      }
+    }
+  }
+
+  //Create list of stations object and extend the class
+  const stationList = new IterableList({
+    selector: document.getElementById("stationSelect"),
+    addBtn: document.getElementById("addStation"),
+    deleteBtn: document.getElementById("deleteStation"),
+    upBtn: document.getElementById("moveUpStation"),
+    downBtn: document.getElementById("moveDownStation"),
+    itemInFocus: 0,
+    refresh: changeStationFocus,
+    add: addStation
+  });
+
+  //Set up current/dynamic defaults
+  stationList.default = new Station(stationList, undefined);
+  stationList.defaultInFocus = true;
+
+  stationList.activeStation = function() {
+    //Don't use arrow function to ensure this points to the caller
+    if (this.defaultInFocus) {
+      return this.default;
+    } else {
+      return this.items[this.itemInFocus];
+    }
+  };
+
+  function changeStationFocus(storeValues = false) {
+    //Dynamic station editing. storeValues is a boolean stating whether to commit values in form fields to variables in memory.
+    var contentField;
+
+    //Radio button options
+    const defaultRadio = document.getElementById("defaultRadio");
+    const stationRadio = document.getElementById("stationRadio");
+
+    //Other DOM elements
+    const stopOnErrorProps = document.getElementById("coreProperties");
+    const setAllResetCSS = document.getElementById("showSetAllCSS");
+
+    if (storeValues) {
+      //Only permit change of station if the name is valid and unique
+      if (stationList.activeStation().stationName.inputElement.classList.contains("error")) {
+        //Abort
+        alert("Please insert a valid and unique station name");
+        //Change radio buttons and selectors back to original values
+        if (stationList.defaultInFocus) {
+          defaultRadio.checked = true;
+        } else {
+          stationRadio.checked = true;
+          stationList.selector.selectedIndex = stationList.itemInFocus;
+        }
+        return;
+      }
+
+      //Highlight entry in selector if there is an error
+      if (stationList.defaultInFocus === false) {
+        //Validity of default station is always false
+        const thisOptionClassList = stationList.selector.getElementsByTagName("option")[stationList.itemInFocus].classList;
+        if (stopOnErrorProps.getElementsByClassName("error").length) {
+          stationList.activeStation().valid = false;
+          thisOptionClassList.add("error");
+        } else {
+          stationList.activeStation().valid = true;
+          thisOptionClassList.remove("error");
+        }
+      }
+    } else {
+      //Loading brand new data, so update station list
+      //Remove all existing options
+      stationList.selector.innerHTML = "";
+      //Add new options according to values in memory
+      let station, newNode;
+      for (station of this.items) {
+        newNode = document.createElement("option");
+        newNode.innerHTML = station.stationName.value;
+        stationList.selector.appendChild(newNode);
+      }
+      //Select current station in focus
+      stationList.selector.selectedIndex = 0;
+    }
+
+    //Show/hide or enable/disable HTML elements according to new selected station
+    stationList.itemInFocus = stationList.selector.selectedIndex;
+    if (defaultRadio.checked) {
+      //Setting defaults for all stations
+      stationList.defaultInFocus = true;
+
+      //Show/hide any buttons as required
+      setAllResetCSS.innerHTML = ".resetCourse{ display: none; }";
+
+      //Some fields need disabling
+      stationList.selector.disabled = true;
+      stationList.addBtn.disabled = true;
+      stationList.deleteBtn.disabled = true;
+      stationList.upBtn.disabled = true;
+      stationList.downBtn.disabled = true;
+      stationList.default.stationName.inputElement.disabled = true;
+      stationList.default.heading.inputElement.disabled = true;
+    } else {
+      stationList.defaultInFocus = false;
+
+      //Show/hide any buttons as required
+      setAllResetCSS.innerHTML = ".setAllCourses{ display: none; }";
+
+      //Some fields may need enabling
+      stationList.selector.disabled = false;
+      stationList.addBtn.disabled = false;
+      stationList.showHideMoveBtns();
+      stationList.activeStation().stationName.inputElement.disabled = false;
+      stationList.activeStation().heading.inputElement.disabled = false;
+    }
+
+    //Populate with values for new selected station and check for errors
+    stationList.activeStation().refreshAllInput();
+  }
+
+  function addStation() {
+    //New station initially takes default values
+    const newStation = new Station(stationList, stationList.default);
+
+    //Name the new station
+    newStation.stationName.value = (stationList.items.length + 1).toString();
+
+    //Add to the end
+    stationList.items.push(newStation);
+    const newNode = document.createElement("option");
+    newNode.innerHTML = newStation.stationName.value;
+    stationList.selector.appendChild(newNode);
+
+    //Try to change to new station. The add station button is disabled when on defaults.
+    newNode.selected = true;
+    stationList.refresh(true);
+  };
+
+
+
+
   //Layout default measurements
+  //TODO: Move inside a class
   const defaultLayout = {
     IDFontSize: 0.7,
     checkWidth: 1.5,
@@ -62,661 +698,14 @@ const tcTemplate = (() => {
     letterFontSize: 1.8,
     phoneticFontSize: 0.6
   };
-  
-  const showHideMoveUpDown = (optionSelect) => {
-    //Shows or hides the move up and move down buttons according to the selected option in list
-    var upBtn, downBtn;
-    
-    if (optionSelect === undefined) {
-      throw "Need to specify corresponding select element";
-    }
-    
-    //Identify up and down buttons
-    switch (optionSelect.id) {
-    case "stationSelect":
-      upBtn = document.getElementById("moveUpStation");
-      downBtn = document.getElementById("moveDownStation");
-      break;
-    default:
-      throw "Select element not recognised";
-    }
-    
-    switch (optionSelect.selectedIndex) {
-    case 0:
-      //First station, so can't move it up
-      upBtn.disabled = true;
-      downBtn.disabled = false;
-      break;
-    case (optionSelect.length - 1):
-      //Last station, so can't move it down
-      upBtn.disabled = false;
-      downBtn.disabled = true;
-      break;
-    default:
-      //Can move in both directions
-      upBtn.disabled = false;
-      downBtn.disabled = false;
-    }
-  };
-	
-  const changeStationFocus = (storeValues = false) => {
-    //Dynamic station editing. storeValues is a boolean stating whether to commit values in form fields to variables in memory.
-    var contentField;
-		
-    if (storeValues) {
-      //Only permit change of station if the name is valid and unique
-      if (document.getElementById("stationName").classList.contains("error")) {
-        //Abort
-        alert("Please insert a valid and unique station name");
-        //stationInFocus contains the station we want to change back to
-        if (stationInFocus === 0) {
-          //Return to defaults station
-          document.getElementById("defaultRadio").checked = true;
-        } else {
-          document.getElementById("stationRadio").checked = true;
-          document.getElementById("stationSelect").selectedIndex = stationInFocus - 1;
-        }
-        return;
-      }
-			
-      //Are we saving any errors? All values have already been saved by onChange events.
-      if (document.getElementById("coreProperties").getElementsByClassName("error").length) {
-        stationParams[stationInFocus].valid = false;
-        //Highlight error option in station selector
-        if (stationInFocus > 0) {
-          document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].classList.add("error");
-        }
-      } else {
-        stationParams[stationInFocus].valid = true;
-        if (stationInFocus > 0) {
-          document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].classList.remove("error");
-        }
-      }
-    } else {
-      //Loading brand new data, so update station list
-      contentField = document.getElementById("stationSelect");
-      //Remove all existing options
-      contentField.innerHTML = "";
-      //Add new options according to values in memory
-      let stationData, newNode;
-      for (stationData of stationParams) {
-        //Station name empty => list of defaults, so ignore
-        if (stationData.stationName !== "") {
-          newNode = document.createElement("option");
-          newNode.innerHTML = stationData.stationName;
-          contentField.appendChild(newNode);
-        }
-      }
-      //Select first option
-      contentField.selectedIndex = 0;
-    }
-		
-    //Show/hide or enable/disable HTML elements according to new selected station
-    if (document.getElementById("defaultRadio").checked) {
-      //Setting defaults for all stations
-      stationInFocus = 0;
 
-      //Show/hide any buttons as required
-      document.getElementById("showSetAllCSS").innerHTML = ".resetCourse{display: none;}";
 
-      //Some fields need disabling
-      document.getElementById("stationSelect").disabled = true;
-      document.getElementById("addStation").disabled = true;
-      document.getElementById("deleteStation").disabled = true;
-      document.getElementById("moveUpStation").disabled = true;
-      document.getElementById("moveDownStation").disabled = true;
-      document.getElementById("stationName").disabled = true;
-      document.getElementById("heading").disabled = true;
-    } else {
-      stationInFocus = document.getElementById("stationSelect").selectedIndex + 1;
 
-      //Show/hide any buttons as required
-      document.getElementById("showSetAllCSS").innerHTML = ".setAllCourses{display: none;}";
-
-      //Some fields may need enabling
-      contentField = document.getElementById("stationSelect");
-      contentField.disabled = false;
-      document.getElementById("addStation").disabled = false;
-      if (contentField.length > 1) {
-        document.getElementById("deleteStation").disabled = false;
-        showHideMoveUpDown(contentField);
-      } else {
-        document.getElementById("deleteStation").disabled = true;
-        document.getElementById("moveUpStation").disabled = true;
-        document.getElementById("moveDownStation").disabled = true;
-      }
-      document.getElementById("stationName").disabled = false;
-      document.getElementById("heading").disabled = false;
-    }
-
-    //Populate with values for new selected station. NaN indicates empty.
-    document.getElementById("stationName").value = stationParams[stationInFocus].stationName;
-    document.getElementById("showStation").checked = stationParams[stationInFocus].showStation;
-    if (isNaN(stationParams[stationInFocus].numKites)) {
-      document.getElementById("numKites").value = "";
-    } else {
-      document.getElementById("numKites").value = stationParams[stationInFocus].numKites.toString();
-    }
-    document.getElementById("zeroes").checked = stationParams[stationInFocus].zeroes;
-    if (isNaN(stationParams[stationInFocus].numTasks)) {
-      document.getElementById("numTasks").value = "";
-    } else {
-      document.getElementById("numTasks").value = stationParams[stationInFocus].numTasks.toString();
-    }
-    if (isNaN(stationParams[stationInFocus].heading)) {
-      document.getElementById("heading").value = "";
-    } else {
-      document.getElementById("heading").value = stationParams[stationInFocus].heading;
-    }
-    document.getElementById("mapShape").value = stationParams[stationInFocus].mapShape;
-    if (isNaN(stationParams[stationInFocus].mapSize)) {
-      document.getElementById("mapSize").value = "";
-    } else {
-      document.getElementById("mapSize").value = stationParams[stationInFocus].mapSize;
-    }
-    if (isNaN(stationParams[stationInFocus].mapScale)) {
-      document.getElementById("mapScale").value = "";
-    } else {
-      document.getElementById("mapScale").value = stationParams[stationInFocus].mapScale;
-    }
-    if (isNaN(stationParams[stationInFocus].contourInterval)) {
-      document.getElementById("contourInterval").value = "";
-    } else {
-      document.getElementById("contourInterval").value = stationParams[stationInFocus].contourInterval;
-    }
-
-    //Highlight any invalid input
-    checkSave.stationName();
-    checkSave.showStation();
-    checkSave.numKites();
-    checkSave.zeroes();
-    checkSave.numTasks();
-    checkSave.heading();
-    checkSave.mapShape();
-    checkSave.mapSize();
-    checkSave.mapScale();
-    checkSave.contourInterval();
-  };
-	
-  //Check and save fields
-  const checkSave = (() => {
-    const stationName = () => {
-      const contentField = document.getElementById("stationName");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-		
-      //Check for updates
-      if (stationParams[stationInFocus].stationName !== contentFieldValue) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].stationName = contentFieldValue;
-      }
-      
-      //Remove error flag then reapply below as appropriate
-      contentFieldClass.remove("error");
-		
-      //Check uniqueness - don't bother if station is the defaults
-      if (stationInFocus > 0 && stationParams.every((val, index) => {
-        if (index === 0 || index === stationInFocus) {
-          //Defaults: don't check. Don't check current station against itself!
-          return true;
-        } else {
-          return val.stationName !== contentFieldValue;
-        }
-      }) === false) {
-        contentFieldClass.add("error");
-        document.getElementById("nameUniqueness").style = "";
-      } else {
-        document.getElementById("nameUniqueness").style.display = "none";
-      }
-	
-      //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
-      if (stationInFocus > 0 && contentField.validity.valid === false) {
-        contentFieldClass.add("error");
-        document.getElementById("nameSyntax").style = "";
-      } else {
-        document.getElementById("nameSyntax").style.display = "none";
-      }
-		
-      //Update station list
-      if (stationInFocus > 0) {
-        document.getElementById("stationSelect").getElementsByTagName("option")[stationInFocus - 1].innerHTML = contentFieldValue;
-      }
-    };
-		
-    const showStation = () => {
-      const contentField = document.getElementById("showStation");
-      const contentFieldChecked = contentField.checked;
-		
-      //Check for updates
-      if (stationParams[stationInFocus].showStation !== contentFieldChecked) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].showStation = contentFieldChecked;
-      }
-    };
-		
-    const numKites = () => {
-      var contentFieldNum;
-      
-      const contentField = document.getElementById("numKites");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-      
-      if (contentFieldValue === "") {
-        contentFieldNum = NaN;
-      } else {
-        contentFieldNum = Number(contentFieldValue);
-      }
-		
-      //Check for updates: new & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (stationParams[stationInFocus].numKites !== contentFieldNum && (Number.isNaN(stationParams[stationInFocus].numKites) === false || Number.isNaN(contentFieldNum) === false)) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].numKites = contentFieldNum;
-      }
-			
-      //Check validity
-      if (contentFieldNum === 6 || (stationInFocus > 0 && stationParams[stationInFocus].showStation === false)) {
-        //Field valid, or empty if defaults, or non-defaults station not displayed
-        contentFieldClass.remove("error");
-        contentFieldClass.remove("warning");
-        document.getElementById("kitesPermitted").style.display = "none";
-        document.getElementById("kitesRule").style.display = "none";
-      } else if (contentField.validity.valid) {
-        //Displaying a number less than 6 - not compliant with IOF rules
-        contentFieldClass.remove("error");
-        contentFieldClass.add("warning");
-        contentField.className = "warning";
-        document.getElementById("kitesPermitted").style.display = "none";
-        document.getElementById("kitesRule").style = "";
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        document.getElementById("kitesPermitted").style = "";
-        document.getElementById("kitesRule").style = "";
-      }
-    };
-		
-    const zeroes = () => {
-      const contentField = document.getElementById("zeroes");
-      const contentFieldChecked = contentField.checked;
-      const contentFieldClass = contentField.classList;
-		
-      //Check for updates
-      if (stationParams[stationInFocus].zeroes !== contentFieldChecked) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].zeroes = contentFieldChecked;
-      }
-			
-      //Check all values the same - don't bother if station is hidden or is defaults
-      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every((val, index) => {
-        if (index === 0 || stationParams[index].showStation === false) {
-          //Defaults and not in use don't need to match other stations
-          return true;
-        } else {
-          return val.zeroes === contentFieldChecked;
-        }
-      }) === false) {
-        contentFieldClass.add("warning");
-        document.getElementById("zeroesWarning").style = "";
-      } else {
-        contentFieldClass.remove("warning");
-        document.getElementById("zeroesWarning").style.display = "none";
-      }
-    };
-		
-    const numTasks = () => {
-      var contentFieldNum;
-      
-      const contentField = document.getElementById("numTasks");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-      
-      if (contentFieldValue === "") {
-        contentFieldNum = NaN;
-      } else {
-        contentFieldNum = Number(contentFieldValue);
-      }
-		
-      //Check for updates: new & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (stationParams[stationInFocus].numTasks !== contentFieldNum && (Number.isNaN(stationParams[stationInFocus].numTasks) === false || Number.isNaN(contentFieldNum) === false)) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].numTasks = contentFieldNum;
-      }
-			
-      //Check all values the same - don't bother if station is hidden or is the defaults
-      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && stationParams.every((val, index) => {
-        if (index === 0 || stationParams[index].showStation === false) {
-          //Defaults and not in use don't check
-          return true;
-        } else {
-          return val.numTasks === contentFieldNum;
-        }
-      }) === false) {
-        contentFieldClass.add("warning");
-        document.getElementById("numTasksRule").style = "";
-      } else {
-        contentFieldClass.remove("warning");
-        document.getElementById("numTasksRule").style.display = "none";
-      }
-			
-      //Check validity. Ignore hidden stations
-      if (contentField.validity.valid || (stationInFocus > 0 && stationParams[stationInFocus].showStation === false)) {
-        contentFieldClass.remove("error");
-        document.getElementById("numTasksError").style.display = "none";
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        document.getElementById("numTasksError").style = "";
-      }
-    };
-		
-    const heading = () => {
-      var contentFieldNum;
-      
-      const contentField = document.getElementById("heading");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-      
-      if (contentFieldValue === "") {
-        contentFieldNum = NaN;
-      } else {
-        contentFieldNum = Number(contentFieldValue);
-      }
-		
-      //Check for updates: new & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (stationParams[stationInFocus].heading !== contentFieldNum && (Number.isNaN(stationParams[stationInFocus].heading) === false || Number.isNaN(contentFieldNum) === false)) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].heading = contentFieldNum;
-      }
-			
-      //Check validity - ignore defaults and hidden stations
-      if (stationInFocus > 0 && stationParams[stationInFocus].showStation === true && contentField.validity.valid === false) {
-        contentFieldClass.add("error");
-        document.getElementById("headingError").style = "";
-      } else {
-        contentFieldClass.remove("error");
-        document.getElementById("headingError").style.display = "none";
-      }
-    };
-		
-    const mapShape = () => {
-      const contentField = document.getElementById("mapShape");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-		
-      //Check for updates
-      if (stationParams[stationInFocus].mapShape !== contentFieldValue) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].mapShape = contentFieldValue;
-      }
-			
-      //Check all values the same - don't bother if station is hidden or is the defaults
-      //No warning if station hidden or Defaults or all stations same
-      if (stationParams[stationInFocus].showStation === false || stationInFocus === 0 || stationParams.every((val, index) => {
-        if (index === 0 || stationParams[index].showStation === false) {
-          //Defaults don't need to match other stations and ignore hidden stations
-          return true;
-        } else {
-          return val.mapShape === contentFieldValue;
-        }
-      }) === true) {
-        contentFieldClass.remove("warning");
-        document.getElementById("mapShapeRule").style.display = "none";
-      } else {
-        contentFieldClass.add("warning");
-        document.getElementById("mapShapeRule").style = "";
-      }
-			
-      //Update labels for map size description
-      if (contentFieldValue === "Circle") {
-        document.getElementById("mapSizeType").innerHTML = "diameter";
-      } else {
-        document.getElementById("mapSizeType").innerHTML = "side length";
-      }
-    };
-		
-    const mapSize = () => {
-      var contentFieldNum;
-      
-      const contentField = document.getElementById("mapSize");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-      
-      if (contentFieldValue === "") {
-        contentFieldNum = NaN;
-      } else {
-        contentFieldNum = Number(contentFieldValue);
-      }
-					
-      //Check for updates: new & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (stationParams[stationInFocus].mapSize !== contentFieldNum && (Number.isNaN(stationParams[stationInFocus].mapSize) === false || Number.isNaN(contentFieldNum) === false)) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].mapSize = contentFieldNum;
-      }
-			
-      //Check validity - don't bother if station is hidden
-      if (stationParams[stationInFocus].showStation === false || (contentField.validity.valid === true && contentFieldNum > 0)) {
-        document.getElementById("mapSizePermitted").style.display = "none";
-        contentFieldClass.remove("error");
-        //Check whether all values are the same
-        //No warning if station hidden or value empty or (size >= 5 and (Defaults or all stations same))
-        if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || (contentFieldNum >= 5 && (stationInFocus === 0 || stationParams.every((val, index) => {
-          if (index == 0 || stationParams[index].showStation === false) {
-            //Defaults don't need to match other stations and ignore hidden stations
-            return true;
-          } else {
-            return val.mapSize === contentFieldNum;
-          }
-        }) === true))) {
-          contentFieldClass.remove("warning");
-          document.getElementById("mapSizeRule").style.display = "none";
-        } else {
-          contentFieldClass.add("warning");
-          document.getElementById("mapSizeRule").style = "";
-        }
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        document.getElementById("mapSizePermitted").style = "";
-        document.getElementById("mapSizeRule").style = "";
-      }
-    };
-		
-    const mapScale = () => {
-      var contentFieldNum;
-      
-      const contentField = document.getElementById("mapScale");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-      
-      if (contentFieldValue === "") {
-        contentFieldNum = NaN;
-      } else {
-        contentFieldNum = Number(contentFieldValue);
-      }
-		
-      //Check for updates: new & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (stationParams[stationInFocus].mapScale !== contentFieldNum && (Number.isNaN(stationParams[stationInFocus].mapScale) === false || Number.isNaN(contentFieldNum) === false)) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].mapScale = contentFieldNum;
-      }
-			
-      //Check validity - don't bother if station is hidden
-      if (stationParams[stationInFocus].showStation === false || (contentField.validity.valid === true && contentFieldNum > 0)) {
-        document.getElementById("mapScalePermitted").style.display = "none";
-        contentFieldClass.remove("error");
-        //Check whether all values are the same
-        //No warning if station hidden or value empty or ((scale = 4000 or 5000) and (Defaults or all stations same))
-        if (stationParams[stationInFocus].showStation === false || contentFieldValue === "" || ((contentFieldNum === 4000 || contentFieldNum === 5000) && (stationInFocus === 0 || stationParams.every((val, index) => {
-          if (index === 0 || stationParams[index].showStation === false) {
-            //Defaults don't need to match other stations and ignore hidden stations
-            return true;
-          } else {
-            return val.mapScale === contentFieldNum;
-          }
-        }) === true))) {
-          contentFieldClass.remove("warning");
-          document.getElementById("mapScaleRule").style.display = "none";
-        } else {
-          contentFieldClass.add("warning");
-          document.getElementById("mapScaleRule").style = "";
-        }
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        document.getElementById("mapScalePermitted").style = "";
-        document.getElementById("mapScaleRule").style = "";
-      }
-    };
-		
-    const contourInterval = () => {
-      var contentFieldNum;
-      
-      const contentField = document.getElementById("contourInterval");
-      const contentFieldValue = contentField.value;
-      const contentFieldClass = contentField.classList;
-		
-      if (contentFieldValue === "") {
-        contentFieldNum = NaN;
-      } else {
-        contentFieldNum = Number(contentFieldValue);
-      }
-      
-      //Check for updates: new & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (stationParams[stationInFocus].contourInterval !== contentFieldNum && (Number.isNaN(stationParams[stationInFocus].contourInterval) === false || Number.isNaN(contentFieldNum) === false)) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        stationParams[stationInFocus].contourInterval = contentFieldNum;
-      }
-			
-      //Check validity - don't bother if station is hidden
-      if (stationParams[stationInFocus].showStation === false || (contentField.validity.valid === true && contentFieldNum > 0)) {
-        document.getElementById("contourIntervalPermitted").style.display = "none";
-        contentFieldClass.remove("error");
-        //Check whether all values are the same
-        //No warning if station hidden or [value empty <= defaults] or Defaults or all stations same
-        if (stationParams[stationInFocus].showStation === false || stationInFocus === 0 || stationParams.every((val, index) => {
-          if (index === 0 || stationParams[index].showStation === false) {
-            //Defaults don't need to match other stations and ignore hidden stations
-            return true;
-          } else {
-            return val.contourInterval === contentFieldNum;
-          }
-        }) === true) {
-          contentFieldClass.remove("warning");
-          document.getElementById("contourIntervalRule").style.display = "none";
-        } else {
-          contentFieldClass.add("warning");
-          document.getElementById("contourIntervalRule").style = "";
-        }
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        document.getElementById("contourIntervalPermitted").style = "";
-        document.getElementById("contourIntervalRule").style = "";
-      }
-    };
-		
-    return {
-      stationName: stationName,
-      showStation: showStation,
-      numKites: numKites,
-      zeroes: zeroes,
-      numTasks: numTasks,
-      heading: heading,
-      mapShape: mapShape,
-      mapSize: mapSize,
-      mapScale: mapScale,
-      contourInterval: contourInterval
-    };
-  })();
-
-  //Manipulate station order
-  const addStation = () => {
-    //New station initially takes default values
-    //Make a copy of the values, otherwise will reference same memory
-    //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
-    const newStation = { ...stationParams[0] };
-    
-    //Name the new station
-    newStation.stationName = stationParams.length.toString();
-    
-    //Add to the end
-		stationParams.push(newStation);
-    const stationSelector = document.getElementById("stationSelect");
-    const newNode = document.createElement("option");
-    newNode.innerHTML = newStation.stationName;
-    stationSelector.appendChild(newNode);
-    
-    //Try to change to new station. The add station button is disabled when on defaults.
-    newNode.selected = true;
-    changeStationFocus(true);
-  };
-  
-  const deleteStation = () => {
-    //Deletes the current station
-    stationParams.splice(stationInFocus, 1);
-    stationInFocus = 1;
-    //Don't save deleted values then redo station list
-    changeStationFocus(false);
-  };
-  
-  const moveStation = (offset = 0) => {
-    //Moves the current station
-    
-    //Check target is in bounds
-    const newPos = stationInFocus + offset;
-    if (newPos < 1 || newPos >= stationParams.length) {
-      throw "Moving station to position beyond bounds of array";
-    }
-    if (!Number.isInteger(newPos)) {
-      throw "Station position offset is not an integer";
-    }
-    
-    //Rearrange data array
-    stationParams.splice(newPos, 0, stationParams.splice(stationInFocus, 1)[0]);
-    
-    //Rearrange station selector
-    const stationSelector = document.getElementById("stationSelect");
-    const currentOption = stationSelector.getElementsByTagName("option")[stationInFocus - 1];
-    currentOption.remove();
-    if (newPos === stationParams.length - 1) {
-      stationSelector.insertBefore(currentOption, null);
-    } else {
-      //Make sure to get a new element list, as it will have changed
-      stationSelector.insertBefore(currentOption, stationSelector.getElementsByTagName("option")[newPos - 1]);
-    }
-    
-    //Update active station number
-    stationInFocus = newPos;
-    
-    //Enable/disable move up/down buttons
-    showHideMoveUpDown(stationSelector);
-  };
-	
   function loadppen(fileInput) {
     //Reads a Purple Pen file
     var fileobj, freader;
     var courseOrderUsed = [];
-		
+
     function getNodeByID(xmlDoc, tagName, ID) {
       //Returns course-control node with given ID
       var courseControlNodeSet, courseControlNumNodes, itemNum;
@@ -729,10 +718,10 @@ const tcTemplate = (() => {
       }
       return null;
     }
-	
+
     fileobj = fileInput.files[0];
     if (!fileobj) { return; }	//Nothing selected
-	
+
     freader = new FileReader();
     freader.onload = function () {
       var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
@@ -746,12 +735,12 @@ const tcTemplate = (() => {
         //Method of getting namespace is too harsh for browser; try no namespace
         parsererrorNS = "";
       }
-        
+
       if (xmlobj.getElementsByTagNameNS(parsererrorNS, "parsererror").length > 0) {
         window.alert("Could not read Purple Pen file: its XML is invalid.");
         return;
       }
-			
+
       //Reset course table - keep the first row
       existingRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
       for (existingRowID = existingRows.length - 1; existingRowID > 0; existingRowID--) {
@@ -763,7 +752,7 @@ const tcTemplate = (() => {
       for (existingRowID = existingRows.length - 1; existingRowID > 1; existingRowID--) {
         document.getElementById("layoutTableBody").removeChild(existingRows[existingRowID]);
       }
-		
+
       //Save map file scale
       otherNode = xmlobj.getElementsByTagName("map")[0];
       if (!otherNode) {
@@ -775,7 +764,7 @@ const tcTemplate = (() => {
         window.alert("Could not read map scale.");
         return;
       }
-						
+
       //Global print scale
       otherNode = xmlobj.getElementsByTagName("all-controls")[0];
       if (otherNode) {
@@ -787,15 +776,15 @@ const tcTemplate = (() => {
           }
         }
       }
-						
+
       courseNodes = xmlobj.getElementsByTagName("course");
       courseNodesNum = courseNodes.length;
       //Make list of all course order attributes used - to determine print page, so must be completed before rest of file reading
-      for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {	
+      for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
         courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
       }
       courseOrderUsed.sort(function(a, b){return a - b});
-	
+
       //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
       for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
         if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1")) {
@@ -804,7 +793,7 @@ const tcTemplate = (() => {
             window.alert("Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + " type must be set to score.");
             return;
           }
-				
+
           //Check zero page margin
           //Portrait vs. landscape is irrelevant, as coordinates are determined by left and bottom attributes
           otherNode = courseNodes[courseNodesId].getElementsByTagName("print-area")[0];
@@ -821,10 +810,10 @@ const tcTemplate = (() => {
             window.alert("The print area selection must be set to manual on Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.");
             return;
           }
-					
+
           //Create new table row
           tableRowNode = document.createElement("tr");
-						
+
           //Create first column - station name + hidden values
           tableColNode = document.createElement("td");
           stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0,-2);
@@ -849,7 +838,7 @@ const tcTemplate = (() => {
           tableContentNode.className = "showStation";
           tableContentNode.checked = true;
           tableColNode.appendChild(tableContentNode);
-                
+
           //Third column - number of kites
           tableColNode = document.createElement("td");
           tableContentNode = document.createElement("input");
@@ -862,7 +851,7 @@ const tcTemplate = (() => {
           tableContentNode.addEventListener("change", () => { paramsSaved = false; });
           tableColNode.appendChild(tableContentNode);
           tableRowNode.appendChild(tableColNode);
-						
+
           //Fourth column - zeroes allowed?
           tableColNode = document.createElement("td");
           tableRowNode.appendChild(tableColNode);
@@ -871,7 +860,7 @@ const tcTemplate = (() => {
           tableContentNode.addEventListener("change", () => { paramsSaved = false; });
           tableContentNode.className = "zeroes";
           tableColNode.appendChild(tableContentNode);
-						
+
           //Fifth column - station heading
           tableColNode = document.createElement("td");
           tableContentNode = document.createElement("input");
@@ -884,7 +873,7 @@ const tcTemplate = (() => {
           tableContentNode = document.createTextNode(" " + String.fromCharCode(176));
           tableColNode.appendChild(tableContentNode);
           tableRowNode.appendChild(tableColNode);
-						
+
           //Sixth column - map shape
           tableColNode = document.createElement("td");
           tableContentNode = document.createElement("select");
@@ -899,7 +888,7 @@ const tcTemplate = (() => {
           tableContentNode.addEventListener("change", () => { paramsSaved = false; });
           tableColNode.appendChild(tableContentNode);
           tableRowNode.appendChild(tableColNode);
-						
+
           //Seventh column - map size
           tableColNode = document.createElement("td");
           tableContentNode = document.createElement("input");
@@ -914,7 +903,7 @@ const tcTemplate = (() => {
           tableContentNode = document.createTextNode(" cm");
           tableColNode.appendChild(tableContentNode);
           tableRowNode.appendChild(tableColNode);
-						
+
           //Eighth column - map scale
           tableColNode = document.createElement("td");
           tableContentNode = document.createTextNode("1:");
@@ -934,7 +923,7 @@ const tcTemplate = (() => {
           tableContentNode.addEventListener("change", () => { paramsSaved = false; });
           tableColNode.appendChild(tableContentNode);
           tableRowNode.appendChild(tableColNode);
-						
+
           //Nineth column - contour interval + hidden values
           tableColNode = document.createElement("td");
           tableContentNode = document.createElement("input");
@@ -948,7 +937,7 @@ const tcTemplate = (() => {
           tableContentNode = document.createTextNode(" m");
           tableColNode.appendChild(tableContentNode);
           tableRowNode.appendChild(tableColNode);
-					
+
           //Hidden: x and y coordinates of centre of circle on map, relative to bottom-left corner
           existingRowID = courseNodesId;
           numProblems = 1;
@@ -1063,12 +1052,12 @@ const tcTemplate = (() => {
           //Populate rows in layout table
           //Create new table row
           layoutRowNode = document.createElement("tr");
-						
+
           //Create first column - station name + hidden values
           tableColNode = document.createElement("td");
           tableColNode.innerHTML = stationNameRoot;
           layoutRowNode.appendChild(tableColNode);
-                
+
           //Other columns
           for (otherNode in defaultLayout) {
             tableColNode = document.createElement("td");
@@ -1084,7 +1073,7 @@ const tcTemplate = (() => {
             tableColNode.appendChild(tableContentNode);
             layoutRowNode.appendChild(tableColNode);
           }
-                    						
+
           //Insert row in correct position in tables for course order
           existingRows = document.getElementById("courseTableBody").getElementsByClassName("courseOrder");
           existingRowID = 0;
@@ -1106,7 +1095,7 @@ const tcTemplate = (() => {
           }
         }
       }
-		
+
       //Reset update all stations fields
       document.getElementsByClassName("showStation")[0].indeterminate = true;
       document.getElementsByClassName("kites")[0].value = "";
@@ -1115,16 +1104,16 @@ const tcTemplate = (() => {
       document.getElementsByClassName("mapSize")[0].value = "";
       document.getElementsByClassName("mapScale")[0].value = "";
       document.getElementsByClassName("contourInterval")[0].value = "";
-		
+
       for (otherNode in defaultLayout) {
         document.getElementsByClassName(otherNode)[1].value = "";
       }
-			
+
       //Disable debug mode
       tableContentNode = document.getElementById("debugCircle");
       tableContentNode.checked = false;
       tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-			    
+
       //Prepare view
       tableContentNode = document.getElementById("stationProperties");
       tableContentNode.hidden = false;
@@ -1133,17 +1122,17 @@ const tcTemplate = (() => {
     freader.onerror = function () { window.alert("Could not read Purple Pen file. Try reselecting it, then click Reload."); };
     freader.readAsText(fileobj);   //Reads as UTF-8
   }
-		
+
   function setAllCourses() {
     //Validates then copies value from set all courses into all courses for any fields that have been set
     var control, controlValue, classSet, classSetLength, id, classList;
-	
+
     classList = ["showStation", "kites", "zeroes", "mapShape", "mapSize", "mapScale", "contourInterval"];
     for (const controlClass of classList) {
       classSet = document.getElementsByClassName(controlClass);
       classSetLength = classSet.length;
       control = classSet[0];
-		
+
       if (controlClass == "zeroes" || controlClass == "showStation") {
         //Check whether control has been set
         if (control.indeterminate == false) {
@@ -1188,13 +1177,13 @@ const tcTemplate = (() => {
   function setAllLayout() {
     //Validates then copies value from set all courses into all courses for any layout fields that have been set
     var controlClass, control, controlValue, classSet, classSetLength, id;
-	
+
     for (controlClass in defaultLayout) {
       classSet = document.getElementsByClassName(controlClass);
       classSetLength = classSet.length;
       //The first input element is the default button
       control = classSet[1];
-		
+
       //Control is required, so invalid if blank
       if (control.checkValidity() == true) {
         controlValue = control.value;
@@ -1219,7 +1208,7 @@ const tcTemplate = (() => {
       freader.onload = function () {
         //Populates station tables from previous LaTeX parameters file
         var fileString, startPos, endPos, subString, varArray, fields, rowId, numRows, classRoot;
-				
+
         fileString = freader.result;
 
         //Indicate that parameters data is currently saved - unedited opened file
@@ -1242,7 +1231,7 @@ const tcTemplate = (() => {
             }
           }
         }
-	
+
         //Number of kites
         startPos = fileString.indexOf("\\def\\NumKitesList{{");
         if (startPos >= 0) {
@@ -1258,7 +1247,7 @@ const tcTemplate = (() => {
             }
           }
         }
-	
+
         //Zeroes
         startPos = fileString.indexOf("\\def\\ZeroOptionList{{");
         if (startPos >= 0) {
@@ -1276,7 +1265,7 @@ const tcTemplate = (() => {
             }
           }
         }
-	
+
         //Heading
         startPos = fileString.indexOf("\\def\\MapHeadingList{{");
         if (startPos >= 0) {
@@ -1293,7 +1282,7 @@ const tcTemplate = (() => {
             }
           }
         }
-	
+
         //Map shape
         startPos = fileString.indexOf("\\def\\SquareMapList{{");
         if (startPos >= 0) {
@@ -1309,7 +1298,7 @@ const tcTemplate = (() => {
             }
           }
         }
-	
+
         //Map size
         startPos = fileString.indexOf("\\def\\CircleRadiusList{{");
         if (startPos >= 0) {
@@ -1325,7 +1314,7 @@ const tcTemplate = (() => {
             }
           }
         }
-	
+
         //Map scale
         startPos = fileString.indexOf("\\def\\MapScaleList{{");
         if (startPos >= 0) {
@@ -1341,7 +1330,7 @@ const tcTemplate = (() => {
             }
           }
         }
-	
+
         //Contour interval
         startPos = fileString.indexOf("\\def\\ContourIntervalList{{");
         if (startPos >= 0) {
@@ -1392,7 +1381,7 @@ const tcTemplate = (() => {
             }
           }
         }
-				
+
         //Debug circles enabled?
         startPos = fileString.indexOf("\\def\\AdjustMode{");
         if (startPos >= 0) {
@@ -1420,11 +1409,11 @@ const tcTemplate = (() => {
   function generateLaTeX() {
     //Generates LaTeX parameters file
     //Returns string with error message or "ok" if no errors
-	
+
     var rtnstr, tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, showStationList, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, parametersBlob;
-	
+
     rtnstr = "ok";
-	
+
     tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
     layoutRows = document.getElementById("layoutTableBody").getElementsByTagName("tr");
     numTableRows = tableRows.length;
@@ -1435,7 +1424,7 @@ const tcTemplate = (() => {
     CDsyCoordBase = 26.28;
     CDsHeightBase = 0.77;
     CDsWidthBase = 5.68;
-	
+
     //Create variables, often strings, to accumulate
     numStations = 0;
     maxProblems = 0;
@@ -1472,7 +1461,7 @@ const tcTemplate = (() => {
     checkBoxHeightList = "\\def\\SheetCheckBoxHeightList{{";
     checkNumberFontList = "\\def\\CheckNumberHeightList{{";
     checkRemoveFontList = "\\def\\RemoveTextFontSizeList{{";
-	
+
     for (tableRowID = 1; tableRowID < numTableRows; tableRowID++) {
       numStations++;
       if (numStations > 1) {
@@ -1482,19 +1471,19 @@ const tcTemplate = (() => {
         stationNameList += ",";
         kitesList += ",";
         zeroesList += ",";
-        headingList += ",";			
-        shapeList += ",";			
+        headingList += ",";
+        shapeList += ",";
         sizeList += ",";
-        briefingWidthList += ",";		
-        scaleList += ",";			
-        contourList += ",";			
-        mapFileList += ",";			
-        mapPageList += ",";			
-        mapxList += ",";			
-        mapyList += ",";			
-        CDsFileList += ",";			
-        CDsPageList += ",";			
-        CDsxList += ",";			
+        briefingWidthList += ",";
+        scaleList += ",";
+        contourList += ",";
+        mapFileList += ",";
+        mapPageList += ",";
+        mapxList += ",";
+        mapyList += ",";
+        CDsFileList += ",";
+        CDsPageList += ",";
+        CDsxList += ",";
         CDsyList += ",";
         CDsHeightList += ",";
         CDsWidthList += ",";
@@ -1502,16 +1491,16 @@ const tcTemplate = (() => {
         CDsbFontList += ",";
         showPointingBoxesList += ",";
         pointingBoxWidthList += ",";
-        pointingBoxHeightList += ",";	
-        pointingLetterFontList += ",";	
-        pointingPhoneticFontList += ",";	
-        stationIDFontList += ",";	
-        checkBoxWidthList += ",";	
+        pointingBoxHeightList += ",";
+        pointingLetterFontList += ",";
+        pointingPhoneticFontList += ",";
+        stationIDFontList += ",";
+        checkBoxWidthList += ",";
         checkBoxHeightList += ",";
         checkNumberFontList += ",";
         checkRemoveFontList += ",";
       }
-			
+
       stationName = tableRows[tableRowID].getElementsByClassName("stationName")[0].innerHTML;	//Store it for useful error messages later
       stationNameList += "\"" + stationName + "\"";
 
@@ -1521,14 +1510,14 @@ const tcTemplate = (() => {
       } else {
         showStationList += "0";
       }
-			
+
       //Number of problems at station
       numProblems = Number(tableRows[tableRowID].getElementsByClassName("numProblems")[0].innerHTML);	//Save for later
       numProblemsList += numProblems;
       if (numProblems > maxProblems) {
         maxProblems = numProblems;
       }
-			
+
       //Number of kites
       contentField = tableRows[tableRowID].getElementsByClassName("kites")[0];
       if (contentField.checkValidity() == false) {
@@ -1538,15 +1527,15 @@ const tcTemplate = (() => {
         numKites = Number(contentField.value);
         kitesList += numKites;	//Don't add quotes
       }
-			
+
       if (tableRows[tableRowID].getElementsByClassName("zeroes")[0].checked == true) {
         zeroesList += "1";
         numKites += 1;
       } else {
         zeroesList += "0";
       }
-      pointingBoxWidthList += (18 / numKites);	
-			
+      pointingBoxWidthList += (18 / numKites);
+
       //Heading
       contentField = tableRows[tableRowID].getElementsByClassName("heading")[0];
       if (contentField.checkValidity() == false) {
@@ -1555,7 +1544,7 @@ const tcTemplate = (() => {
       } else {
         headingList += contentField.value;	//Don't add quotes
       }
-			
+
       //Map shape
       contentField = tableRows[tableRowID].getElementsByClassName("mapShape")[0];
       if (contentField.checkValidity() == false) {
@@ -1564,7 +1553,7 @@ const tcTemplate = (() => {
       } else {
         shapeList += contentField.selectedIndex;	//Don't add quotes
       }
-			
+
       //Map size
       contentField = tableRows[tableRowID].getElementsByClassName("mapSize")[0];
       if (contentField.checkValidity() == false) {
@@ -1587,7 +1576,7 @@ const tcTemplate = (() => {
       } else {
         scaleList += contentField.value;	//Don't add quotes
       }
-			
+
       //Map contour interval
       contentField = tableRows[tableRowID].getElementsByClassName("contourInterval")[0];
       if (contentField.checkValidity() == false || contentField.value == 0) {
@@ -1596,7 +1585,7 @@ const tcTemplate = (() => {
       } else {
         contourList += contentField.value;	//Don't add quotes
       }
-			
+
       //Map and control description files
       fileName = "\"Maps\"";
       mapFileList += "{" + fileName;
@@ -1624,7 +1613,7 @@ const tcTemplate = (() => {
       CDsWidthList += "}";
       CDsaFontList += "\"0.45cm\"";
       CDsbFontList += "\"0.39cm\"";
-									
+
       //Coordinate map positions in files
       mapxList += tableRows[tableRowID].getElementsByClassName("circlex")[0].innerHTML;
       mapyList += tableRows[tableRowID].getElementsByClassName("circley")[0].innerHTML;
@@ -1659,7 +1648,7 @@ const tcTemplate = (() => {
       } else {
         checkBoxHeightList += contentField.value;
       }
-            
+
       //Check box number font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("checkFontSize")[0];
       if (contentField.checkValidity() == false) {
@@ -1668,7 +1657,7 @@ const tcTemplate = (() => {
       } else {
         checkNumberFontList += "\"" + contentField.value + "cm\"";
       }
-            
+
       //Check box remove text font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("removeFontSize")[0];
       if (contentField.checkValidity() == false) {
@@ -1685,7 +1674,7 @@ const tcTemplate = (() => {
         contentField.focus();
       } else {
         pointingBoxHeightList += contentField.value;
-                
+
         //Show pointing boxes only if they will fit: Map diameter + Pointing box height <= 12.5cm
         if (mapSize + Number(contentField.value) <= 12.5) {
           showPointingBoxesList += "1";
@@ -1693,7 +1682,7 @@ const tcTemplate = (() => {
           showPointingBoxesList += "0";
         }
       }
-                        
+
       //Pointing box letter font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("letterFontSize")[0];
       if (contentField.checkValidity() == false) {
@@ -1702,7 +1691,7 @@ const tcTemplate = (() => {
       } else {
         pointingLetterFontList += "\"" + contentField.value + "cm\"";
       }
-            
+
       //Check box remove text font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("phoneticFontSize")[0];
       if (contentField.checkValidity() == false) {
@@ -1712,14 +1701,14 @@ const tcTemplate = (() => {
         pointingPhoneticFontList += "\"" + contentField.value + "cm\"";
       }
     }
-	
+
     //Show construction circle for lining up maps? Not required when using this wizard, but still a useful feature.
     if (document.getElementById("debugCircle").checked == true) {
       fileString = "\\def\\AdjustMode{1}\n";
     } else {
       fileString = "\\def\\AdjustMode{0}\n";
     }
-	
+
     //Write to fileString
     //Insert a comma to introduce an extra element to the array where it contains a string ending in cm, otherwise TikZ parses it incorrectly/doesn't recognise an array of length 1.
     fileString += "\\newcommand{\\NumStations}{" + numStations + "}\n";
@@ -1757,10 +1746,10 @@ const tcTemplate = (() => {
     fileString += checkBoxHeightList + "}}\n";
     fileString += checkNumberFontList + ",}}\n";
     fileString += checkRemoveFontList + ",}}\n";
-	
+
     //Create file
     parametersBlob = new Blob([fileString], { type: "text/plain" });
-	
+
     return {str: rtnstr, file:parametersBlob};
   }
 
@@ -1789,7 +1778,7 @@ const tcTemplate = (() => {
     var rtn;
     rtn = generateLaTeX();
     downloadFile(rtn.file, "TemplateParameters.tex");
-        
+
     //Indicate that parameters data is currently saved - unedited opened file
     paramsSaved = true;
   }
@@ -1907,7 +1896,7 @@ const tcTemplate = (() => {
               downloadElement.href = outURL;
               downloadElement.hidden = false;
               downloadElement.click();
-					
+
               //Final clean
               texlive.terminate();
               btn.disabled = false;
@@ -1917,16 +1906,16 @@ const tcTemplate = (() => {
         });
       });
     }
-		
+
     //Disable button to avoid double press
     btn.disabled = true;
-	
+
     //Status line
     statusBox = document.getElementById("compileStatus");
     statusBox.innerHTML = "Loading files. If this message persists, there is a problem. Seek assistance.";
     document.getElementById("savePDF").hidden = true;
     document.getElementById("viewLog").hidden = true;
-	
+
     //Make LaTeX parameters file
     paramRtn = generateLaTeX();
     if (paramRtn.str !== "ok") {
@@ -1934,7 +1923,7 @@ const tcTemplate = (() => {
       btn.disabled = false;
       return;
     }
-	
+
     //Read maps and CDs PDFs
     resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
     resourceFileArray = [paramRtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
@@ -1958,11 +1947,11 @@ const tcTemplate = (() => {
       //Download a copy of parameters file to save for later
       if (document.getElementById("autoSave").checked === true && paramsSaved === false) {
         downloadFile(paramRtn.file, "TemplateParameters.tex");
-                
+
         //Indicate that parameters data is currently saved
         paramsSaved = true;
       }
-			
+
       resourceURLs = result.slice(0);
       //Load LaTeX code
       return fetch("TCTemplate.tex");
@@ -1982,14 +1971,10 @@ const tcTemplate = (() => {
       btn.disabled = false;
     });
   }
-	
-  //Make required functions globally visible
+
+  //Make required functions and objects globally visible
   return {
-    changeStationFocus: changeStationFocus,
-    checkSave: checkSave,
-    addStation: addStation,
-    deleteStation: deleteStation,
-    moveStation: moveStation,
+    stationList: stationList,
     loadppen: loadppen,
     loadTeX: loadTeX,
     saveParameters: saveParameters,
@@ -2001,5 +1986,22 @@ const tcTemplate = (() => {
   };
 })();
 
+//Check browser supports required APIs
+if (FileReader && DOMParser && Blob && URL && fetch) {
+  document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
+} else {
+  document.getElementById("mainView").hidden = true;
+}
+
+//Old MS Edge/IE doesn't always work - <details> tag not implemented
+if ("open" in document.createElement("details")) {
+  document.getElementById("MSEdgeWarning").hidden = true;
+}
+
+document.getElementById("stationProperties").hidden = true;
+document.getElementById("savePDF").hidden = true;
+document.getElementById("viewLog").hidden = true;
+
 //Initiate all variables on page. Do it this way rather than in HTML to avoid multiple hardcodings of the same initial values.
-tcTemplate.changeStationFocus(false);
+tcTemplate.stationList.add(tcTemplate.stationList.default);
+tcTemplate.stationList.refresh(false);

@@ -46,9 +46,9 @@ input.coordinate {
 }
 
 details, .warning {
-	background-color: #F5D2B8;
+	background-color: #f5d2b8;
 }
 
 summary, .setAll, .error {
-    background-color: #F56600;
+    background-color: #f56600;
 }

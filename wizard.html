@@ -1,343 +1,343 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en-GB">
 <head>
   <meta charset="utf-8" />
-  <link rel="stylesheet" type="text/css" href="WizardStyle.css" />
-  <style id="showSetAllCSS">
-    /*Reserved for editing in Javascript to show/hide all elements within a class*/
-    .resetCourse{display: none;}
-    </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="WizardStyle.css" />
+  <!--Reserved for editing in Javascript to show/hide all elements within a class-->
+  <style id="showSetAllCSS"></style>
 
-    <!--Favicons-->
-    <link rel="apple-touch-icon" type="image/png" href="favicon/noborder152.png" sizes="152x152" />
-    <link rel="icon" type="image/png" href="favicon/favicon512.png" sizes="512x512" />
-    <link rel="icon" type="image/png" href="favicon/favicon256.png" sizes="256x256" />
-    <link rel="icon" type="image/png" href="favicon/favicon192.png" sizes="192x192" />
-    <link rel="icon" type="image/png" href="favicon/favicon32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="favicon/favicon16.png" sizes="16x16" />
+  <!--Favicons-->
+  <link rel="apple-touch-icon" type="image/png" href="favicon/noborder152.png" sizes="152x152" />
+  <link rel="icon" type="image/png" href="favicon/favicon512.png" sizes="512x512" />
+  <link rel="icon" type="image/png" href="favicon/favicon256.png" sizes="256x256" />
+  <link rel="icon" type="image/png" href="favicon/favicon192.png" sizes="192x192" />
+  <link rel="icon" type="image/png" href="favicon/favicon32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="favicon/favicon16.png" sizes="16x16" />
 
-    <title>TCTemplate</title>
-  </head>
-  <body>
-    <header>
-      <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
-      <noscript>Enable Javascript for this wizard to work.</noscript>
-      <p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
-      <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try updating your browser to the latest version or use a different one.</p>
-      <p class="right"><a href="help/index.html" target="help">Help</a>&emsp;<a href="index.html">Home</a></p>
-    </header>
-    <main id="mainView">
-      <section>
-        <ol>
-          <li>Set up an event in <a href="http://purplepen.golde.org" target="prequisites">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
-          <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the <em>Control circle diameter</em> to 6 mm (current recommended size) and <em>Scale item sizes</em> to <em>Do not scale</em>. Tick <em>Blend purple with underlying map colours</em> and <em>Use overprint effect for colors marked "overprint"</em>. Click OK.</li>
-          <li>Mark each question control to be used, cut the circles as required and set the control description. The content of columns A and B does not matter, nor do the control codes.</li>
-          <li>Create a course for each problem. Name it in the format <em>name of station.i</em>, where <em>i</em> is the problem number counting from 1. It is not recommended to include the word <em>station</em> in the name, and it is simplest to be just a number, although it could be <em>warm-up</em>. For example, the 3<sup>rd</sup> problem at the 2<sup>nd</sup> could be be named <em>2.3</em>. Set the course type to score. The stations will be printed in the order of the 1<sup>st</sup> map at each station.</li>
-          <li>Add the (single) control to the course. It doesn't matter whether a start and finished are also added, so long as they are outside the map excerpts.</li>
-          <li>Move the purple number labelling the control out of the field of view. (At the time of writing, Purple Pen does not permit this label to be removed, which would be preferable here.)</li>
-          <li>Set the print area for all courses (under the File menu) to have 0 margin, limit the printable area to the page size and untick <em>Set Print Area Automatically</em>. Select a paper size (custom size if necessary) that is large enough to include all parts of the map that are to be printed. Move the print area to cover all desired parts of the map and click done. (Each course/map does not need to have the same print area, although the author considers it easier to do so.)</li>
-          <li>Create a single PDF of all the courses using File->Create PDFs->Courses and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Select <em>CMYK</em> as the colour model. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
-          <li>Create a single PDF of all the control descriptions using File->Create PDFs->Descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Set the box size to 7 mm. Leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
-          <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
-        </ol>
-      </section>
-		
-      <!--New interface-->
-      <section>
+  <title>TCTemplate</title>
+</head>
+<body>
+  <header>
+    <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
+    <noscript>Enable Javascript for this wizard to work.</noscript>
+    <p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
+    <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try updating your browser to the latest version or use a different one.</p>
+    <p class="right"><a href="help/index.html" target="help">Help</a>&emsp;<a href="index.html">Home</a></p>
+  </header>
+  <main id="mainView">
+    <section>
+      <ol>
+        <li>Set up an event in <a href="http://purplepen.golde.org" target="prequisites">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
+        <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the <em>Control circle diameter</em> to 6 mm (current recommended size) and <em>Scale item sizes</em> to <em>Do not scale</em>. Tick <em>Blend purple with underlying map colours</em> and <em>Use overprint effect for colors marked "overprint"</em>. Click OK.</li>
+        <li>Mark each question control to be used, cut the circles as required and set the control description. The content of columns A and B does not matter, nor do the control codes.</li>
+        <li>Create a course for each problem. Name it in the format <em>name of station.i</em>, where <em>i</em> is the problem number counting from 1. It is not recommended to include the word <em>station</em> in the name, and it is simplest to be just a number, although it could be <em>warm-up</em>. For example, the 3<sup>rd</sup> problem at the 2<sup>nd</sup> could be be named <em>2.3</em>. Set the course type to score. The stations will be printed in the order of the 1<sup>st</sup> map at each station.</li>
+        <li>Add the (single) control to the course. It doesn't matter whether a start and finished are also added, so long as they are outside the map excerpts.</li>
+        <li>Move the purple number labelling the control out of the field of view. (At the time of writing, Purple Pen does not permit this label to be removed, which would be preferable here.)</li>
+        <li>Set the print area for all courses (under the File menu) to have 0 margin, limit the printable area to the page size and untick <em>Set Print Area Automatically</em>. Select a paper size (custom size if necessary) that is large enough to include all parts of the map that are to be printed. Move the print area to cover all desired parts of the map and click done. (Each course/map does not need to have the same print area, although the author considers it easier to do so.)</li>
+        <li>Create a single PDF of all the courses using File->Create PDFs->Courses and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Select <em>CMYK</em> as the colour model. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
+        <li>Create a single PDF of all the control descriptions using File->Create PDFs->Descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Set the box size to 7 mm. Leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
+        <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
+      </ol>
+    </section>
+
+    <!--New interface-->
+    <section>
+      <ul>
+        <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
+        <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
+      </ul>
+      <p>
+        <label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.stationList.refresh(true)" />Set defaults for all stations</label><br />
+        <label><input id="stationRadio" type="radio" name="editType" value="station" onchange="tcTemplate.stationList.refresh(true)" />Customise individual station:</label><br /><br />
+        <select id="stationSelect" size="5" onchange="tcTemplate.stationList.refresh(true)"></select><br />
+      </p>
+      <p class="setOneCourse">
+        Station:
+        <input id="addStation" type="button" value="+ Add" onclick="tcTemplate.stationList.add()" />
+        <input id="deleteStation" type="button" value="X Delete" onclick="tcTemplate.stationList.deleteItem()" />
+        <input id="moveUpStation" type="button" value="&uarr; Move up" onclick="tcTemplate.stationList.moveItem(-1)" />
+        <input id="moveDownStation" type="button" value="&darr; Move down" onclick="tcTemplate.stationList.moveItem(1)" />
+      </p>
+
+      <table id="coreProperties">
+        <tr>
+          <td>Name</td>
+          <td colspan="2"><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" required="required" oninput="tcTemplate.stationList.activeStation().stationName.checkSave()" /></td>
+          <!--These error messages shouldn't be displayed together-->
+          <td id="nameSyntax" colspan="2">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</td>
+          <td id="nameUniqueness" colspan="2">Must be unique</td>
+        </tr>
+        <tr>
+          <td>Print station?</td>
+          <td><input id="showStation" type="checkbox" onchange="tcTemplate.stationList.activeStation().showStation.checkSave()" /></td>
+          <td><input id="resetShowStation" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().showStation.resetValue()" value="Reset" /><input id="setAllShowStation" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+        </tr>
+        <tr>
+          <td>Number of kites</td>
+          <td><input id="numKites" type="number" min="1" max="6" step="1" required="required" oninput="tcTemplate.stationList.activeStation().numKites.checkSave()" /></td>
+          <td><input id="resetNumKites" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().numKites.resetValue()" value="Reset" /><input id="setAllNumKites" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          <td id="kitesPermitted">Number of kites must be an integer between 1 and 6</td>
+          <td id="kitesRule">IOF rule: number of kites = 6</td>
+        </tr>
+        <tr>
+          <td>Zeroes?</td>
+          <td><input id="zeroes" type="checkbox" onchange="tcTemplate.stationList.activeStation().zeroes.checkSave()" /></td>
+          <td><input id="resetZeroes" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().zeroes.resetValue()" value="Reset" /><input id="setAllZeroes" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          <td id="zeroesWarning" colspan="2">Not the same for all stations</td>
+        </tr>
+        <tr>
+          <td>Number of tasks</td>
+          <td><input id="numTasks" type="number" min="1" step="1" required="required" oninput="tcTemplate.stationList.activeStation().numTasks.checkSave()" /></td>
+          <td><input id="resetNumTasks" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().numTasks.resetValue()" value="Reset" /><input id="setAllNumTasks" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          <td id="numTasksError">Must be a strictly positive integer</td>
+          <td id="numTasksRule">IOF rule: must be the same for all stations</td>
+        </tr>
+        <tr>
+          <td>Heading</td>
+          <td colspan="2"><input id="heading" type="number" step="any" required="required" oninput="tcTemplate.stationList.activeStation().heading.checkSave()" />&deg</td><!--Plan: make this automatic-->
+          <td id="headingError" colspan="2">Must be a number</td>
+        </tr>
+        <tr>
+          <td>Map shape</td>
+          <td>
+            <select id="mapShape" required="required" onchange="tcTemplate.stationList.activeStation().mapShape.checkSave()" >
+              <option>Circle</option>
+              <option>Square</option>
+            </select>
+          </td>
+          <td><input id="resetMapShape" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().mapShape.resetValue()" value="Reset" /><input id="setAllMapShape" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          <td id="mapShapeRule" colspan="2">IOF rule: must be the same for all stations</td>
+        </tr>
+        <tr>
+          <td>Map <span id="mapSizeType">diameter</span></td>
+          <td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" required="required" oninput="tcTemplate.stationList.activeStation().mapSize.checkSave()" /> cm</td>
+          <td><input id="resetMapSize" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().mapSize.resetValue()" value="Reset" /><input id="setAllMapSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          <td id="mapSizePermitted">0 &lt; size &le; 12</td>
+          <td id="mapSizeRule">IOF rules: 5 &le; size &le; 12; must be the same for all stations</td>
+        </tr>
+        <tr>
+          <td>Map scale</td>
+          <td>1:<input id="mapScale" type="number" min="0" step="any" required="required" oninput="tcTemplate.stationList.activeStation().mapScale.checkSave()" /></td>
+          <td><input id="resetMapScale" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().mapScale.resetValue()" value="Reset" /><input id="setAllMapScale" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          <td id="mapScalePermitted">Must be a strictly positive number</td>
+          <td id="mapScaleRule">IOF rules: normally 1:4000 or 1:5000; must be the same for all stations</td>
+        </tr>
+        <tr>
+          <td>Contour interval</td>
+          <td><input id="contourInterval" type="number" min="0" step="any" required="required" oninput="tcTemplate.stationList.activeStation().contourInterval.checkSave()" /> m</td>
+          <td><input id="resetContourInterval" class="resetCourse" type="button" onclick="tcTemplate.stationList.activeStation().contourInterval.resetValue()" value="Reset" /><input id="setAllContourInterval" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          <td id="contourIntervalPermitted">Must be a strictly positive number</td>
+          <td id="contourIntervalRule">IOF rule: must be the same for all stations</td>
+        </tr>
+      </table>
+      <br />
+
+      <details>
+        <summary>Map position</summary>
+        <p><label><input id="ppMapPosition" type="checkbox" checked="checked" />Calculate from Purple Pen file</label> <input id="setAllPPMapPosition" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></p>
+        <p><label><input id="debugCircle" type="checkbox" />Show construction marks to verify position of control circle</label></p>
+        <p>Positions of centres of control circles are measured in cm from the bottom-left corner of the page.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Page</th>
+              <th>x</th>
+              <th>y</th>
+            </tr>
+          </thead>
+          <tbody class="centre">
+            <tr>
+              <td>1</td>
+              <td><input class="mapPage" type="number" step="1" min="1" required="required" readonly="readonly" /></td>
+              <td><input class="mapxCoordinate coordinate" type="number" step="any" required="required" readonly="readonly" /></td>
+              <td><input class="mapyCoordinate coordinate" type="number" step="any" required="required" readonly="readonly" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </details><br />
+
+      <details>
+        <summary>Customise layout</summary>
+        <p>There are no sanity checks here, so check the output carefully.</p>
+        <p><input type="button" value="Reset all to default template" /><input type="button" value="Apply current template to all courses" /></p>
+        <table>
+          <tr>
+            <td>Station name</td>
+            <td>Font size</td>
+            <td><input id="IDFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetIDFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllIDFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+          <tr>
+            <td rowspan="4">Page order boxes</td>
+            <td>Width</td>
+            <td><input id="checkWidth" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetCheckWidth" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckWidth" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+          <tr>
+            <td>Height</td>
+            <td><input id="checkHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetCheckHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+          <tr>
+            <td>Number font size</td>
+            <td><input id="checkFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetCheckFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+          <tr>
+            <td><em>Remove</em> font size</td>
+            <td><input id="removeFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetRemoveFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllRemoveFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+          <tr>
+            <td rowspan="3">Pointing boxes</td>
+            <td>Height</td>
+            <td><input id="pointHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetPointHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPointHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+          <tr>
+            <td>Letter font size</td>
+            <td><input id="letterFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetLetterFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllLetterFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+          <tr>
+            <td>Phonetic font size</td>
+            <td><input id="phoneticFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
+            <td><input id="resetPhoneticFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPhoneticFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
+          </tr>
+        </table>
+      </details>
+    </section>
+
+    <section id="stationProperties">
+      <ol start="11">
+        <li>Fill in the details of each station in the table:</li>
+      </ol>
+
+      <details>
+        <summary>Instructions and guidelines</summary>
         <ul>
-          <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
-          <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
+          <li>Use the first row to overwrite the values for all stations. The values will update automatically.</li>
+          <li>Untick the box in the show column to exclude the station from the printed output.</li>
+          <li>The station name is read-only; to change it, rename the courses in Purple Pen, then reload the file.</li>
+          <li>The number of kites must be less than or equal to 6, and should be 5 or 6 (rule 16.10, <a href="http://orienteering.org/trail-orienteering/rules/" target="rules">IOF Trail Orienteering Competition Rules 2018</a>).</li>
+          <li>Tick the zeroes box if zero (no kite correct) is a permitted answer. This should be ticked for TempO and unticked for PreO.</li>
+          <li>Heading is the bearing in degrees of the line subtending the left-most and right-most kite from the observation point.</li>
+          <li>The printed map can either be circular or square (IOF rule 15.7).</li>
+          <li>The circle diameter or square side length should be between 5 and 12 cm (IOF rule 15.7). Do not include the unit in the textbox.</li>
+          <li>The map scale is read automatically from the Purple Pen file. It may be changed here if the OCAD map file was set up incorrectly, although it will not change the print scale of the map excerpts. It should be 1:4000 or 1:5000 and be constant across all maps in a competition (IOF rule 15.2).</li>
+          <li>The contour interval must be stated in metres, without typing the unit in the text box.</li>
         </ul>
-        <p>
-          <label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" onchange="tcTemplate.changeStationFocus(true)" />Set defaults for all stations</label><br />
-          <label><input id="stationRadio" type="radio" name="editType" value="station" onchange="tcTemplate.changeStationFocus(true)" />Customise individual station:</label><br /><br />
-          <select id="stationSelect" size="5" onchange="tcTemplate.changeStationFocus(true)"></select><br />
-        </p>
-        <p class="setOneCourse">
-          Station:
-          <input id="addStation" type="button" value="+ Add" onclick="tcTemplate.addStation()" />
-          <input id="deleteStation" type="button" value="X Delete" onclick="tcTemplate.deleteStation()" />
-          <input id="moveUpStation" type="button" value="&uarr; Move up" onclick="tcTemplate.moveStation(-1)" />
-          <input id="moveDownStation" type="button" value="&darr; Move down" onclick="tcTemplate.moveStation(1)" />
-        </p>
-			
-        <table id="coreProperties">
+      </details>
+
+      <ul>
+        <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
+        <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
+      </ul>
+
+      <table>
+        <thead>
           <tr>
-            <td>Name</td>
-            <td><input id="stationName" type="text" pattern="^[A-Za-z0-9][,.\-+= \w]*$" required="required" oninput="tcTemplate.checkSave.stationName()" /></td>
-            <td id="nameSyntax" colspan="2">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</td>
-            <td id="nameUniqueness">Must be unique</td>
+            <th>Station name<!--Also includes several hidden fields:--></th>
+            <th>Show</th>
+            <th>Kites</th>
+            <th>Zeroes</th>
+            <th>Heading</th>
+            <th>Map shape</th>
+            <th>Diameter/side length</th>
+            <th>Scale</th>
+            <th>Contour interval</th>
           </tr>
+        </thead>
+        <tbody id="courseTableBody">
           <tr>
-            <td>Print station?</td>
-            <td><input id="showStation" type="checkbox" onchange="tcTemplate.checkSave.showStation()" /></td>
-            <td><input id="resetShowStation" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllShowStation" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-          </tr>
-          <tr>
-            <td>Number of kites</td>
-            <td><input id="numKites" type="number" min="1" max="6" step="1" required="required" oninput="tcTemplate.checkSave.numKites()" /></td>
-            <td><input id="resetKites" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllKites" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            <td id="kitesPermitted">Number of kites must be an integer between 1 and 6</td>
-            <td id="kitesRule">IOF rule: number of kites = 6</td>
-          </tr>
-          <tr>
-            <td>Zeroes?</td>
-            <td><input id="zeroes" type="checkbox" onchange="tcTemplate.checkSave.zeroes()" /></td>
-            <td><input id="resetZeroes" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllZeroes" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            <td id="zeroesWarning" colspan="2">Not the same for all stations</td>
-          </tr>
-          <tr>
-            <td>Number of tasks</td>
-            <td><input id="numTasks" type="number" min="1" step="1" required="required" oninput="tcTemplate.checkSave.numTasks()" /></td>
-            <td><input id="resetNumTasks" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllNumTasks" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            <td id="numTasksError">Must be a strictly positive integer</td>
-            <td id="numTasksRule">IOF rule: must be the same for all stations</td>
-          </tr>
-          <tr>
-            <td>Heading</td>
-            <td><input id="heading" type="number" step="any" required="required" oninput="tcTemplate.checkSave.heading()" />&deg</td><!--Plan: make this automatic-->
-            <td id="headingError" colspan="3">Must be a number</td>
-          </tr>
-          <tr>
-            <td>Map shape</td>
-            <td>
-              <select id="mapShape" required="required" onchange="tcTemplate.checkSave.mapShape()" >
+            <td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
+            <td class="setAll"><input class="showStation" type="checkbox" /></td>
+            <td class="setAll"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
+            <td class="setAll"><input class="zeroes" type="checkbox" /></td>
+            <td class="setAll"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
+            <td class="setAll">
+              <select class="mapShape">
+                <option></option>
                 <option>Circle</option>
                 <option>Square</option>
               </select>
             </td>
-            <td><input id="resetMapShape" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapShape" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            <td id="mapShapeRule" colspan="2">IOF rule: must be the same for all stations</td>
+            <td class="setAll"><input class="mapSize layoutLength" type="number" min="0" max="12" step="any" required="required" /> cm</td>
+            <td class="setAll">1:<input class="mapScale" type="number" min="0" step="any" required="required" /></td>
+            <td class="setAll"><input class="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
           </tr>
-          <tr>
-            <td>Map <span id="mapSizeType">diameter</span></td>
-            <td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" required="required" oninput="tcTemplate.checkSave.mapSize()" /> cm</td>
-            <td><input id="resetMapSize" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            <td id="mapSizePermitted">0 &lt; size &le; 12</td>
-            <td id="mapSizeRule">IOF rules: 5 &le; size &le; 12; must be the same for all stations</td>
-          </tr>
-          <tr>
-            <td>Map scale</td>
-            <td>1:<input id="mapScale" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkSave.mapScale()" /></td>
-            <td><input id="resetMapScale" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllMapScale" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            <td id="mapScalePermitted">Must be a strictly positive number</td>
-            <td id="mapScaleRule">IOF rules: normally 1:4000 or 1:5000; must be the same for all stations</td>
-          </tr>
-          <tr>
-            <td>Contour interval</td>
-            <td><input id="contourInterval" type="number" min="0" step="any" required="required" oninput="tcTemplate.checkSave.contourInterval()" /> m</td>
-            <td><input id="resetContourInterval" class="resetCourse" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllContourInterval" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            <td id="contourIntervalPermitted">Must be a strictly positive number</td>
-            <td id="contourIntervalRule">IOF rule: must be the same for all stations</td>
-          </tr>
-        </table>
-        <br />
-			
-        <details>
-          <summary>Map position</summary>
-          <p><label><input id="ppMapPosition" type="checkbox" checked="checked" />Calculate from Purple Pen file</label> <input id="setAllPPMapPosition" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></p>
-          <p><label><input id="debugCircle" type="checkbox" />Show construction marks to verify position of control circle</label></p>
-          <p>Positions of centres of control circles are measured in cm from the bottom-left corner of the page.</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Task</th>
-                <th>Page</th>
-                <th>x</th>
-                <th>y</th>
-              </tr>
-            </thead>
-            <tbody class="centre">
-              <tr>
-                <td>1</td>
-                <td><input class="mapPage" type="number" step="1" min="1" required="required" readonly="readonly" /></td>
-                <td><input class="mapxCoordinate coordinate" type="number" step="any" required="required" readonly="readonly" /></td>
-                <td><input class="mapyCoordinate coordinate" type="number" step="any" required="required" readonly="readonly" /></td>
-              </tr>
-            </tbody>
-          </table>
-        </details><br />
-			
-        <details>
-          <summary>Customise layout</summary>
-          <p>There are no sanity checks here, so check the output carefully.</p>
-          <p><input type="button" value="Reset all to default template" /><input type="button" value="Apply current template to all courses" /></p>
-          <table>
-            <tr>
-              <td>Station name</td>
-              <td>Font size</td>
-              <td><input id="IDFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetIDFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllIDFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-            <tr>
-              <td rowspan="4">Page order boxes</td>
-              <td>Width</td>
-              <td><input id="checkWidth" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetCheckWidth" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckWidth" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-            <tr>
-              <td>Height</td>
-              <td><input id="checkHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetCheckHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-            <tr>
-              <td>Number font size</td>
-              <td><input id="checkFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetCheckFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-            <tr>
-              <td><em>Remove</em> font size</td>
-              <td><input id="removeFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetRemoveFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllRemoveFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-            <tr>
-              <td rowspan="3">Pointing boxes</td>
-              <td>Height</td>
-              <td><input id="pointHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetPointHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPointHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-            <tr>
-              <td>Letter font size</td>
-              <td><input id="letterFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetLetterFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllLetterFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-            <tr>
-              <td>Phonetic font size</td>
-              <td><input id="phoneticFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
-              <td><input id="resetPhoneticFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPhoneticFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all courses" /></td>
-            </tr>
-          </table>
-        </details>
-      </section>
+        </tbody>
+      </table>
 
-      <section id="stationProperties">
-        <ol start="11">
-          <li>Fill in the details of each station in the table:</li>
-        </ol>
-
-        <details>
-          <summary>Instructions and guidelines</summary>
-          <ul>
-            <li>Use the first row to overwrite the values for all stations. The values will update automatically.</li>
-            <li>Untick the box in the show column to exclude the station from the printed output.</li>
-            <li>The station name is read-only; to change it, rename the courses in Purple Pen, then reload the file.</li>
-            <li>The number of kites must be less than or equal to 6, and should be 5 or 6 (rule 16.10, <a href="http://orienteering.org/trail-orienteering/rules/" target="rules">IOF Trail Orienteering Competition Rules 2018</a>).</li>
-            <li>Tick the zeroes box if zero (no kite correct) is a permitted answer. This should be ticked for TempO and unticked for PreO.</li>
-            <li>Heading is the bearing in degrees of the line subtending the left-most and right-most kite from the observation point.</li>
-            <li>The printed map can either be circular or square (IOF rule 15.7).</li>
-            <li>The circle diameter or square side length should be between 5 and 12 cm (IOF rule 15.7). Do not include the unit in the textbox.</li>
-            <li>The map scale is read automatically from the Purple Pen file. It may be changed here if the OCAD map file was set up incorrectly, although it will not change the print scale of the map excerpts. It should be 1:4000 or 1:5000 and be constant across all maps in a competition (IOF rule 15.2).</li>
-            <li>The contour interval must be stated in metres, without typing the unit in the text box.</li>
-          </ul>
-        </details>
-
-        <ul>
-          <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
-          <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
-        </ul>
-
+      <br />
+      <details>
+        <summary>Customise layout</summary>
+        <p><input id="debugCircle" type="checkbox" /><label for="debugCircle">Show construction marks to verify position of control circle</label></p>
+        <p>All measurements are in cm. There are no sanity checks here, so check the output carefully.</p>
         <table>
           <thead>
             <tr>
-              <th>Station name<!--Also includes several hidden fields:--></th>
-              <th>Show</th>
-              <th>Kites</th>
-              <th>Zeroes</th>
-              <th>Heading</th>
-              <th>Map shape</th>
-              <th>Diameter/side length</th>
-              <th>Scale</th>
-              <th>Contour interval</th>
+              <th colspan="2">Station name</th>
+              <th colspan="4">Page order boxes</th>
+              <th colspan="3">Pointing boxes</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th>Font size</th>
+              <th>Width</th>
+              <th>Height</th>
+              <th>Number font size</th>
+              <th><em>Remove</em> font size</th>
+              <th>Height</th>
+              <th>Letter font size</th>
+              <th>Phonetic font size</th>
             </tr>
           </thead>
-          <tbody id="courseTableBody">
+          <tbody id="layoutTableBody">
             <tr>
-              <td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllCourses()" /></td>
-              <td class="setAll"><input class="showStation" type="checkbox" /></td>
-              <td class="setAll"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
-              <td class="setAll"><input class="zeroes" type="checkbox" /></td>
-              <td class="setAll"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
-              <td class="setAll">
-                <select class="mapShape">
-                  <option></option>
-                  <option>Circle</option>
-                  <option>Square</option>
-                </select>
-              </td>
-              <td class="setAll"><input class="mapSize layoutLength" type="number" min="0" max="12" step="any" required="required" /> cm</td>
-              <td class="setAll">1:<input class="mapScale" type="number" min="0" step="any" required="required" /></td>
-              <td class="setAll"><input class="contourInterval" type="number" min="0" step="any" required="required" /> m</td>
+              <td><input type="button" value="Insert all defaults" onclick="tcTemplate.resetAllLayout()" /></td>
+              <td><input class="IDFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+              <td><input class="checkWidth" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+              <td><input class="checkHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+              <td><input class="checkFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+              <td><input class="removeFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+              <td><input class="pointHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+              <td><input class="letterFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+              <td><input class="phoneticFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
+            </tr>
+            <tr id="layoutSetAllRow">
+              <td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllLayout()" /></td>
+              <td class="setAll"><input class="IDFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+              <td class="setAll"><input class="checkWidth layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+              <td class="setAll"><input class="checkHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+              <td class="setAll"><input class="checkFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+              <td class="setAll"><input class="removeFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+              <td class="setAll"><input class="pointHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+              <td class="setAll"><input class="letterFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+              <td class="setAll"><input class="phoneticFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
             </tr>
           </tbody>
         </table>
+      </details>
 
-        <br />
-        <details>
-          <summary>Customise layout</summary>
-          <p><input id="debugCircle" type="checkbox" /><label for="debugCircle">Show construction marks to verify position of control circle</label></p>
-          <p>All measurements are in cm. There are no sanity checks here, so check the output carefully.</p>
-          <table>
-            <thead>
-              <tr>
-                <th colspan="2">Station name</th>
-                <th colspan="4">Page order boxes</th>
-                <th colspan="3">Pointing boxes</th>
-              </tr>
-              <tr>
-                <th></th>
-                <th>Font size</th>
-                <th>Width</th>
-                <th>Height</th>
-                <th>Number font size</th>
-                <th><em>Remove</em> font size</th>
-                <th>Height</th>
-                <th>Letter font size</th>
-                <th>Phonetic font size</th>
-              </tr>
-            </thead>
-            <tbody id="layoutTableBody">
-              <tr>
-                <td><input type="button" value="Insert all defaults" onclick="tcTemplate.resetAllLayout()" /></td>
-                <td><input class="IDFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                <td><input class="checkWidth" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                <td><input class="checkHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                <td><input class="checkFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                <td><input class="removeFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                <td><input class="pointHeight" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                <td><input class="letterFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-                <td><input class="phoneticFontSize" type="button" value="Default" onclick="tcTemplate.resetField(this)" /></td>
-              </tr>
-              <tr id="layoutSetAllRow">
-                <td class="setAll"><input type="button" value="Set all stations" onclick="tcTemplate.setAllLayout()" /></td>
-                <td class="setAll"><input class="IDFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                <td class="setAll"><input class="checkWidth layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                <td class="setAll"><input class="checkHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                <td class="setAll"><input class="checkFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                <td class="setAll"><input class="removeFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                <td class="setAll"><input class="pointHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                <td class="setAll"><input class="letterFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-                <td class="setAll"><input class="phoneticFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
-              </tr>
-            </tbody>
-          </table>
-        </details>
+      <ol start="12">
+        <li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
+        <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page. See <a href="help/printingadjustments.html" target="help">instructions for professional printing</a>.</li>
+        <li>Cut along all of the red lines.</li>
+        <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
+        <li>Have a successful competition!</li>
+      </ol>
+    </section>
+  </main>
+  <footer>
+    <p class="right">Last updated (UTC): 7<sup>th</sup> November 2019 23:32</p>
+    <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
+  </footer>
 
-        <ol start="12">
-          <li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
-          <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page. See <a href="help/printingadjustments.html" target="help">instructions for professional printing</a>.</li>
-          <li>Cut along all of the red lines.</li>
-          <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
-          <li>Have a successful competition!</li>
-        </ol>
-      </section>
-    </main>
-    <footer>
-      <p class="right">Last updated (UTC): 7<sup>th</sup> November 2019 23:32</p>
-      <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
-    </footer>
-	
-    <script src="texlive.js/promisejs/promise.js"></script>
-    <script src="texlive.js/pdftex.js"></script>
-    <script src="WizardScript.js"></script>
-  </body>
-  </html>
+  <script src="texlive.js/promisejs/promise.js"></script>
+  <script src="texlive.js/pdftex.js"></script>
+  <script src="WizardScript.js"></script>
+</body>
+</html>
