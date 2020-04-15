@@ -1,78 +1,79 @@
 ﻿<!DOCTYPE html>
 <html lang="en-GB">
 <head>
-	<meta charset="utf-8" />
-	<link rel="stylesheet" type="text/css" href="../WizardStyle.css" />
-	
-	<!--Favicons-->
-	<link rel="apple-touch-icon" type="image/png" href="../favicon/noborder152.png" sizes="152x152" />
-	<link rel="icon" type="image/png" href="../favicon/favicon512.png" sizes="512x512" />
-	<link rel="icon" type="image/png" href="../favicon/favicon256.png" sizes="256x256" />
-	<link rel="icon" type="image/png" href="../favicon/favicon192.png" sizes="192x192" />
-	<link rel="icon" type="image/png" href="../favicon/favicon32.png" sizes="32x32" />
-	<link rel="icon" type="image/png" href="../favicon/favicon16.png" sizes="16x16" />
-	
-	<title>TCTemplate Help: Security</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" type="text/css" href="../WizardStyle.css" />
+
+  <!--Favicons-->
+  <link rel="apple-touch-icon" type="image/png" href="../favicon/noborder152.png" sizes="152x152" />
+  <link rel="icon" type="image/png" href="../favicon/favicon512.png" sizes="512x512" />
+  <link rel="icon" type="image/png" href="../favicon/favicon256.png" sizes="256x256" />
+  <link rel="icon" type="image/png" href="../favicon/favicon192.png" sizes="192x192" />
+  <link rel="icon" type="image/png" href="../favicon/favicon32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="../favicon/favicon16.png" sizes="16x16" />
+
+  <title>TCTemplate Help: Security</title>
 </head>
 <body>
-	<header>
-		<h1>TCTemplate Help</h1>
-		<h2>Security/Running Offline</h2>
-	</header>
-	<main id="mainView">
-		<h3>Security Statement</h3>
-		<p>TCTemplate is secure, so it is very difficult for a hacker to steal your competition maps. Purple Pen (used for map and control description preparation) is third-party software that is not known to transfer your data across the internet. The TCTemplate web wizard is delivered over the internet using a secure connection and only the author is able to change the version of the software presented, so tampering of the code is very unlikely. Although you select your competition map files from your computer and the web page reads them, all of this is performed locally on your computer and no data is uploaded to the internet. The final step of compiling the LaTeX file is performed using third-party software, either on a secure website (recommended) or locally on your computer (advanced users), so should be secure.</p>
-		<h3>Extra Security/Running Offline</h3>
-		<p>For extra security, it is possible to download all the software to your computer and prepare the map cards locally with your computer disconnected from the internet. Running offline is also useful when assisting with software development. Instructions:</p>
-		<ol>
-            <li>
-                Download the source code:
+  <header>
+    <h1>TCTemplate Help</h1>
+    <h2>Security/Running Offline</h2>
+  </header>
+  <main id="mainView">
+    <h3>Security Statement</h3>
+    <p>TCTemplate is secure, so it is very difficult for a hacker to steal your competition maps. Purple Pen (used for map and control description preparation) is third-party software that is not known to transfer your data across the internet. The TCTemplate web wizard is delivered over the internet using a secure connection and only the author is able to change the version of the software presented, so tampering of the code is very unlikely. Although you select your competition map files from your computer and the web page reads them, all of this is performed locally on your computer and no data is uploaded to the internet. The final step of compiling the LaTeX file is performed using third-party software, either on a secure website (recommended) or locally on your computer (advanced users), so should be secure.</p>
+    <h3>Extra Security/Running Offline</h3>
+    <p>For extra security, it is possible to download all the software to your computer and prepare the map cards locally with your computer disconnected from the internet. Running offline is also useful when assisting with software development. Instructions:</p>
+    <ol>
+      <li>
+        Download the source code:
+        <ul>
+          <li>Software developers (and those who know about Git): Install <a href="https://githowto.com" target="installGit">Git</a>, then open the terminal, use the <code>cd</code> command to navigate to the target folder and run <code>git clone --recursive https://github.com/tdobra/tctemplate.git</code>.</li>
+          <li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">main ZIP</a>, then download and extract <a href="https://github.com/tdobra/texlive.js/archive/master.zip" download="texlive.js.zip">TeX Live</a> into the <code>texlive.js</code> folder, and then download and extract <a href="https://github.com/stackp/promisejs/archive/2ac90b7c04cf3095d58659649b98d66a3e5ad2f2.zip" download="promisejs.zip">promisejs</a> into the <code>promisejs</code> folder. Take care to avoid double subfolders. It is necessary to repeat these steps when installing updates.</li>
+        </ul>
+      </li>
+      <li>
+        Install Web Server for Chrome (if not using the Python option below):
+        <ol>
+          <li>Install <a href="https://www.google.com/chrome/" target="prerequisites">Google Chrome</a>.</li>
+          <li>In Chrome, navigate to <a href="https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb" target="prerequisites">https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb</a>.</li>
+          <li>Click on <em>Add to Chrome</em>.</li>
+        </ol>
+      </li>
+      <li>You may now disconnect your computer from the internet if extra security is required.</li>
+      <li>
+        Start the local web server:
+        <ul>
+          <li>
+            Easier: Web Server for Chrome
+            <ol>
+              <li>Open Web Server for Chrome. It is in the Start menu (Windows) or the list of apps (MacOS).</li>
+              <li>Choose the top-level folder where the TCTemplate source code is saved.</li>
+              <li>Click on the slider so that it turns blue and says <em>Web Server: STARTED</em>.</li>
+              <li>Navigate to the URL shown.</li>
+            </ol>
+          </li>
+          <li>
+            Alternative: Python HTTP server
+            <ol>
+              <li>Install <a href="https://www.python.org/downloads/" target="prerequisites">Python</a> version 3.</li>
+              <li>
+                Run <em>Start.py</em>.
                 <ul>
-                    <li>Software developers (and those who know about Git): Install <a href="https://githowto.com" target="installGit">Git</a>, then open the terminal, use the <code>cd</code> command to navigate to the target folder and run <code>git clone --recursive https://github.com/tdobra/tctemplate.git</code>.</li>
-                    <li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">main ZIP</a>, then download and extract <a href="https://github.com/tdobra/texlive.js/archive/master.zip" download="texlive.js.zip">TeX Live</a> into the <code>texlive.js</code> folder, and then download and extract <a href="https://github.com/stackp/promisejs/archive/2ac90b7c04cf3095d58659649b98d66a3e5ad2f2.zip" download="promisejs.zip">promisejs</a> into the <code>promisejs</code> folder. Take care to avoid double subfolders. It is necessary to repeat these steps when installing updates.</li>
+                  <li>Windows: Double click on <em>Start</em> in the TCTemplate source code (or use the command prompt as below).</li>
+                  <li>MacOS, Linux and other Unix: Open the terminal, change to the correct directory and make <code>Start.py</code> executable using <code>chmod u+x Start.py</code>, then run using <code>./Start.py</code>.
                 </ul>
-            </li>
-            <li>Install Web Server for Chrome (if not using the Python option below):
-                <ol>
-                    <li>Install <a href="https://www.google.com/chrome/" target="prerequisites">Google Chrome</a>.</li>
-                    <li>In Chrome, navigate to <a href="https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb" target="prerequisites">https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb</a>.</li>
-                    <li>Click on <em>Add to Chrome</em>.</li>
-                </ol>
-            </li>
-			<li>You may now disconnect your computer from the internet if extra security is required.</li>
-            <li>
-                Start the local web server:
-                <ul>
-                    <li>
-                        Easier: Web Server for Chrome
-                        <ol>
-                            <li>Open Web Server for Chrome. It is in the Start menu (Windows) or the list of apps (MacOS).</li>
-                            <li>Choose the top-level folder where the TCTemplate source code is saved.</li>
-                            <li>Click on the slider so that it turns blue and says <em>Web Server: STARTED</em>.</li>
-                            <li>Navigate to the URL shown.</li>
-                        </ol>
-                    </li>
-                    <li>
-                        Alternative: Python HTTP server
-                        <ol>
-                            <li>Install <a href="https://www.python.org/downloads/" target="prerequisites">Python</a> version 3.</li>
-                            <li>
-                                Run <em>Start.py</em>.
-                                <ul>
-                                    <li>Windows: Double click on <em>Start</em> in the TCTemplate source code (or use the command prompt as below).</li>
-                                    <li>MacOS, Linux and other Unix: Open the terminal, change to the correct directory and make <code>Start.py</code> executable using <code>chmod u+x Start.py</code>, then run using <code>./Start.py</code>.
-                                </ul>
-                            </li>
-                            <li>TCTemplate appears automatically, or navigate to the URL shown.</li>
-                        </ol>
-                    </li>
-                </ul>
-            </li>
-		</ol>
-	</main>
-	<footer>
-        <p class="right">Last updated (UTC): 2nd November 2019 23:20</p>
-        <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="license.html">view license</a></p>
-	</footer>
+              </li>
+              <li>TCTemplate appears automatically, or navigate to the URL shown.</li>
+            </ol>
+          </li>
+        </ul>
+      </li>
+    </ol>
+  </main>
+  <footer>
+    <p class="right">Last updated (UTC): 2nd November 2019 23:20</p>
+    <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="license.html">view license</a></p>
+  </footer>
 </body>
 </html>
