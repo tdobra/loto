@@ -1,43 +1,43 @@
 body {
-	font-family: sans-serif;
+  font-family: sans-serif;
 }
 
 table {
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
 
 th, td {
-    border-style: solid;
-    border-color: black;
-    border-width: 1px;
-	text-align: center;
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+  text-align: center;
 }
 
 input.layoutLength {
-    /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
-    width: 7ch;
+  /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
+  width: 7ch;
 }
 
 input.kites {
-	width: 4ch;
+  width: 4ch;
 }
 
 input.heading, input.mapScale {
-	width: 8ch;
+  width: 8ch;
 }
 
 input.contourInterval {
-	width: 6ch;
+  width: 6ch;
 }
 
 .right {
-    text-align: right;
+  text-align: right;
 }
 
 details {
-	background-color: #F5D2B8;
+  background-color: #F5D2B8;
 }
 
 summary, .setAll {
-    background-color: #F56600;
+  background-color: #F56600;
 }
