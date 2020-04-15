@@ -755,7 +755,7 @@ tcTemplate = function() {
     //Generates LaTeX parameters file
     //Returns string with error message or "ok" if no errors
 
-    var rtnstr, tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, showStationList, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, parametersBlob;
+    var rtnstr, tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, showStationList, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsScaleList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, CDsPDFScale, parametersBlob;
 
     rtnstr = "ok";
 
@@ -766,9 +766,10 @@ tcTemplate = function() {
     //Define constants
     //Positioning relative to bottom-left corner and size of control descriptions in source PDF
     CDsxCoordBase = 1.25;
-    CDsyCoordBase = 26.28;
+    CDsyCoordBase = 26.58;
     CDsHeightBase = 0.77;
     CDsWidthBase = 5.68;
+    CDsPDFScale = 7 / 6; //Enlarges CDs from 6mm to 7mm boxes. LaTeX crashes if too many decimal places.
 
     //Create variables, often strings, to accumulate
     numStations = 0;
@@ -794,6 +795,7 @@ tcTemplate = function() {
     CDsyList = "\\def\\DescriptionyCoordinateList{{";
     CDsHeightList = "\\def\\DescriptionHeightList{{";
     CDsWidthList = "\\def\\DescriptionWidthList{{";
+    CDsScaleList = "\\def\\DescriptionPDFScaleList{{";
     CDsaFontList = "\\def\\CDaFontSizeList{{";
     CDsbFontList = "\\def\\CDbFontSizeList{{";
     showPointingBoxesList = "\\def\\ShowPointingBoxesList{{";
@@ -903,15 +905,18 @@ tcTemplate = function() {
       CDsyList += "{";
       CDsHeightList += "{";
       CDsWidthList += "{";
+      CDsScaleList += "{";
       //Add a comma after all elements including the last one. A scalar without comma is misinterpreted by LaTeX.
       for (iterNum = 0; iterNum < numProblems; iterNum++) {
         mapFileList += fileName + ",";
         CDsFileList += "\"CDs\",";
+        //Control description size parameters taking 6mm boxes in PDF from PPen and displaying 7mm on map cards
         CDsxList += CDsxCoordBase + ",";	//Must match number just above for Purple Pen
-        CDsyCoord = CDsyCoordBase - 0.7 * controlsSkipped[iterNum];
+        CDsyCoord = CDsyCoordBase - 0.6 * controlsSkipped[iterNum];
         CDsyList += CDsyCoord + ",";	//Must match number just above for Purple Pen
         CDsHeightList += CDsHeightBase + ",";   //For a 7mm box
         CDsWidthList += CDsWidthBase + ",";   //For a 7mm box
+        CDsScaleList += CDsPDFScale.toString() + ",";
       }
       mapFileList += "}";
       CDsFileList += "}";
@@ -919,6 +924,7 @@ tcTemplate = function() {
       CDsyList += "}";
       CDsHeightList += "}";
       CDsWidthList += "}";
+      CDsScaleList += "}";
       CDsaFontList += "\"0.45cm\"";
       CDsbFontList += "\"0.39cm\"";
 
@@ -1031,6 +1037,7 @@ tcTemplate = function() {
       CDsyList += ",";
       CDsHeightList += ",";
       CDsWidthList += ",";
+      CDsScaleList += ",";
       CDsaFontList += ",";
       CDsbFontList += ",";
       showPointingBoxesList += ",";
@@ -1077,6 +1084,7 @@ tcTemplate = function() {
     fileString += CDsyList + "}}\n";
     fileString += CDsHeightList + "}}\n";
     fileString += CDsWidthList + "}}\n";
+    fileString += CDsScaleList + "}}\n";
     fileString += CDsaFontList + "}}\n";
     fileString += CDsbFontList + "}}\n";
     fileString += showPointingBoxesList + "}}\n";

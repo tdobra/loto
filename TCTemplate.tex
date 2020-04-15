@@ -83,7 +83,8 @@
 \pgfmathsetmacro{\DescriptionxCoordinate}{\DescriptionxCoordinateList[\StaNumber][\SheetNumber-1]}
 \pgfmathsetmacro{\DescriptionyCoordinate}{\DescriptionyCoordinateList[\StaNumber][\SheetNumber-1]}
 \pgfmathsetmacro{\DescriptionHeight}{\DescriptionHeightList[\StaNumber][\SheetNumber-1]}
-\pgfmathsetmacro{\DescriptionWidth}{\DescriptionWidthList[\StaNumber][\SheetNumber-1]}}
+\pgfmathsetmacro{\DescriptionWidth}{\DescriptionWidthList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionPDFScale}{\DescriptionPDFScaleList[\StaNumber][\SheetNumber-1]}}
 
 %Define variables/constants - these are macros, so need brackets when combining
 \newcommand{\CardHalfHeight}{6.75}
@@ -194,7 +195,7 @@
 \ifthenelse{\SheetNumber = 0}{}{
 \begin{scope}[shift={(-0.5*\DescriptionWidth,\DescriptionBaseyCoordinate)}]
 \clip (0,0) rectangle (\DescriptionWidth,\DescriptionHeight);
-\node[anchor=south west, inner sep=0] at (-\DescriptionxCoordinate,-\DescriptionyCoordinate) {\includegraphics[page=\DescriptionPage]{\DescriptionFile}};
+\node[anchor=south west, inner sep=0] at (-\DescriptionxCoordinate*\DescriptionPDFScale,-\DescriptionyCoordinate*\DescriptionPDFScale) {\includegraphics[page=\DescriptionPage, scale=\DescriptionPDFScale]{\DescriptionFile}};
 %Problem number
 \node[anchor=center, inner sep=0cm, minimum size=0.6cm, fill=white] at (0.07*\DescriptionWidth,0.52*\DescriptionHeight) {\fontseries{b}\fontsize{\CDaFontSize}{\CDaFontSize}\selectfont \SheetNumber{}};
 %Number of kites
