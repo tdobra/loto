@@ -1,54 +1,54 @@
 body {
-	font-family: sans-serif;
+  font-family: sans-serif;
 }
 
 table {
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
 
 th, td {
-    border-style: solid;
-    border-color: black;
-    border-width: 1px;
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
 }
 
 th {
-	text-align: center;
+  text-align: center;
 }
 
 input.layoutLength, input.mapPage {
-    /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
-    width: 7ch;
+  /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
+  width: 7ch;
 }
 
 input.coordinate {
-	width: 20ch;
+  width: 20ch;
 }
 
 #kites, #numTasks {
-	width: 4ch;
+  width: 4ch;
 }
 
 #heading, #mapScale {
-	width: 8ch;
+  width: 8ch;
 }
 
 #contourInterval {
-	width: 6ch;
+  width: 6ch;
 }
 
 .centre {
-	text-align: center;
+  text-align: center;
 }
 
 .right {
-    text-align: right;
+  text-align: right;
 }
 
 details, .warning {
-	background-color: #f5d2b8;
+  background-color: #f5d2b8;
 }
 
 summary, .setAll, .error {
-    background-color: #f56600;
+  background-color: #f56600;
 }
