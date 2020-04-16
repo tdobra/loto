@@ -223,6 +223,15 @@ const tcTemplate = (() => {
         this.value = inputFieldValue;
       }
     }
+
+    setAll() {
+      //Sets this field to this value in all stations
+      let station;
+      for (station of this.stationList.items) {
+        station[this.fieldName].value = this.value;
+        //TODO: Check validity of all stations
+      }
+    }
   }
 
   class BooleanField extends Field {
