@@ -55,9 +55,9 @@
       <p class="setOneCourse">
         Station:
         <input id="addStation" type="button" value="+ Add" onclick="tcTemplate.stationList.add()" />
-        <input id="deleteStation" type="button" value="X Delete" onclick="tcTemplate.stationList.deleteItem()" />
-        <input id="moveUpStation" type="button" value="&uarr; Move up" onclick="tcTemplate.stationList.moveItem(-1)" />
-        <input id="moveDownStation" type="button" value="&darr; Move down" onclick="tcTemplate.stationList.moveItem(1)" />
+        <input id="deleteStation" type="button" value="X Delete" onclick="tcTemplate.stationList.activeStation().deleteThis()" />
+        <input id="moveUpStation" type="button" value="&uarr; Move up" onclick="tcTemplate.stationList.activeStation().move(-1)" />
+        <input id="moveDownStation" type="button" value="&darr; Move down" onclick="tcTemplate.stationList.activeStation().move(1)" />
       </p>
 
       <table id="coreProperties">

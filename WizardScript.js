@@ -27,50 +27,6 @@ const tcTemplate = (() => {
       this.add = obj.add;
     }
 
-    deleteItem(index = this.itemInFocus) {
-      //Deletes an item
-      //Check first
-      if (confirm("Are you sure you want to delete? This cannot be undone.")) {
-        this.items.splice(index, 1);
-        this.iteminFocus = 0;
-        //Don't save deleted values then redo station list
-        this.refresh(false);
-      }
-    }
-
-    moveItem(offset = 0) {
-      //Moves the active item
-
-      //Check target is in bounds
-      const newPos = this.itemInFocus + offset;
-      const arrayLength = this.items.length
-      if (newPos < 0 || newPos >= arrayLength) {
-        throw "Moving station to position beyond bounds of array";
-      }
-      if (!Number.isInteger(newPos)) {
-        throw "Station position offset is not an integer";
-      }
-
-      //Rearrange data array
-      this.items.splice(newPos, 0, this.items.splice(this.itemInFocus, 1)[0]);
-
-      //Rearrange selector
-      const currentOption = this.selector.getElementsByTagName("option")[this.itemInFocus];
-      currentOption.remove();
-      if (newPos === arrayLength - 1) {
-        this.selector.insertBefore(currentOption, null);
-      } else {
-        //Make sure to get a new element list, as it will have changed
-        this.selector.insertBefore(currentOption, this.selector.getElementsByTagName("option")[newPos]);
-      }
-
-      //Update active station number
-      this.itemInFocus = newPos;
-
-      //Enable/disable move up/down buttons
-      this.showHideMoveBtns();
-    }
-
     showHideMoveBtns() {
       //Show the delete button only if more than one option
       if (this.selector.length > 1) {
@@ -101,8 +57,9 @@ const tcTemplate = (() => {
 
   class Station {
     //May need to create a more general class to inherit from
-    constructor(parentObj, copyStation) {
+    constructor(parentObj, optionElement, copyStation) {
       this.stationList = parentObj;
+      this.optionElement = optionElement;
       this.valid = false;
 
       //Fields - populate with values given in copyStation, if present
@@ -118,30 +75,91 @@ const tcTemplate = (() => {
         "mapScale",
         "contourInterval"
       ];
+      const classNames = [
+        StationName,
+        ShowStation,
+        NumKites,
+        Zeroes,
+        NumTasks,
+        Heading,
+        MapShape,
+        MapSize,
+        MapScale,
+        ContourInterval
+      ];
+      let field;
       if (copyStation === undefined) {
         //Create an object to pass undefined parameters => triggers default values specified in class
         copyStation = {};
-        let field;
         for (field of this.fieldNames) {
           copyStation[field] = { value: undefined };
         }
       }
       //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
-      this.stationName = new StationName(this, copyStation.stationName.value);
-      this.showStation = new ShowStation(this, copyStation.showStation.value);
-      this.numKites = new NumKites(this, copyStation.numKites.value);
-      this.zeroes = new Zeroes(this, copyStation.zeroes.value);
-      this.numTasks = new NumTasks(this, copyStation.numTasks.value);
-      this.heading = new Heading(this, copyStation.heading.value);
-      this.mapShape = new MapShape(this, copyStation.mapShape.value);
-      this.mapSize = new MapSize(this, copyStation.mapSize.value);
-      this.mapScale = new MapScale(this, copyStation.mapScale.value);
-      this.contourInterval = new ContourInterval(this, copyStation.contourInterval.value);
+      let index = 0;
+      for (field of this.fieldNames) {
+        this[field] = new classNames[index](this, copyStation[field].value);
+        index++;
+      }
+    }
+
+    get index() {
+      let thisIndex = 0;
+      while (this.stationList.items[thisIndex] !== this) { thisIndex++; }
+      return thisIndex;
     }
 
     isNonDefaultHidden() {
       //Returns true if the station is hidden and the default station is not in focus
       return !(this.showStation.value || this.stationList.defaultInFocus);
+    }
+
+    deleteThis() {
+      //Deletes this item
+      //Check first
+      if (confirm("Are you sure you want to delete? This cannot be undone.")) {
+        this.optionElement.remove();
+        this.stationList.iteminFocus = 0;
+        this.stationList.selector.selectedIndex = 0;
+        //Remove this station from array
+        this.stationList.items.splice(this.index, 1);
+        //Don't save deleted values then refresh input fields
+        this.stationList.refresh(false);
+      }
+    }
+
+    move(offset = 0) {
+      //Moves this item
+
+      //Check target is in bounds
+      const newPos = this.index + offset;
+      const arrayLength = this.stationList.items.length
+      if (newPos < 0 || newPos >= arrayLength) {
+        throw "Moving station to position beyond bounds of array";
+      }
+      if (!Number.isInteger(newPos)) {
+        throw "Station position offset is not an integer";
+      }
+
+      //Rearrange selector
+      this.optionElement.remove();
+      let insertBeforeElement = null;
+      if (newPos < arrayLength - 1) {
+        insertBeforeElement = this.stationList.items[newPos].optionElement;
+      } //Else move to end of list
+      //Make sure to get a new element list, as it will have changed
+      this.stationList.selector.insertBefore(this.optionElement, insertBeforeElement);
+
+      //Remove this from array
+      this.stationList.items.splice(this.index, 1);
+      //Insert into new position
+      this.stationList.items.splice(newPos, 0, this);
+
+      //Update active station number
+      this.stationList.itemInFocus = newPos;
+
+      //Enable/disable move up/down buttons
+      this.stationList.showHideMoveBtns();
     }
 
     refreshAllInput() {
@@ -310,7 +328,7 @@ const tcTemplate = (() => {
 
       //Update station list
       if (this.stationList.defaultInFocus === false) {
-        this.stationList.selector.getElementsByTagName("option")[this.stationList.itemInFocus].innerHTML = this.value;
+        this.station.optionElement.innerHTML = this.value;
       }
     }
   }
@@ -573,7 +591,7 @@ const tcTemplate = (() => {
   });
 
   //Set up current/dynamic defaults
-  stationList.default = new Station(stationList, undefined);
+  stationList.default = new Station(stationList, null, undefined);
   stationList.defaultInFocus = true;
 
   stationList.activeStation = function() {
@@ -615,7 +633,7 @@ const tcTemplate = (() => {
       //Highlight entry in selector if there is an error
       if (stationList.defaultInFocus === false) {
         //Validity of default station is always false
-        const thisOptionClassList = stationList.selector.getElementsByTagName("option")[stationList.itemInFocus].classList;
+        const thisOptionClassList = stationList.activeStation().optionElement.classList;
         if (stopOnErrorProps.getElementsByClassName("error").length) {
           stationList.activeStation().valid = false;
           thisOptionClassList.add("error");
@@ -624,19 +642,6 @@ const tcTemplate = (() => {
           thisOptionClassList.remove("error");
         }
       }
-    } else {
-      //Loading brand new data, so update station list
-      //Remove all existing options
-      stationList.selector.innerHTML = "";
-      //Add new options according to values in memory
-      let station, newNode;
-      for (station of this.items) {
-        newNode = document.createElement("option");
-        newNode.innerHTML = station.stationName.value;
-        stationList.selector.appendChild(newNode);
-      }
-      //Select current station in focus
-      stationList.selector.selectedIndex = 0;
     }
 
     //Show/hide or enable/disable HTML elements according to new selected station
@@ -675,17 +680,18 @@ const tcTemplate = (() => {
   }
 
   function addStation() {
+    //Create option in station selector
+    const newNode = stationList.selector.appendChild(document.createElement("option"));
+
     //New station initially takes default values
-    const newStation = new Station(stationList, stationList.default);
+    const newStation = new Station(stationList, newNode, stationList.default);
 
     //Name the new station
     newStation.stationName.value = (stationList.items.length + 1).toString();
+    newNode.innerHTML = newStation.stationName.value;
 
     //Add to the end
     stationList.items.push(newStation);
-    const newNode = document.createElement("option");
-    newNode.innerHTML = newStation.stationName.value;
-    stationList.selector.appendChild(newNode);
 
     //Try to change to new station. The add station button is disabled when on defaults.
     newNode.selected = true;
