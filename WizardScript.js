@@ -3,7 +3,17 @@
 //Prevent sloppy programming and throw more errors
 "use strict";
 
-//Script to call on page load is below the namespace definition
+//Check browser supports required APIs
+if (FileReader && DOMParser && Blob && URL && fetch) {
+  document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
+} else {
+  document.getElementById("mainView").hidden = true;
+}
+
+//Old MS Edge/IE doesn't always work - <details> tag not implemented
+if ("open" in document.createElement("details")) {
+  document.getElementById("MSEdgeWarning").hidden = true;
+}
 
 //Keep all functions private and put those with events in HTML tags in a namespace
 const tcTemplate = (() => {
@@ -21,10 +31,28 @@ const tcTemplate = (() => {
       this.upBtn = obj.upBtn;
       this.downBtn = obj.downBtn;
       if (typeof(obj.itemInFocus) === undefined) { obj.itemInFocus = 0; };
+      this.defaultInFocus = obj.defaultInFocus;
       this.itemInFocus = obj.itemInFocus;
       this.items = [];
       this.refresh = obj.refresh;
       this.add = obj.add;
+    }
+
+    get activeItem() {
+      if (this.defaultInFocus) {
+        return this.default;
+      } else {
+        return this.items[this.itemInFocus];
+      }
+    }
+
+    createEventListeners() {
+      //Do not call until activeItem is defined
+      this.selector.addEventListener("change", this.refresh);
+      this.addBtn.addEventListener("click", this.add);
+      this.deleteBtn.addEventListener("click", () => { this.activeItem.deleteThis(); });
+      this.upBtn.addEventListener("click", () => { this.activeItem.move(-1); });
+      this.downBtn.addEventListener("click", () => { this.activeItem.move(1); });
     }
 
     showHideMoveBtns() {
@@ -87,17 +115,16 @@ const tcTemplate = (() => {
         MapScale,
         ContourInterval
       ];
-      let field;
       if (copyStation === undefined) {
         //Create an object to pass undefined parameters => triggers default values specified in class
         copyStation = {};
-        for (field of this.fieldNames) {
+        for (const field of this.fieldNames) {
           copyStation[field] = { value: undefined };
         }
       }
       //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
       let index = 0;
-      for (field of this.fieldNames) {
+      for (const field of this.fieldNames) {
         this[field] = new classNames[index](this, copyStation[field].value);
         index++;
       }
@@ -109,9 +136,17 @@ const tcTemplate = (() => {
       return thisIndex;
     }
 
+    isActive() {
+      return this.stationList.activeItem === this;
+    }
+
+    isDefault() {
+      return this.stationList.default === this;
+    }
+
     isNonDefaultHidden() {
       //Returns true if the station is hidden and the default station is not in focus
-      return !(this.showStation.value || this.stationList.defaultInFocus);
+      return !(this.showStation.value || this.isDefault());
     }
 
     deleteThis() {
@@ -162,23 +197,37 @@ const tcTemplate = (() => {
       this.stationList.showHideMoveBtns();
     }
 
+    checkValidity() {
+      this.valid = this.fieldNames.every((field) => this[field].valid);
+      if (!this.isDefault()) {
+        //Highlight errors in the station selector
+        if (this.valid) {
+          this.optionElement.classList.remove("error");
+        } else {
+          this.optionElement.classList.add("error");
+        }
+      }
+    }
+
     refreshAllInput() {
-      let field;
-      for (field of this.fieldNames) {
+      for (const field of this.fieldNames) {
         this[field].refreshInput();
       }
+      this.checkValidity();
     }
   }
 
   //Fields
   class Field {
     //Generic field: string or select
-    constructor(parentObj, value, fieldName, inputElement) {
-      this.station = parentObj;
+    constructor(obj) {
+      this.station = obj.parentObj;
       this.stationList = this.station.stationList; //Shortcut
-      this.value = value;
-      this.fieldName = fieldName;
-      this.inputElement = inputElement;
+      this.value = obj.value;
+      this.fieldName = obj.fieldName;
+      this.inputElement = obj.inputElement;
+      this.resetBtn = obj.resetBtn;
+      this.setAllBtn = obj.setAllBtn;
     }
 
     get inputValue() {
@@ -196,9 +245,9 @@ const tcTemplate = (() => {
       if (ignoreHidden && this.station.showStation.value === false) { return false; }
 
       if (ignoreHidden) {
-        return this.stationList.items.some(station => (station[this.fieldName].value === this.value && station !== this.station && station.showStation.value === true));
+        return this.stationList.items.some((station) => (station[this.fieldName].value === this.value && station !== this.station && station.showStation.value === true));
       } else {
-        return this.stationList.items.some(station => (station[this.fieldName].value === this.value && station !== this.station));
+        return this.stationList.items.some((station) => (station[this.fieldName].value === this.value && station !== this.station));
       }
     }
 
@@ -209,15 +258,10 @@ const tcTemplate = (() => {
       if (ignoreHidden && this.station.showStation.value === false) { return true; }
 
       if (ignoreHidden) {
-        return this.stationList.items.every(station => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value) || station.showStation.value === false));
+        return this.stationList.items.every((station) => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value) || station.showStation.value === false));
       } else {
-        return this.stationList.items.every(station => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value)));
+        return this.stationList.items.every((station) => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value)));
       }
-    }
-
-    checkSave() {
-      this.saveInput();
-      this.check();
     }
 
     refreshInput() {
@@ -228,26 +272,34 @@ const tcTemplate = (() => {
 
     resetValue() {
       //Resets to current default value
-      this.inputValue = this.stationList.default[this.fieldName].value;
-      this.checkSave();
+      this.save(this.stationList.default[this.fieldName].value);
+      this.refreshInput();
+      this.station.checkValidity();
     }
 
     saveInput() {
-      const inputFieldValue = this.inputValue;
-      if (this.value !== inputFieldValue) {
+      //Call when the value of the input element is updated by the user
+      this.save(this.inputValue);
+      this.check();
+      this.station.checkValidity();
+    }
+
+    save(val) {
+      //Saves value and determines whether a change has occurred
+      if (this.value !== val) {
         //Flag value as changed
         paramsSaved = false;
         //Write new value to memory
-        this.value = inputFieldValue;
+        this.value = val;
       }
     }
 
     setAll() {
       //Sets this field to this value in all stations
-      let station;
-      for (station of this.stationList.items) {
+      for (const station of this.stationList.items) {
         station[this.fieldName].value = this.value;
-        //TODO: Check validity of all stations
+        station[this.fieldName].check();
+        station.checkValidity();
       }
     }
   }
@@ -285,49 +337,61 @@ const tcTemplate = (() => {
       }
     }
 
-    saveInput() {
-      const inputFieldNum = this.inputValue;
+    save(val) {
       //New & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (this.value !== inputFieldNum && (Number.isNaN(this.value) === false || Number.isNaN(inputFieldNum) === false)) {
+      if (this.value !== val && (Number.isNaN(this.value) === false || Number.isNaN(val) === false)) {
         //Flag value as changed
         paramsSaved = false;
         //Write new value to memory
-        this.value = inputFieldNum;
+        this.value = val;
       }
     }
   }
 
   class StationName extends Field {
     constructor(parentObj, value = "") {
-      super(parentObj, value, "stationName", document.getElementById("stationName"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "stationName",
+        inputElement: document.getElementById("stationName"),
+        resetBtn: undefined,
+        setAllBtn: undefined
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentFieldClass = this.inputElement.classList;
-      const syntaxMsgStyle = document.getElementById("nameSyntax").style;
-      const uniquenessMsgStyle = document.getElementById("nameUniqueness").style;
-
       //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
-      if (this.stationList.defaultInFocus === false && this.inputElement.validity.valid === false) {
-        //Invalid syntax
-        contentFieldClass.add("error");
-        syntaxMsgStyle.display = "";
-        uniquenessMsgStyle.display = "none";
-      } else {
-        syntaxMsgStyle.display = "none";
-        //Check uniqueness - don't bother if station is the defaults
-        if (this.stationList.defaultInFocus === false && this.isDuplicate(false)) {
-          //Duplicate station name
-          contentFieldClass.add("error");
-          uniquenessMsgStyle.display = "";
-        } else {
+      const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
+      const syntaxError = !(this.station.isDefault() || stringFormat.test(this.value));
+      const duplicateError = !(this.station.isDefault()) && this.isDuplicate(false);
+      this.valid = !(syntaxError || duplicateError);
+
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const syntaxMsgStyle = document.getElementById("nameSyntax").style;
+        const uniquenessMsgStyle = document.getElementById("nameUniqueness").style;
+
+        if (this.valid) {
           contentFieldClass.remove("error");
+          syntaxMsgStyle.display = "none";
           uniquenessMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("error");
+          //Don't show both error messages together
+          if (syntaxError) {
+            syntaxMsgStyle.display = "";
+            uniquenessMsgStyle.display = "none";
+          } else {
+            syntaxMsgStyle.display = "none";
+            uniquenessMsgStyle.display = "";
+          }
         }
       }
 
       //Update station list
-      if (this.stationList.defaultInFocus === false) {
+      if (!this.station.isDefault()) {
         this.station.optionElement.innerHTML = this.value;
       }
     }
@@ -335,245 +399,328 @@ const tcTemplate = (() => {
 
   class ShowStation extends BooleanField {
     constructor(parentObj, value = true) {
-      super(parentObj, value, "showStation", document.getElementById("showStation"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "showStation",
+        inputElement: document.getElementById("showStation"),
+        resetBtn: document.getElementById("resetShowStation"),
+        setAllBtn: document.getElementById("setAllShowStation")
+      };
+      super(inputObj);
     }
 
     check () {
-      //Do nothing: always ok
+      //Always ok
+      this.valid = true;
+      //Most validity checks are ignored when station is hidden, so rerun all checks
+      for (const field of this.station.fieldNames) {
+        //Avoid infinite loops
+        if (field !== "showStation") {
+          this.station[field].check();
+        }
+      }
     }
   }
 
   class NumKites extends NumberField {
     constructor(parentObj, value = 6) {
-      super(parentObj, value, "numKites", document.getElementById("numKites"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "numKites",
+        inputElement: document.getElementById("numKites"),
+        resetBtn: document.getElementById("resetNumKites"),
+        setAllBtn: document.getElementById("setAllNumKites")
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentField = this.inputElement;
-      const contentFieldClass = contentField.classList;
-      const errorMsgStyle = document.getElementById("kitesPermitted").style;
-      const ruleMsgStyle = document.getElementById("kitesRule").style;
+      //Always technically valid
+      this.valid = true;
 
-      //Check validity
-      if (this.value === 6 || this.station.isNonDefaultHidden()) {
-        //Field valid, or non-defaults station not displayed
-        contentFieldClass.remove("error");
-        contentFieldClass.remove("warning");
-        errorMsgStyle.display = "none";
-        ruleMsgStyle.display = "none";
-      } else if (contentField.validity.valid) {
-        //Displaying a number less than 6 - not compliant with IOF rules
-        contentFieldClass.remove("error");
-        contentFieldClass.add("warning");
-        contentField.className = "warning";
-        errorMsgStyle.display = "none";
-        ruleMsgStyle.display = "";
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        errorMsgStyle.display = "";
-        ruleMsgStyle.display = "";
+      //Check rules if in focus
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const ruleMsgStyle = document.getElementById("kitesRule").style;
+        if (this.value === 6 || this.station.isNonDefaultHidden()) {
+          //Field valid, or non-defaults station not displayed
+          contentFieldClass.remove("warning");
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
+          ruleMsgStyle.display = "";
+        }
       }
     }
   }
 
   class Zeroes extends BooleanField {
     constructor(parentObj, value = false) {
-      super(parentObj, value, "zeroes", document.getElementById("zeroes"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "zeroes",
+        inputElement: document.getElementById("zeroes"),
+        resetBtn: document.getElementById("resetZeroes"),
+        setAllBtn: document.getElementById("setAllZeroes")
+      };
+      super(inputObj);
     }
 
     check() {
-      const ruleMsgStyle = document.getElementById("zeroesWarning").style;
-      const contentFieldClass = this.inputElement.classList;
+      //Always ok
+      this.valid = true;
 
-      //Check all values the same - don't bother if station is hidden or is defaults
-      if (this.matchesAll(true) || this.stationList.defaultInFocus){
-        contentFieldClass.remove("warning");
-        ruleMsgStyle.display = "none";
-      } else {
-        contentFieldClass.add("warning");
-        ruleMsgStyle.display = "";
+      //Check rules if in focus
+      if (this.station.isActive()) {
+        const ruleMsgStyle = document.getElementById("zeroesWarning").style;
+        const contentFieldClass = this.inputElement.classList;
+
+        //Check all values the same - don't bother if station is hidden or is defaults
+        if (this.matchesAll(true) || this.station.isDefault()){
+          contentFieldClass.remove("warning");
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
+          ruleMsgStyle.display = "";
+        }
       }
     }
   }
 
   class NumTasks extends NumberField {
     constructor(parentObj, value = NaN) {
-      super(parentObj, value, "numTasks", document.getElementById("numTasks"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "numTasks",
+        inputElement: document.getElementById("numTasks"),
+        resetBtn: document.getElementById("resetNumTasks"),
+        setAllBtn: document.getElementById("setAllNumTasks")
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentField = this.inputElement;
-      const contentFieldClass = contentField.classList;
-      const errorMsgStyle = document.getElementById("numTasksError").style;
-      const ruleMsgStyle = document.getElementById("numTasksRule").style;
+      this.valid = (Number.isInteger(this.value) && this.value >= 1) || this.station.isNonDefaultHidden();
 
-      //Check all values the same - don't bother if station is hidden or is the defaults
-      if (this.matchesAll(true) || this.stationList.defaultInFocus) {
-        contentFieldClass.remove("warning");
-        ruleMsgStyle.display = "none";
-      } else {
-        contentFieldClass.add("warning");
-        ruleMsgStyle.display = "";
-      }
-
-      //Check validity. Ignore non-default hidden stations
-      if (contentField.validity.valid || this.station.isNonDefaultHidden()) {
-        contentFieldClass.remove("error");
-        errorMsgStyle.display = "none";
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        errorMsgStyle.display = "";
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const errorMsgStyle = document.getElementById("numTasksError").style;
+        const ruleMsgStyle = document.getElementById("numTasksRule").style;
+        if (this.valid) {
+          contentFieldClass.remove("error");
+          errorMsgStyle.display = "none";
+          //Check all values the same - don't bother if station is hidden or is the defaults
+          if (this.matchesAll(true) || this.station.isDefault()) {
+            contentFieldClass.remove("warning");
+            ruleMsgStyle.display = "none";
+          } else {
+            contentFieldClass.add("warning");
+            ruleMsgStyle.display = "";
+          }
+        } else {
+          contentFieldClass.add("error");
+          contentFieldClass.remove("warning");
+          errorMsgStyle.display = "";
+          ruleMsgStyle.display = "";
+        }
       }
     }
   }
 
   class Heading extends NumberField {
     constructor(parentObj, value = NaN) {
-      super(parentObj, value, "heading", document.getElementById("heading"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "heading",
+        inputElement: document.getElementById("heading"),
+        resetBtn: undefined,
+        setAllBtn: undefined
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentField = this.inputElement;
-      const contentFieldClass = contentField.classList;
-      const errorMsgStyle = document.getElementById("headingError").style;
-
-      //Check validity - ignore defaults and hidden stations
-      if (contentField.validity.valid === false && !(this.station.isNonDefaultHidden())) {
-        contentFieldClass.add("error");
-        errorMsgStyle.dispaly = "";
-      } else {
-        contentFieldClass.remove("error");
-        errorMsgStyle.display = "none";
+      this.valid = (Number.isFinite(this.value) || this.station.showStation.value === false) || this.station.isDefault();
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const errorMsgStyle = document.getElementById("headingError").style;
+        if (this.valid) {
+          contentFieldClass.remove("error");
+          errorMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("error");
+          errorMsgStyle.dispaly = "";
+        }
       }
     }
   }
 
   class MapShape extends Field {
     constructor(parentObj, value = "Circle") {
-      super(parentObj, value, "mapShape", document.getElementById("mapShape"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "mapShape",
+        inputElement: document.getElementById("mapShape"),
+        resetBtn: document.getElementById("resetMapShape"),
+        setAllBtn: document.getElementById("setAllMapShape")
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentFieldClass = this.inputElement.classList;
-      const ruleMsgStyle = document.getElementById("mapShapeRule").style;
-      const sizeTypeElement = document.getElementById("mapSizeType");
+      this.valid = true;
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const ruleMsgStyle = document.getElementById("mapShapeRule").style;
+        const sizeTypeElement = document.getElementById("mapSizeType");
 
-      //Check all values the same - don't bother if station is hidden or is the defaults
-      //No warning if station hidden or Defaults or all stations same
-      if (this.matchesAll(true) || this.stationList.defaultInFocus === true) {
-        contentFieldClass.remove("warning");
-        ruleMsgStyle.display = "none";
-      } else {
-        contentFieldClass.add("warning");
-        ruleMsgStyle.display = "";
-      }
+        //Check all values the same - don't bother if station is hidden or is the defaults
+        //No warning if station hidden or Defaults or all stations same
+        if (this.matchesAll(true) || this.station.isDefault()) {
+          contentFieldClass.remove("warning");
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
+          ruleMsgStyle.display = "";
+        }
 
-      //Update labels for map size description
-      if (this.value === "Circle") {
-        sizeTypeElement.innerHTML = "diameter";
-      } else {
-        sizeTypeElement.innerHTML = "side length";
+        //Update labels for map size description
+        if (this.value === "Circle") {
+          sizeTypeElement.innerHTML = "diameter";
+        } else {
+          sizeTypeElement.innerHTML = "side length";
+        }
       }
     }
   }
 
   class MapSize extends NumberField {
     constructor(parentObj, value = NaN) {
-      super(parentObj, value, "mapSize", document.getElementById("mapSize"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "mapSize",
+        inputElement: document.getElementById("mapSize"),
+        resetBtn: document.getElementById("resetMapSize"),
+        setAllBtn: document.getElementById("setAllMapSize")
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentField = this.inputElement;
-      const contentFieldClass = contentField.classList;
-      const errorMsgStyle = document.getElementById("mapSizePermitted").style;
-      const ruleMsgStyle = document.getElementById("mapSizeRule").style;
-
-      //Check validity - don't bother for non-default hidden station
-      if ((contentField.validity.valid === true && this.value > 0) || this.station.isNonDefaultHidden()) {
-        errorMsgStyle.display = "none";
-        contentFieldClass.remove("error");
-        //Check whether all values are the same and >= 5
-        //No warning if non-default hidden station or (size >= 5 and (default or all stations same))
-        if (this.station.isNonDefaultHidden() || (this.value >= 5 && (this.stationList.defaultInFocus || this.matchesAll(true)))) {
-          contentFieldClass.remove("warning");
-          ruleMsgStyle.display = "none";
+      this.valid = (Number.isFinite(this.value) && this.value > 0 && this.value <= 12) || this.station.isNonDefaultHidden();
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const errorMsgStyle = document.getElementById("mapSizePermitted").style;
+        const ruleMsgStyle = document.getElementById("mapSizeRule").style;
+        if (this.valid) {
+          errorMsgStyle.display = "none";
+          contentFieldClass.remove("error");
+          //Check whether all values are the same and >= 5
+          //No warning if non-default hidden station or (size >= 5 and (default or all stations same))
+          if (this.station.isNonDefaultHidden() || (this.value >= 5 && (this.station.isDefault() || this.matchesAll(true)))) {
+            contentFieldClass.remove("warning");
+            ruleMsgStyle.display = "none";
+          } else {
+            contentFieldClass.add("warning");
+            ruleMsgStyle.display = "";
+          }
         } else {
-          contentFieldClass.add("warning");
+          contentFieldClass.add("error");
+          contentFieldClass.remove("warning");
+          errorMsgStyle.display = "";
           ruleMsgStyle.display = "";
         }
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        errorMsgStyle.display = "";
-        ruleMsgStyle.display = "";
       }
     }
   }
 
   class MapScale extends NumberField {
     constructor(parentObj, value = NaN) {
-      super(parentObj, value, "mapScale", document.getElementById("mapScale"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "mapScale",
+        inputElement: document.getElementById("mapScale"),
+        resetBtn: document.getElementById("resetMapScale"),
+        setAllBtn: document.getElementById("setAllMapScale")
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentField = this.inputElement;
-      const contentFieldClass = contentField.classList;
-      const errorMsgStyle = document.getElementById("mapScalePermitted").style;
-      const ruleMsgStyle = document.getElementById("mapScaleRule").style;
-
-      //Check validity - don't bother if station is non-default hidden
-      if ((contentField.validity.valid === true && this.value > 0) || this.station.isNonDefaultHidden()) {
-        errorMsgStyle.display = "none";
-        contentFieldClass.remove("error");
-        //Check whether all values are the same and (equal 4000 or 5000)
-        //No warning if non-default hidden station or (4000/5000 and (default or all stations same))
-        if (this.station.isNonDefaultHidden() || ((this.value === 4000 || this.value === 5000) && (this.stationList.defaultInFocus || this.matchesAll(true)))) {
-          contentFieldClass.remove("warning");
-          ruleMsgStyle.display = "none";
+      this.valid = (Number.isFinite(this.value) && this.value > 0) || this.station.isNonDefaultHidden();
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const errorMsgStyle = document.getElementById("mapScalePermitted").style;
+        const ruleMsgStyle = document.getElementById("mapScaleRule").style;
+        if (this.valid) {
+          errorMsgStyle.display = "none";
+          contentFieldClass.remove("error");
+          //Check whether all values are the same and (equal 4000 or 5000)
+          //No warning if non-default hidden station or (4000/5000 and (default or all stations same))
+          if (this.station.isNonDefaultHidden() || ((this.value === 4000 || this.value === 5000) && (this.station.isDefault() || this.matchesAll(true)))) {
+            contentFieldClass.remove("warning");
+            ruleMsgStyle.display = "none";
+          } else {
+            contentFieldClass.add("warning");
+            ruleMsgStyle.display = "";
+          }
         } else {
-          contentFieldClass.add("warning");
+          contentFieldClass.add("error");
+          contentFieldClass.remove("warning");
+          errorMsgStyle.display = "";
           ruleMsgStyle.display = "";
         }
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        errorMsgStyle.display = "";
-        ruleMsgStyle.display = "";
       }
     }
   }
 
   class ContourInterval extends NumberField {
     constructor(parentObj, value = NaN) {
-      super(parentObj, value, "contourInterval", document.getElementById("contourInterval"));
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "contourInterval",
+        inputElement: document.getElementById("contourInterval"),
+        resetBtn: document.getElementById("resetContourInterval"),
+        setAllBtn: document.getElementById("setAllContourInterval")
+      };
+      super(inputObj);
     }
 
     check() {
-      const contentField = this.inputElement;
-      const contentFieldClass = contentField.classList;
-      const errorMsgStyle = document.getElementById("contourIntervalPermitted").style;
-      const ruleMsgStyle = document.getElementById("contourIntervalRule").style;
+      this.valid = (Number.isFinite(this.value) && this.value > 0) || this.station.isNonDefaultHidden();
+      if (this.station.isActive()) {
+        const contentFieldClass = this.inputElement.classList;
+        const errorMsgStyle = document.getElementById("contourIntervalPermitted").style;
+        const ruleMsgStyle = document.getElementById("contourIntervalRule").style;
 
-      //Check validity - don't bother if station is non-default hidden
-      if ((contentField.validity.valid === true && this.value > 0) || this.station.isNonDefaultHidden()) {
-        errorMsgStyle.display = "none";
-        contentFieldClass.remove("error");
-        //Check whether all values are the same
-        //No warning if non-default hidden station or defaults or all stations same
-        if (this.stationList.defaultInFocus || this.matchesAll(true)) {
-          contentFieldClass.remove("warning");
-          ruleMsgStyle.display = "none";
+        //Check validity - don't bother if station is non-default hidden
+        if (this.valid) {
+          errorMsgStyle.display = "none";
+          contentFieldClass.remove("error");
+          //Check whether all values are the same
+          //No warning if non-default hidden station or defaults or all stations same
+          if (this.station.isDefault() || this.matchesAll(true)) {
+            contentFieldClass.remove("warning");
+            ruleMsgStyle.display = "none";
+          } else {
+            contentFieldClass.add("warning");
+            ruleMsgStyle.display = "";
+          }
         } else {
-          contentFieldClass.add("warning");
+          contentFieldClass.add("error");
+          contentFieldClass.remove("warning");
+          errorMsgStyle.display = "";
           ruleMsgStyle.display = "";
         }
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        errorMsgStyle.display = "";
-        ruleMsgStyle.display = "";
       }
     }
   }
@@ -585,6 +732,7 @@ const tcTemplate = (() => {
     deleteBtn: document.getElementById("deleteStation"),
     upBtn: document.getElementById("moveUpStation"),
     downBtn: document.getElementById("moveDownStation"),
+    defaultInFocus: true,
     itemInFocus: 0,
     refresh: changeStationFocus,
     add: addStation
@@ -592,24 +740,17 @@ const tcTemplate = (() => {
 
   //Set up current/dynamic defaults
   stationList.default = new Station(stationList, null, undefined);
-  stationList.defaultInFocus = true;
 
-  stationList.activeStation = function() {
-    //Don't use arrow function to ensure this points to the caller
-    if (this.defaultInFocus) {
-      return this.default;
-    } else {
-      return this.items[this.itemInFocus];
-    }
-  };
+  //Radio button options
+  stationList.defaultRadio = document.getElementById("defaultRadio");
+  stationList.stationRadio = document.getElementById("stationRadio");
+
+  stationList.setAllBtn = document.getElementById("setAllFieldsAllStations");
+  stationList.setAll = setAllFieldsStations;
 
   function changeStationFocus(storeValues = false) {
     //Dynamic station editing. storeValues is a boolean stating whether to commit values in form fields to variables in memory.
     var contentField;
-
-    //Radio button options
-    const defaultRadio = document.getElementById("defaultRadio");
-    const stationRadio = document.getElementById("stationRadio");
 
     //Other DOM elements
     const stopOnErrorProps = document.getElementById("coreProperties");
@@ -617,7 +758,7 @@ const tcTemplate = (() => {
 
     if (storeValues) {
       //Only permit change of station if the name is valid and unique
-      if (stationList.activeStation().stationName.inputElement.classList.contains("error")) {
+      if (stationList.activeItem.stationName.valid === false) {
         //Abort
         alert("Please insert a valid and unique station name");
         //Change radio buttons and selectors back to original values
@@ -628,19 +769,6 @@ const tcTemplate = (() => {
           stationList.selector.selectedIndex = stationList.itemInFocus;
         }
         return;
-      }
-
-      //Highlight entry in selector if there is an error
-      if (stationList.defaultInFocus === false) {
-        //Validity of default station is always false
-        const thisOptionClassList = stationList.activeStation().optionElement.classList;
-        if (stopOnErrorProps.getElementsByClassName("error").length) {
-          stationList.activeStation().valid = false;
-          thisOptionClassList.add("error");
-        } else {
-          stationList.activeStation().valid = true;
-          thisOptionClassList.remove("error");
-        }
       }
     }
 
@@ -671,12 +799,12 @@ const tcTemplate = (() => {
       stationList.selector.disabled = false;
       stationList.addBtn.disabled = false;
       stationList.showHideMoveBtns();
-      stationList.activeStation().stationName.inputElement.disabled = false;
-      stationList.activeStation().heading.inputElement.disabled = false;
+      stationList.activeItem.stationName.inputElement.disabled = false;
+      stationList.activeItem.heading.inputElement.disabled = false;
     }
 
     //Populate with values for new selected station and check for errors
-    stationList.activeStation().refreshAllInput();
+    stationList.activeItem.refreshAllInput();
   }
 
   function addStation() {
@@ -696,9 +824,16 @@ const tcTemplate = (() => {
     //Try to change to new station. The add station button is disabled when on defaults.
     newNode.selected = true;
     stationList.refresh(true);
-  };
+  }
 
-
+  function setAllFieldsStations() {
+    //Sets all fields on all stations to the current defaults
+    for (const field of stationList.default.fieldNames) {
+      if (stationList.default[field].resetBtn !== undefined) {
+        stationList.default[field].setAll();
+      }
+    }
+  }
 
 
   //Layout default measurements
@@ -1829,7 +1964,7 @@ const tcTemplate = (() => {
         logContent = [];
         numEvents = 0;
         statusBox = document.getElementById("compileStatus");
-        return msg => {
+        return (msg) => {
           var logStr, rowId, logBlob, downloadElement, logURL;
           console.log(msg);
           logContent.push(msg);
@@ -1891,7 +2026,7 @@ const tcTemplate = (() => {
             statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
           } else {
             //Save PDF
-            pdftex.FS_readFile("./input.pdf").then(outfile => {
+            pdftex.FS_readFile("./input.pdf").then((outfile) => {
               var outBlob, outURL, outLen, outArray, index;
               downloadElement = document.getElementById("savePDF");
               //Revoke old URL
@@ -1944,7 +2079,7 @@ const tcTemplate = (() => {
     resourceFileArray = [paramRtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
     //Load each resource file and get a URL for each
     //Read them using promises native in Javascript
-    promiseArray = resourceFileArray.map(fileobj => {
+    promiseArray = resourceFileArray.map((fileobj) => {
       return new Promise(function(resolve, reject) {
         var filename = fileobj.name;
         var freader = new FileReader();
@@ -1955,10 +2090,10 @@ const tcTemplate = (() => {
         freader.readAsDataURL(fileobj);
       });
     });
-    Promise.all(promiseArray).catch(err => {
+    Promise.all(promiseArray).catch((err) => {
       statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
       return Promise.reject("handled");
-    }).then(result => {
+    }).then((result) => {
       //Download a copy of parameters file to save for later
       if (document.getElementById("autoSave").checked === true && paramsSaved === false) {
         downloadFile(paramRtn.file, "TemplateParameters.tex");
@@ -1970,21 +2105,48 @@ const tcTemplate = (() => {
       resourceURLs = result.slice(0);
       //Load LaTeX code
       return fetch("TCTemplate.tex");
-    }).then(response => {
+    }).then((response) => {
       if (response.ok === true) {
         return response.text();
       } else {
         throw response.status;
       }
-    }).then(sourceCode => {
+    }).then((sourceCode) => {
       compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
-    }, err => {
+    }, (err) => {
       if (err !== "handled") {
         statusBox.innerHTML = "Failed to load TCTemplate.tex: " + err;
       }
       //Enable generate PDF button
       btn.disabled = false;
     });
+  }
+
+  //Initialisation
+  //TODO: From legacy UI
+  document.getElementById("stationProperties").hidden = true;
+  document.getElementById("savePDF").hidden = true;
+  document.getElementById("viewLog").hidden = true;
+
+  //Initialise variables. Do it this way rather than in HTML to avoid multiple hardcodings of the same initial values.
+  stationList.add(stationList.default);
+  stationList.refresh(false);
+
+  //Event listeners
+  stationList.createEventListeners();
+  stationList.defaultRadio.addEventListener("change", () => { stationList.refresh(true); });
+  stationList.stationRadio.addEventListener("change", () => { stationList.refresh(true); });
+  stationList.setAllBtn.addEventListener("click", stationList.setAll);
+  for (const field of stationList.default.fieldNames) {
+    let inputEvent = "input";
+    if (stationList.default[field].inputElement.tagName === "SELECT") {
+      inputEvent = "change";
+    }
+    stationList.default[field].inputElement.addEventListener(inputEvent, () => { stationList.activeItem[field].saveInput(); });
+    if (stationList.default[field].resetBtn !== undefined) {
+      stationList.default[field].resetBtn.addEventListener("click", () => { stationList.activeItem[field].resetValue(); });
+      stationList.default[field].setAllBtn.addEventListener("click", () => { stationList.activeItem[field].setAll(); });
+    }
   }
 
   //Make required functions and objects globally visible
@@ -2000,23 +2162,3 @@ const tcTemplate = (() => {
     generatePDF: generatePDF
   };
 })();
-
-//Check browser supports required APIs
-if (FileReader && DOMParser && Blob && URL && fetch) {
-  document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
-} else {
-  document.getElementById("mainView").hidden = true;
-}
-
-//Old MS Edge/IE doesn't always work - <details> tag not implemented
-if ("open" in document.createElement("details")) {
-  document.getElementById("MSEdgeWarning").hidden = true;
-}
-
-document.getElementById("stationProperties").hidden = true;
-document.getElementById("savePDF").hidden = true;
-document.getElementById("viewLog").hidden = true;
-
-//Initiate all variables on page. Do it this way rather than in HTML to avoid multiple hardcodings of the same initial values.
-tcTemplate.stationList.add(tcTemplate.stationList.default);
-tcTemplate.stationList.refresh(false);
