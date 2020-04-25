@@ -91,18 +91,6 @@ const tcTemplate = (() => {
       this.valid = false;
 
       //Fields - populate with values given in copyStation, if present
-      this.fieldNames = [
-        "stationName",
-        "showStation",
-        "numKites",
-        "zeroes",
-        "numTasks",
-        "heading",
-        "mapShape",
-        "mapSize",
-        "mapScale",
-        "contourInterval"
-      ];
       const classNames = [
         StationName,
         ShowStation,
@@ -113,8 +101,17 @@ const tcTemplate = (() => {
         MapShape,
         MapSize,
         MapScale,
-        ContourInterval
+        ContourInterval,
+        IDFontSize,
+        CheckWidth,
+        CheckHeight,
+        CheckFontSize,
+        RemoveFontSize,
+        PointHeight,
+        LetterFontSize,
+        PhoneticFontSize
       ];
+      this.fieldNames = classNames.map((className) => className.getFieldName());
       if (copyStation === undefined) {
         //Create an object to pass undefined parameters => triggers default values specified in class
         copyStation = {};
@@ -197,7 +194,14 @@ const tcTemplate = (() => {
       this.stationList.showHideMoveBtns();
     }
 
-    checkValidity() {
+    checkValidity(recheckFields = true) {
+      if (recheckFields === true) {
+        //Recheck validity of all fields
+        for (const field of this.fieldNames) {
+          this[field].checkValidity();
+        }
+      }
+
       this.valid = this.fieldNames.every((field) => this[field].valid);
       if (!this.isDefault()) {
         //Highlight errors in the station selector
@@ -213,7 +217,6 @@ const tcTemplate = (() => {
       for (const field of this.fieldNames) {
         this[field].refreshInput();
       }
-      this.checkValidity();
     }
   }
 
@@ -221,10 +224,10 @@ const tcTemplate = (() => {
   class Field {
     //Generic field: string or select
     constructor(obj) {
+      this.fieldName = this.constructor.getFieldName();
       this.station = obj.parentObj;
       this.stationList = this.station.stationList; //Shortcut
       this.value = obj.value;
-      this.fieldName = obj.fieldName;
       this.inputElement = obj.inputElement;
       this.resetBtn = obj.resetBtn;
       this.setAllBtn = obj.setAllBtn;
@@ -276,14 +279,14 @@ const tcTemplate = (() => {
       //Resets to current default value
       this.save(this.stationList.default[this.fieldName].value);
       this.refreshInput();
-      this.station.checkValidity();
+      this.station.checkValidity(false);
     }
 
     saveInput() {
       //Call when the value of the input element is updated by the user
       this.save(this.inputValue);
       this.updateMsgs();
-      this.station.checkValidity();
+      this.station.checkValidity(false);
     }
 
     save(val) {
@@ -302,9 +305,13 @@ const tcTemplate = (() => {
       //Sets this field to this value in all stations
       for (const station of this.stationList.items) {
         station[this.fieldName].save(this.value);
-        station.checkValidity();
+        station.checkValidity(false);
       }
     }
+
+    //Empty functions, which may be overwritten in inheriting classes if some action is required
+    checkValidity() {} //Most likely: field always valid
+    updateMsgs() {}
   }
 
   class BooleanField extends Field {
@@ -319,10 +326,6 @@ const tcTemplate = (() => {
 
     set inputValue(ticked) {
       this.inputElement.checked = ticked;
-    }
-
-    checkValidity() {
-      //Do nothing: always valid
     }
   }
 
@@ -354,6 +357,8 @@ const tcTemplate = (() => {
         paramsSaved = false;
         //Write new value to memory
         this.value = val;
+        //Check whether this new value is valid
+        this.checkValidity();
       }
     }
   }
@@ -376,7 +381,7 @@ const tcTemplate = (() => {
     }
   }
 
-  class StrictPostiveField extends NonNegativeField {
+  class StrictPositiveField extends NonNegativeField {
     checkValidity() {
       //LaTeX crashes if font size is set to zero
       this.valid =  (Number.isFinite(this.value) && this.value > 0) || this.station.isNonDefaultHidden();
@@ -388,7 +393,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "stationName",
         inputElement: document.getElementById("stationName"),
         resetBtn: undefined,
         setAllBtn: undefined,
@@ -398,12 +402,16 @@ const tcTemplate = (() => {
       super(inputObj);
     }
 
+    static getFieldName() {
+      return "stationName";
+    }
+
     checkValidity() {
       //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
       const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
       this.syntaxError = !(this.station.isDefault() || stringFormat.test(this.value));
       this.duplicateError = !(this.station.isDefault()) && this.isDuplicate(false);
-      this.valid = !(syntaxError || duplicateError);
+      this.valid = !(this.syntaxError || this.duplicateError);
 
       //Update station list
       if (!this.station.isDefault()) {
@@ -422,7 +430,7 @@ const tcTemplate = (() => {
       } else {
         contentFieldClass.add("error");
         //Don't show both error messages together
-        if (syntaxError) {
+        if (this.syntaxError) {
           syntaxMsgStyle.display = "";
           uniquenessMsgStyle.display = "none";
         } else {
@@ -438,7 +446,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "showStation",
         inputElement: document.getElementById("showStation"),
         resetBtn: document.getElementById("resetShowStation"),
         setAllBtn: document.getElementById("setAllShowStation"),
@@ -446,6 +453,10 @@ const tcTemplate = (() => {
         errorElement2: undefined
       };
       super(inputObj);
+    }
+
+    static getFieldName() {
+      return "showStation";
     }
 
     checkValidity() {
@@ -468,7 +479,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "numKites",
         inputElement: document.getElementById("numKites"),
         resetBtn: document.getElementById("resetNumKites"),
         setAllBtn: document.getElementById("setAllNumKites"),
@@ -479,21 +489,21 @@ const tcTemplate = (() => {
       this.valid = true; //Always valid
     }
 
-    checkValidity() {
-      //Do nothing: always valid
+    static getFieldName() {
+      return "numKites";
     }
 
     updateMsgs() {
-        const contentFieldClass = this.inputElement.classList;
-        const ruleMsgStyle = this.errorElement1.style;
-        if (this.value === 6 || this.station.isNonDefaultHidden()) {
-          //Field valid, or non-defaults station not displayed
-          contentFieldClass.remove("warning");
-          ruleMsgStyle.display = "none";
-        } else {
-          contentFieldClass.add("warning");
-          ruleMsgStyle.display = "";
-        }
+      const contentFieldClass = this.inputElement.classList;
+      const ruleMsgStyle = this.errorElement1.style;
+      if (this.value === 6 || this.station.isNonDefaultHidden()) {
+        //Field valid, or non-defaults station not displayed
+        contentFieldClass.remove("warning");
+        ruleMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("warning");
+        ruleMsgStyle.display = "";
+      }
     }
   }
 
@@ -502,7 +512,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "zeroes",
         inputElement: document.getElementById("zeroes"),
         resetBtn: document.getElementById("resetZeroes"),
         setAllBtn: document.getElementById("setAllZeroes"),
@@ -512,17 +521,21 @@ const tcTemplate = (() => {
       super(inputObj);
     }
 
+    static getFieldName() {
+      return "zeroes";
+    }
+
     updateMsgs() {
-        const ruleMsgStyle = this.errorElement1.style;
-        const contentFieldClass = this.inputElement.classList;
-        //Check all values the same - don't bother if station is hidden or is defaults
-        if (this.matchesAll(true) || this.station.isDefault()){
-          contentFieldClass.remove("warning");
-          ruleMsgStyle.display = "none";
-        } else {
-          contentFieldClass.add("warning");
-          ruleMsgStyle.display = "";
-        }
+      const ruleMsgStyle = this.errorElement1.style;
+      const contentFieldClass = this.inputElement.classList;
+      //Check all values the same - don't bother if station is hidden or is defaults
+      if (this.matchesAll(true) || this.station.isDefault()){
+        contentFieldClass.remove("warning");
+        ruleMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("warning");
+        ruleMsgStyle.display = "";
+      }
     }
   }
 
@@ -531,7 +544,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "numTasks",
         inputElement: document.getElementById("numTasks"),
         resetBtn: document.getElementById("resetNumTasks"),
         setAllBtn: document.getElementById("setAllNumTasks"),
@@ -541,32 +553,36 @@ const tcTemplate = (() => {
       super(inputObj);
     }
 
+    static getFieldName() {
+      return "numTasks";
+    }
+
     checkValidity() {
       this.valid = (Number.isInteger(this.value) && this.value >= 1) || this.station.isNonDefaultHidden();
     }
 
     updateMsgs() {
-        const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = this.errorElement1.style;
-        const ruleMsgStyle = this.errorElement2.style;
-        if (this.valid) {
-          contentFieldClass.remove("error");
-          errorMsgStyle.display = "none";
-          //Check all values the same - don't bother if station is hidden or is the defaults
-          if (this.matchesAll(true) || this.station.isDefault()) {
-            contentFieldClass.remove("warning");
-            ruleMsgStyle.display = "none";
-          } else {
-            contentFieldClass.add("warning");
-            ruleMsgStyle.display = "";
-          }
-        } else {
-          contentFieldClass.add("error");
+      const contentFieldClass = this.inputElement.classList;
+      const errorMsgStyle = this.errorElement1.style;
+      const ruleMsgStyle = this.errorElement2.style;
+      if (this.valid) {
+        contentFieldClass.remove("error");
+        errorMsgStyle.display = "none";
+        //Check all values the same - don't bother if station is hidden or is the defaults
+        if (this.matchesAll(true) || this.station.isDefault()) {
           contentFieldClass.remove("warning");
-          errorMsgStyle.display = "";
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
           ruleMsgStyle.display = "";
         }
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
       }
+    }
   }
 
   class Heading extends NumberField {
@@ -574,7 +590,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "heading",
         inputElement: document.getElementById("heading"),
         resetBtn: undefined,
         setAllBtn: undefined,
@@ -584,20 +599,24 @@ const tcTemplate = (() => {
       super(inputObj);
     }
 
+    static getFieldName() {
+      return "heading";
+    }
+
     checkValidity() {
       this.valid = (Number.isFinite(this.value) || this.station.showStation.value === false) || this.station.isDefault();
     }
 
     updateMsgs() {
-        const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = this.errorElement1.style;
-        if (this.valid) {
-          contentFieldClass.remove("error");
-          errorMsgStyle.display = "none";
-        } else {
-          contentFieldClass.add("error");
-          errorMsgStyle.dispaly = "";
-        }
+      const contentFieldClass = this.inputElement.classList;
+      const errorMsgStyle = this.errorElement1.style;
+      if (this.valid) {
+        contentFieldClass.remove("error");
+        errorMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("error");
+        errorMsgStyle.dispaly = "";
+      }
     }
   }
 
@@ -606,7 +625,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "mapShape",
         inputElement: document.getElementById("mapShape"),
         resetBtn: document.getElementById("resetMapShape"),
         setAllBtn: document.getElementById("setAllMapShape"),
@@ -617,31 +635,31 @@ const tcTemplate = (() => {
       this.valid = true; //Always valid
     }
 
-    checkValidity() {
-      //Do nothing: always valid
+    static getFieldName() {
+      return "mapShape";
     }
 
     updateMsgs() {
-        const contentFieldClass = this.inputElement.classList;
-        const ruleMsgStyle = this.errorElement1.style;
-        const sizeTypeElement = document.getElementById("mapSizeType");
+      const contentFieldClass = this.inputElement.classList;
+      const ruleMsgStyle = this.errorElement1.style;
+      const sizeTypeElement = document.getElementById("mapSizeType");
 
-        //Check all values the same - don't bother if station is hidden or is the defaults
-        //No warning if station hidden or Defaults or all stations same
-        if (this.matchesAll(true) || this.station.isDefault()) {
-          contentFieldClass.remove("warning");
-          ruleMsgStyle.display = "none";
-        } else {
-          contentFieldClass.add("warning");
-          ruleMsgStyle.display = "";
-        }
+      //Check all values the same - don't bother if station is hidden or is the defaults
+      //No warning if station hidden or Defaults or all stations same
+      if (this.matchesAll(true) || this.station.isDefault()) {
+        contentFieldClass.remove("warning");
+        ruleMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("warning");
+        ruleMsgStyle.display = "";
+      }
 
-        //Update labels for map size description
-        if (this.value === "Circle") {
-          sizeTypeElement.innerHTML = "diameter";
-        } else {
-          sizeTypeElement.innerHTML = "side length";
-        }
+      //Update labels for map size description
+      if (this.value === "Circle") {
+        sizeTypeElement.innerHTML = "diameter";
+      } else {
+        sizeTypeElement.innerHTML = "side length";
+      }
     }
   }
 
@@ -650,7 +668,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "mapSize",
         inputElement: document.getElementById("mapSize"),
         resetBtn: document.getElementById("resetMapSize"),
         setAllBtn: document.getElementById("setAllMapSize"),
@@ -660,32 +677,36 @@ const tcTemplate = (() => {
       super(inputObj);
     }
 
+    static getFieldName() {
+      return "mapSize";
+    }
+
     checkValidity() {
       this.valid = (Number.isFinite(this.value) && this.value > 0 && this.value <= 12) || this.station.isNonDefaultHidden();
     }
 
     updateMsgs() {
-        const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = this.errorElement1.style;
-        const ruleMsgStyle = this.errorElement2.style;
-        if (this.valid) {
-          errorMsgStyle.display = "none";
-          contentFieldClass.remove("error");
-          //Check whether all values are the same and >= 5
-          //No warning if non-default hidden station or (size >= 5 and (default or all stations same))
-          if (this.station.isNonDefaultHidden() || (this.value >= 5 && (this.station.isDefault() || this.matchesAll(true)))) {
-            contentFieldClass.remove("warning");
-            ruleMsgStyle.display = "none";
-          } else {
-            contentFieldClass.add("warning");
-            ruleMsgStyle.display = "";
-          }
-        } else {
-          contentFieldClass.add("error");
+      const contentFieldClass = this.inputElement.classList;
+      const errorMsgStyle = this.errorElement1.style;
+      const ruleMsgStyle = this.errorElement2.style;
+      if (this.valid) {
+        errorMsgStyle.display = "none";
+        contentFieldClass.remove("error");
+        //Check whether all values are the same and >= 5
+        //No warning if non-default hidden station or (size >= 5 and (default or all stations same))
+        if (this.station.isNonDefaultHidden() || (this.value >= 5 && (this.station.isDefault() || this.matchesAll(true)))) {
           contentFieldClass.remove("warning");
-          errorMsgStyle.display = "";
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
           ruleMsgStyle.display = "";
         }
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
+      }
     }
   }
 
@@ -694,7 +715,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "mapScale",
         inputElement: document.getElementById("mapScale"),
         resetBtn: document.getElementById("resetMapScale"),
         setAllBtn: document.getElementById("setAllMapScale"),
@@ -704,28 +724,32 @@ const tcTemplate = (() => {
       super(inputObj);
     }
 
+    static getFieldName() {
+      return "mapScale";
+    }
+
     updateMsgs() {
-        const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = this.errorElement1.style;
-        const ruleMsgStyle = this.errorElement2.style;
-        if (this.valid) {
-          errorMsgStyle.display = "none";
-          contentFieldClass.remove("error");
-          //Check whether all values are the same and (equal 4000 or 5000)
-          //No warning if non-default hidden station or (4000/5000 and (default or all stations same))
-          if (this.station.isNonDefaultHidden() || ((this.value === 4000 || this.value === 5000) && (this.station.isDefault() || this.matchesAll(true)))) {
-            contentFieldClass.remove("warning");
-            ruleMsgStyle.display = "none";
-          } else {
-            contentFieldClass.add("warning");
-            ruleMsgStyle.display = "";
-          }
-        } else {
-          contentFieldClass.add("error");
+      const contentFieldClass = this.inputElement.classList;
+      const errorMsgStyle = this.errorElement1.style;
+      const ruleMsgStyle = this.errorElement2.style;
+      if (this.valid) {
+        errorMsgStyle.display = "none";
+        contentFieldClass.remove("error");
+        //Check whether all values are the same and (equal 4000 or 5000)
+        //No warning if non-default hidden station or (4000/5000 and (default or all stations same))
+        if (this.station.isNonDefaultHidden() || ((this.value === 4000 || this.value === 5000) && (this.station.isDefault() || this.matchesAll(true)))) {
           contentFieldClass.remove("warning");
-          errorMsgStyle.display = "";
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
           ruleMsgStyle.display = "";
         }
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
+      }
     }
   }
 
@@ -734,7 +758,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "contourInterval",
         inputElement: document.getElementById("contourInterval"),
         resetBtn: document.getElementById("resetContourInterval"),
         setAllBtn: document.getElementById("setAllContourInterval"),
@@ -744,31 +767,35 @@ const tcTemplate = (() => {
       super(inputObj);
     }
 
-    updateMsgs() {
-        const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = this.errorElement1.style;
-        const ruleMsgStyle = this.errorElement2.style;
+    static getFieldName() {
+      return "contourInterval";
+    }
 
-        //Check validity - don't bother if station is non-default hidden
-        if (this.valid) {
-          errorMsgStyle.display = "none";
-          contentFieldClass.remove("error");
-          //Check whether all values are the same
-          //No warning if non-default hidden station or defaults or all stations same
-          if (this.station.isDefault() || this.matchesAll(true)) {
-            contentFieldClass.remove("warning");
-            ruleMsgStyle.display = "none";
-          } else {
-            contentFieldClass.add("warning");
-            ruleMsgStyle.display = "";
-          }
-        } else {
-          contentFieldClass.add("error");
+    updateMsgs() {
+      const contentFieldClass = this.inputElement.classList;
+      const errorMsgStyle = this.errorElement1.style;
+      const ruleMsgStyle = this.errorElement2.style;
+
+      //Check validity - don't bother if station is non-default hidden
+      if (this.valid) {
+        errorMsgStyle.display = "none";
+        contentFieldClass.remove("error");
+        //Check whether all values are the same
+        //No warning if non-default hidden station or defaults or all stations same
+        if (this.station.isDefault() || this.matchesAll(true)) {
           contentFieldClass.remove("warning");
-          errorMsgStyle.display = "";
+          ruleMsgStyle.display = "none";
+        } else {
+          contentFieldClass.add("warning");
           ruleMsgStyle.display = "";
         }
+      } else {
+        contentFieldClass.add("error");
+        contentFieldClass.remove("warning");
+        errorMsgStyle.display = "";
+        ruleMsgStyle.display = "";
       }
+    }
   }
 
   class IDFontSize extends StrictPositiveField {
@@ -776,7 +803,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "IDFontSize",
         inputElement: document.getElementById("IDFontSize"),
         resetBtn: document.getElementById("resetIDFontSize"),
         setAllBtn: document.getElementById("setAllIDFontSize"),
@@ -785,6 +811,10 @@ const tcTemplate = (() => {
       };
       super(inputObj);
     }
+
+    static getFieldName() {
+      return "IDFontSize";
+    }
   }
 
   class CheckWidth extends NonNegativeField {
@@ -792,7 +822,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "checkWidth",
         inputElement: document.getElementById("checkWidth"),
         resetBtn: document.getElementById("resetCheckWidth"),
         setAllBtn: document.getElementById("setAllCheckWidth"),
@@ -801,6 +830,10 @@ const tcTemplate = (() => {
       };
       super(inputObj);
     }
+
+    static getFieldName() {
+      return "checkWidth";
+    }
   }
 
   class CheckHeight extends NonNegativeField {
@@ -808,7 +841,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "checkHeight",
         inputElement: document.getElementById("checkHeight"),
         resetBtn: document.getElementById("resetCheckHeight"),
         setAllBtn: document.getElementById("setAllCheckHeight"),
@@ -817,6 +849,10 @@ const tcTemplate = (() => {
       };
       super(inputObj);
     }
+
+    static getFieldName() {
+      return "checkHeight";
+    }
   }
 
   class CheckFontSize extends StrictPositiveField {
@@ -824,7 +860,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "IDFontSize",
         inputElement: document.getElementById("checkFontSize"),
         resetBtn: document.getElementById("resetCheckFontSize"),
         setAllBtn: document.getElementById("setAllCheckFontSize"),
@@ -833,6 +868,10 @@ const tcTemplate = (() => {
       };
       super(inputObj);
     }
+
+    static getFieldName() {
+      return "checkFontSize";
+    }
   }
 
   class RemoveFontSize extends StrictPositiveField {
@@ -840,7 +879,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "removeFontSize",
         inputElement: document.getElementById("removeFontSize"),
         resetBtn: document.getElementById("resetRemoveFontSize"),
         setAllBtn: document.getElementById("setAllRemoveFontSize"),
@@ -849,6 +887,10 @@ const tcTemplate = (() => {
       };
       super(inputObj);
     }
+
+    static getFieldName() {
+      return "removeFontSize";
+    }
   }
 
   class PointHeight extends NonNegativeField {
@@ -856,7 +898,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "pointHeight",
         inputElement: document.getElementById("pointHeight"),
         resetBtn: document.getElementById("resetPointHeight"),
         setAllBtn: document.getElementById("setAllPointHeight"),
@@ -865,6 +906,10 @@ const tcTemplate = (() => {
       };
       super(inputObj);
     }
+
+    static getFieldName() {
+      return "pointHeight";
+    }
   }
 
   class LetterFontSize extends StrictPositiveField {
@@ -872,7 +917,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "letterFontSize",
         inputElement: document.getElementById("letterFontSize"),
         resetBtn: document.getElementById("resetLetterFontSize"),
         setAllBtn: document.getElementById("setAllLetterFontSize"),
@@ -881,6 +925,10 @@ const tcTemplate = (() => {
       };
       super(inputObj);
     }
+
+    static getFieldName() {
+      return "letterFontSize";
+    }
   }
 
   class PhoneticFontSize extends StrictPositiveField {
@@ -888,7 +936,6 @@ const tcTemplate = (() => {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        fieldName: "phoneticFontSize",
         inputElement: document.getElementById("phoneticFontSize"),
         resetBtn: document.getElementById("resetPhoneticFontSize"),
         setAllBtn: document.getElementById("setAllPhoneticFontSize"),
@@ -896,6 +943,10 @@ const tcTemplate = (() => {
         errorElement2: undefined
       };
       super(inputObj);
+    }
+
+    static getFieldName() {
+      return "phoneticFontSize";
     }
   }
 
@@ -914,6 +965,7 @@ const tcTemplate = (() => {
 
   //Set up current/dynamic defaults
   stationList.default = new Station(stationList, null, undefined);
+  stationList.default.checkValidity(true);
 
   //Radio button options
   stationList.defaultRadio = document.getElementById("defaultRadio");
@@ -924,7 +976,6 @@ const tcTemplate = (() => {
 
   function changeStationFocus(storeValues = false) {
     //Dynamic station editing. storeValues is a boolean stating whether to commit values in form fields to variables in memory.
-    var contentField;
 
     //Other DOM elements
     const stopOnErrorProps = document.getElementById("coreProperties");
@@ -977,7 +1028,7 @@ const tcTemplate = (() => {
       stationList.activeItem.heading.inputElement.disabled = false;
     }
 
-    //Populate with values for new selected station and check for errors
+    //Populate with values for new selected station and show error/warning messages
     stationList.activeItem.refreshAllInput();
   }
 
@@ -991,6 +1042,9 @@ const tcTemplate = (() => {
     //Name the new station
     newStation.stationName.value = (stationList.items.length + 1).toString();
     newNode.innerHTML = newStation.stationName.value;
+
+    //Check validity of data in new station including all fields
+    newStation.checkValidity(true);
 
     //Add to the end
     stationList.items.push(newStation);
