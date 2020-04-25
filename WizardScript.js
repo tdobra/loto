@@ -228,6 +228,8 @@ const tcTemplate = (() => {
       this.inputElement = obj.inputElement;
       this.resetBtn = obj.resetBtn;
       this.setAllBtn = obj.setAllBtn;
+      this.errorElement1 = obj.errorElement1;
+      this.errorElement2 = obj.errorElement2;
     }
 
     get inputValue() {
@@ -267,7 +269,7 @@ const tcTemplate = (() => {
     refreshInput() {
       //Updates input element value - no user input
       this.inputValue = this.value;
-      this.check();
+      this.updateMsgs();
     }
 
     resetValue() {
@@ -280,7 +282,7 @@ const tcTemplate = (() => {
     saveInput() {
       //Call when the value of the input element is updated by the user
       this.save(this.inputValue);
-      this.check();
+      this.updateMsgs();
       this.station.checkValidity();
     }
 
@@ -291,21 +293,25 @@ const tcTemplate = (() => {
         paramsSaved = false;
         //Write new value to memory
         this.value = val;
+        //Check whether this new value is valid
+        this.checkValidity();
       }
     }
 
     setAll() {
       //Sets this field to this value in all stations
       for (const station of this.stationList.items) {
-        station[this.fieldName].value = this.value;
-        station[this.fieldName].check();
+        station[this.fieldName].save(this.value);
         station.checkValidity();
       }
     }
   }
 
   class BooleanField extends Field {
-    //Same constructor and saveInput as Field
+    constructor(obj) {
+      super(obj);
+      this.valid = true; //Never updated
+    }
 
     get inputValue() {
       return this.inputElement.checked;
@@ -313,6 +319,10 @@ const tcTemplate = (() => {
 
     set inputValue(ticked) {
       this.inputElement.checked = ticked;
+    }
+
+    checkValidity() {
+      //Do nothing: always valid
     }
   }
 
@@ -348,6 +358,31 @@ const tcTemplate = (() => {
     }
   }
 
+  class NonNegativeField extends NumberField {
+    checkValidity() {
+      this.valid = (Number.isFinite(this.value) && this.value >= 0) || this.station.isNonDefaultHidden();
+    }
+
+    updateMsgs() {
+      const contentFieldClass = this.inputElement.classList;
+      const errorMsgStyle = this.errorElement1.style;
+      if (this.valid) {
+        contentFieldClass.remove("error");
+        errorMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("error");
+        errorMsgStyle.display = "";
+      }
+    }
+  }
+
+  class StrictPostiveField extends NonNegativeField {
+    checkValidity() {
+      //LaTeX crashes if font size is set to zero
+      this.valid =  (Number.isFinite(this.value) && this.value > 0) || this.station.isNonDefaultHidden();
+    }
+  }
+
   class StationName extends Field {
     constructor(parentObj, value = "") {
       const inputObj = {
@@ -356,43 +391,44 @@ const tcTemplate = (() => {
         fieldName: "stationName",
         inputElement: document.getElementById("stationName"),
         resetBtn: undefined,
-        setAllBtn: undefined
+        setAllBtn: undefined,
+        errorElement1: document.getElementById("nameSyntax"),
+        errorElement2: document.getElementById("nameUniqueness")
       };
       super(inputObj);
     }
 
-    check() {
+    checkValidity() {
       //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
       const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
-      const syntaxError = !(this.station.isDefault() || stringFormat.test(this.value));
-      const duplicateError = !(this.station.isDefault()) && this.isDuplicate(false);
+      this.syntaxError = !(this.station.isDefault() || stringFormat.test(this.value));
+      this.duplicateError = !(this.station.isDefault()) && this.isDuplicate(false);
       this.valid = !(syntaxError || duplicateError);
-
-      if (this.station.isActive()) {
-        const contentFieldClass = this.inputElement.classList;
-        const syntaxMsgStyle = document.getElementById("nameSyntax").style;
-        const uniquenessMsgStyle = document.getElementById("nameUniqueness").style;
-
-        if (this.valid) {
-          contentFieldClass.remove("error");
-          syntaxMsgStyle.display = "none";
-          uniquenessMsgStyle.display = "none";
-        } else {
-          contentFieldClass.add("error");
-          //Don't show both error messages together
-          if (syntaxError) {
-            syntaxMsgStyle.display = "";
-            uniquenessMsgStyle.display = "none";
-          } else {
-            syntaxMsgStyle.display = "none";
-            uniquenessMsgStyle.display = "";
-          }
-        }
-      }
 
       //Update station list
       if (!this.station.isDefault()) {
         this.station.optionElement.innerHTML = this.value;
+      }
+    }
+
+    updateMsgs() {
+      const contentFieldClass = this.inputElement.classList;
+      const syntaxMsgStyle = this.errorElement1.style;
+      const uniquenessMsgStyle = this.errorElement2.style;
+      if (this.valid) {
+        contentFieldClass.remove("error");
+        syntaxMsgStyle.display = "none";
+        uniquenessMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("error");
+        //Don't show both error messages together
+        if (syntaxError) {
+          syntaxMsgStyle.display = "";
+          uniquenessMsgStyle.display = "none";
+        } else {
+          syntaxMsgStyle.display = "none";
+          uniquenessMsgStyle.display = "";
+        }
       }
     }
   }
@@ -405,19 +441,23 @@ const tcTemplate = (() => {
         fieldName: "showStation",
         inputElement: document.getElementById("showStation"),
         resetBtn: document.getElementById("resetShowStation"),
-        setAllBtn: document.getElementById("setAllShowStation")
+        setAllBtn: document.getElementById("setAllShowStation"),
+        errorElement1: undefined,
+        errorElement2: undefined
       };
       super(inputObj);
     }
 
-    check () {
-      //Always ok
-      this.valid = true;
-      //Most validity checks are ignored when station is hidden, so rerun all checks
+    checkValidity() {
+      //Always valid
+      //Most validity checks of other fields are ignored when station is hidden, so rerun all checks
       for (const field of this.station.fieldNames) {
         //Avoid infinite loops
         if (field !== "showStation") {
-          this.station[field].check();
+          this.station[field].checkValidity();
+          if (this.station.isActive()) {
+            this.station[field].updateMsgs();
+          }
         }
       }
     }
@@ -431,19 +471,21 @@ const tcTemplate = (() => {
         fieldName: "numKites",
         inputElement: document.getElementById("numKites"),
         resetBtn: document.getElementById("resetNumKites"),
-        setAllBtn: document.getElementById("setAllNumKites")
+        setAllBtn: document.getElementById("setAllNumKites"),
+        errorElement1: document.getElementById("kitesRule"),
+        errorElement2: undefined
       };
       super(inputObj);
+      this.valid = true; //Always valid
     }
 
-    check() {
-      //Always technically valid
-      this.valid = true;
+    checkValidity() {
+      //Do nothing: always valid
+    }
 
-      //Check rules if in focus
-      if (this.station.isActive()) {
+    updateMsgs() {
         const contentFieldClass = this.inputElement.classList;
-        const ruleMsgStyle = document.getElementById("kitesRule").style;
+        const ruleMsgStyle = this.errorElement1.style;
         if (this.value === 6 || this.station.isNonDefaultHidden()) {
           //Field valid, or non-defaults station not displayed
           contentFieldClass.remove("warning");
@@ -452,7 +494,6 @@ const tcTemplate = (() => {
           contentFieldClass.add("warning");
           ruleMsgStyle.display = "";
         }
-      }
     }
   }
 
@@ -464,20 +505,16 @@ const tcTemplate = (() => {
         fieldName: "zeroes",
         inputElement: document.getElementById("zeroes"),
         resetBtn: document.getElementById("resetZeroes"),
-        setAllBtn: document.getElementById("setAllZeroes")
+        setAllBtn: document.getElementById("setAllZeroes"),
+        errorElement1: document.getElementById("zeroesWarning"),
+        errorElement2: undefined
       };
       super(inputObj);
     }
 
-    check() {
-      //Always ok
-      this.valid = true;
-
-      //Check rules if in focus
-      if (this.station.isActive()) {
-        const ruleMsgStyle = document.getElementById("zeroesWarning").style;
+    updateMsgs() {
+        const ruleMsgStyle = this.errorElement1.style;
         const contentFieldClass = this.inputElement.classList;
-
         //Check all values the same - don't bother if station is hidden or is defaults
         if (this.matchesAll(true) || this.station.isDefault()){
           contentFieldClass.remove("warning");
@@ -486,7 +523,6 @@ const tcTemplate = (() => {
           contentFieldClass.add("warning");
           ruleMsgStyle.display = "";
         }
-      }
     }
   }
 
@@ -498,18 +534,21 @@ const tcTemplate = (() => {
         fieldName: "numTasks",
         inputElement: document.getElementById("numTasks"),
         resetBtn: document.getElementById("resetNumTasks"),
-        setAllBtn: document.getElementById("setAllNumTasks")
+        setAllBtn: document.getElementById("setAllNumTasks"),
+        errorElement1: document.getElementById("numTasksError"),
+        errorElement2: document.getElementById("numTasksRule")
       };
       super(inputObj);
     }
 
-    check() {
+    checkValidity() {
       this.valid = (Number.isInteger(this.value) && this.value >= 1) || this.station.isNonDefaultHidden();
+    }
 
-      if (this.station.isActive()) {
+    updateMsgs() {
         const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = document.getElementById("numTasksError").style;
-        const ruleMsgStyle = document.getElementById("numTasksRule").style;
+        const errorMsgStyle = this.errorElement1.style;
+        const ruleMsgStyle = this.errorElement2.style;
         if (this.valid) {
           contentFieldClass.remove("error");
           errorMsgStyle.display = "none";
@@ -528,7 +567,6 @@ const tcTemplate = (() => {
           ruleMsgStyle.display = "";
         }
       }
-    }
   }
 
   class Heading extends NumberField {
@@ -539,16 +577,20 @@ const tcTemplate = (() => {
         fieldName: "heading",
         inputElement: document.getElementById("heading"),
         resetBtn: undefined,
-        setAllBtn: undefined
+        setAllBtn: undefined,
+        errorElement1: document.getElementById("headingError"),
+        errorElement2: undefined
       };
       super(inputObj);
     }
 
-    check() {
+    checkValidity() {
       this.valid = (Number.isFinite(this.value) || this.station.showStation.value === false) || this.station.isDefault();
-      if (this.station.isActive()) {
+    }
+
+    updateMsgs() {
         const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = document.getElementById("headingError").style;
+        const errorMsgStyle = this.errorElement1.style;
         if (this.valid) {
           contentFieldClass.remove("error");
           errorMsgStyle.display = "none";
@@ -556,7 +598,6 @@ const tcTemplate = (() => {
           contentFieldClass.add("error");
           errorMsgStyle.dispaly = "";
         }
-      }
     }
   }
 
@@ -568,16 +609,21 @@ const tcTemplate = (() => {
         fieldName: "mapShape",
         inputElement: document.getElementById("mapShape"),
         resetBtn: document.getElementById("resetMapShape"),
-        setAllBtn: document.getElementById("setAllMapShape")
+        setAllBtn: document.getElementById("setAllMapShape"),
+        errorElement1: document.getElementById("mapShapeRule"),
+        errorElement2: undefined
       };
       super(inputObj);
+      this.valid = true; //Always valid
     }
 
-    check() {
-      this.valid = true;
-      if (this.station.isActive()) {
+    checkValidity() {
+      //Do nothing: always valid
+    }
+
+    updateMsgs() {
         const contentFieldClass = this.inputElement.classList;
-        const ruleMsgStyle = document.getElementById("mapShapeRule").style;
+        const ruleMsgStyle = this.errorElement1.style;
         const sizeTypeElement = document.getElementById("mapSizeType");
 
         //Check all values the same - don't bother if station is hidden or is the defaults
@@ -596,7 +642,6 @@ const tcTemplate = (() => {
         } else {
           sizeTypeElement.innerHTML = "side length";
         }
-      }
     }
   }
 
@@ -608,17 +653,21 @@ const tcTemplate = (() => {
         fieldName: "mapSize",
         inputElement: document.getElementById("mapSize"),
         resetBtn: document.getElementById("resetMapSize"),
-        setAllBtn: document.getElementById("setAllMapSize")
+        setAllBtn: document.getElementById("setAllMapSize"),
+        errorElement1: document.getElementById("mapSizePermitted"),
+        errorElement2: document.getElementById("mapSizeRule")
       };
       super(inputObj);
     }
 
-    check() {
+    checkValidity() {
       this.valid = (Number.isFinite(this.value) && this.value > 0 && this.value <= 12) || this.station.isNonDefaultHidden();
-      if (this.station.isActive()) {
+    }
+
+    updateMsgs() {
         const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = document.getElementById("mapSizePermitted").style;
-        const ruleMsgStyle = document.getElementById("mapSizeRule").style;
+        const errorMsgStyle = this.errorElement1.style;
+        const ruleMsgStyle = this.errorElement2.style;
         if (this.valid) {
           errorMsgStyle.display = "none";
           contentFieldClass.remove("error");
@@ -637,11 +686,10 @@ const tcTemplate = (() => {
           errorMsgStyle.display = "";
           ruleMsgStyle.display = "";
         }
-      }
     }
   }
 
-  class MapScale extends NumberField {
+  class MapScale extends StrictPositiveField {
     constructor(parentObj, value = NaN) {
       const inputObj = {
         parentObj: parentObj,
@@ -649,17 +697,17 @@ const tcTemplate = (() => {
         fieldName: "mapScale",
         inputElement: document.getElementById("mapScale"),
         resetBtn: document.getElementById("resetMapScale"),
-        setAllBtn: document.getElementById("setAllMapScale")
+        setAllBtn: document.getElementById("setAllMapScale"),
+        errorElement1: document.getElementById("mapScalePermitted"),
+        errorElement2: document.getElementById("mapScaleRule")
       };
       super(inputObj);
     }
 
-    check() {
-      this.valid = (Number.isFinite(this.value) && this.value > 0) || this.station.isNonDefaultHidden();
-      if (this.station.isActive()) {
+    updateMsgs() {
         const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = document.getElementById("mapScalePermitted").style;
-        const ruleMsgStyle = document.getElementById("mapScaleRule").style;
+        const errorMsgStyle = this.errorElement1.style;
+        const ruleMsgStyle = this.errorElement2.style;
         if (this.valid) {
           errorMsgStyle.display = "none";
           contentFieldClass.remove("error");
@@ -678,11 +726,10 @@ const tcTemplate = (() => {
           errorMsgStyle.display = "";
           ruleMsgStyle.display = "";
         }
-      }
     }
   }
 
-  class ContourInterval extends NumberField {
+  class ContourInterval extends StrictPositiveField {
     constructor(parentObj, value = NaN) {
       const inputObj = {
         parentObj: parentObj,
@@ -690,17 +737,17 @@ const tcTemplate = (() => {
         fieldName: "contourInterval",
         inputElement: document.getElementById("contourInterval"),
         resetBtn: document.getElementById("resetContourInterval"),
-        setAllBtn: document.getElementById("setAllContourInterval")
+        setAllBtn: document.getElementById("setAllContourInterval"),
+        errorElement1: document.getElementById("contourIntervalPermitted"),
+        errorElement2: document.getElementById("contourIntervalRule")
       };
       super(inputObj);
     }
 
-    check() {
-      this.valid = (Number.isFinite(this.value) && this.value > 0) || this.station.isNonDefaultHidden();
-      if (this.station.isActive()) {
+    updateMsgs() {
         const contentFieldClass = this.inputElement.classList;
-        const errorMsgStyle = document.getElementById("contourIntervalPermitted").style;
-        const ruleMsgStyle = document.getElementById("contourIntervalRule").style;
+        const errorMsgStyle = this.errorElement1.style;
+        const ruleMsgStyle = this.errorElement2.style;
 
         //Check validity - don't bother if station is non-default hidden
         if (this.valid) {
@@ -722,6 +769,133 @@ const tcTemplate = (() => {
           ruleMsgStyle.display = "";
         }
       }
+  }
+
+  class IDFontSize extends StrictPositiveField {
+    constructor(parentObj, value = 0.7) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "IDFontSize",
+        inputElement: document.getElementById("IDFontSize"),
+        resetBtn: document.getElementById("resetIDFontSize"),
+        setAllBtn: document.getElementById("setAllIDFontSize"),
+        errorElement1: document.getElementById("IDFontSizeError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+  }
+
+  class CheckWidth extends NonNegativeField {
+    constructor(parentObj, value = 1.5) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "checkWidth",
+        inputElement: document.getElementById("checkWidth"),
+        resetBtn: document.getElementById("resetCheckWidth"),
+        setAllBtn: document.getElementById("setAllCheckWidth"),
+        errorElement1: document.getElementById("checkWidthError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+  }
+
+  class CheckHeight extends NonNegativeField {
+    constructor(parentObj, value = 1.5) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "checkHeight",
+        inputElement: document.getElementById("checkHeight"),
+        resetBtn: document.getElementById("resetCheckHeight"),
+        setAllBtn: document.getElementById("setAllCheckHeight"),
+        errorElement1: document.getElementById("checkHeightError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+  }
+
+  class CheckFontSize extends StrictPositiveField {
+    constructor(parentObj, value = 0.8) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "IDFontSize",
+        inputElement: document.getElementById("checkFontSize"),
+        resetBtn: document.getElementById("resetCheckFontSize"),
+        setAllBtn: document.getElementById("setAllCheckFontSize"),
+        errorElement1: document.getElementById("checkFontSizeError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+  }
+
+  class RemoveFontSize extends StrictPositiveField {
+    constructor(parentObj, value = 0.3) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "removeFontSize",
+        inputElement: document.getElementById("removeFontSize"),
+        resetBtn: document.getElementById("resetRemoveFontSize"),
+        setAllBtn: document.getElementById("setAllRemoveFontSize"),
+        errorElement1: document.getElementById("removeFontSizeError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+  }
+
+  class PointHeight extends NonNegativeField {
+    constructor(parentObj, value = 2.5) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "pointHeight",
+        inputElement: document.getElementById("pointHeight"),
+        resetBtn: document.getElementById("resetPointHeight"),
+        setAllBtn: document.getElementById("setAllPointHeight"),
+        errorElement1: document.getElementById("pointHeightError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+  }
+
+  class LetterFontSize extends StrictPositiveField {
+    constructor(parentObj, value = 1.8) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "letterFontSize",
+        inputElement: document.getElementById("letterFontSize"),
+        resetBtn: document.getElementById("resetLetterFontSize"),
+        setAllBtn: document.getElementById("setAllLetterFontSize"),
+        errorElement1: document.getElementById("letterFontSizeError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+  }
+
+  class PhoneticFontSize extends StrictPositiveField {
+    constructor(parentObj, value = 0.6) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        fieldName: "phoneticFontSize",
+        inputElement: document.getElementById("phoneticFontSize"),
+        resetBtn: document.getElementById("resetPhoneticFontSize"),
+        setAllBtn: document.getElementById("setAllPhoneticFontSize"),
+        errorElement1: document.getElementById("phoneticFontSizeError"),
+        errorElement2: undefined
+      };
+      super(inputObj);
     }
   }
 
@@ -836,18 +1010,7 @@ const tcTemplate = (() => {
   }
 
 
-  //Layout default measurements
-  //TODO: Move inside a class
-  const defaultLayout = {
-    IDFontSize: 0.7,
-    checkWidth: 1.5,
-    checkHeight: 1.5,
-    checkFontSize: 0.8,
-    removeFontSize: 0.3,
-    pointHeight: 2.5,
-    letterFontSize: 1.8,
-    phoneticFontSize: 0.6
-  };
+
 
 
 

@@ -177,43 +177,51 @@
             <td>Font size</td>
             <td><input id="IDFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetIDFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllIDFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="IDFontSizeError">Must be &gt; 0</td>
           </tr>
           <tr>
             <td rowspan="4">Page order boxes</td>
             <td>Width</td>
             <td><input id="checkWidth" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetCheckWidth" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckWidth" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="checkWidthError">Must be &ge; 0</td>
           </tr>
           <tr>
             <td>Height</td>
             <td><input id="checkHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetCheckHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="checkHeightError">Must be &ge; 0</td>
           </tr>
           <tr>
             <td>Number font size</td>
             <td><input id="checkFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetCheckFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllCheckFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="checkFontSizeError">Must be &gt; 0</td>
           </tr>
           <tr>
             <td><em>Remove</em> font size</td>
             <td><input id="removeFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetRemoveFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllRemoveFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="removeFontSizeError">Must be &gt; 0</td>
           </tr>
           <tr>
             <td rowspan="3">Pointing boxes</td>
             <td>Height</td>
             <td><input id="pointHeight" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetPointHeight" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPointHeight" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="pointHeightError">Must be &ge; 0</td>
           </tr>
           <tr>
             <td>Letter font size</td>
             <td><input id="letterFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetLetterFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllLetterFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="letterFontSizeError">Must be &gt; 0</td>
           </tr>
           <tr>
             <td>Phonetic font size</td>
             <td><input id="phoneticFontSize" class="layoutLength" type="number" min="0" max="29.7" step="any" required="required" /> cm</td>
             <td><input id="resetPhoneticFontSize" type="button" onclick="tcTemplate.resetCourseField(this)" value="Reset" /><input id="setAllPhoneticFontSize" class="setAllCourses" type="button" onclick="tcTemplate.setAllCourses(this)" value="Set all stations" /></td>
+            <td id="phoneticFontSizeError">Must be &gt; 0</td>
           </tr>
         </table>
       </details>
