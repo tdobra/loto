@@ -30,12 +30,10 @@ const tcTemplate = (() => {
       this.deleteBtn = obj.deleteBtn;
       this.upBtn = obj.upBtn;
       this.downBtn = obj.downBtn;
-      if (typeof(obj.itemInFocus) === undefined) { obj.itemInFocus = 0; };
+      if (obj.itemInFocus === undefined) { obj.itemInFocus = 0; };
       this.defaultInFocus = obj.defaultInFocus;
       this.itemInFocus = obj.itemInFocus;
       this.items = [];
-      this.refresh = obj.refresh;
-      this.add = obj.add;
     }
 
     get activeItem() {
@@ -53,6 +51,15 @@ const tcTemplate = (() => {
       this.deleteBtn.addEventListener("click", () => { this.activeItem.deleteThis(); });
       this.upBtn.addEventListener("click", () => { this.activeItem.move(-1); });
       this.downBtn.addEventListener("click", () => { this.activeItem.move(1); });
+    }
+
+    applyAll(action, fieldList) {
+      //Applies specified action function to all fields with reset buttons
+      for (const field of fieldList) {
+        if (this.activeItem[field].resetBtn !== undefined) {
+          this.activeItem[field][action]();
+        }
+      }
     }
 
     showHideMoveBtns() {
@@ -83,67 +90,59 @@ const tcTemplate = (() => {
     }
   }
 
-  class Station {
-    //May need to create a more general class to inherit from
-    constructor(parentObj, optionElement, copyStation) {
-      this.stationList = parentObj;
-      this.optionElement = optionElement;
-      this.valid = false;
+  class TaskList extends IterableList {
+    add() {
+      //TODO: Merge this with addStation and put in IterableList class
 
-      //Fields - populate with values given in copyStation, if present
-      const classNames = [
-        StationName,
-        ShowStation,
-        NumKites,
-        Zeroes,
-        NumTasks,
-        Heading,
-        MapShape,
-        MapSize,
-        MapScale,
-        ContourInterval,
-        IDFontSize,
-        CheckWidth,
-        CheckHeight,
-        CheckFontSize,
-        RemoveFontSize,
-        PointHeight,
-        LetterFontSize,
-        PhoneticFontSize
-      ];
-      this.fieldNames = classNames.map((className) => className.getFieldName());
-      if (copyStation === undefined) {
-        //Create an object to pass undefined parameters => triggers default values specified in class
-        copyStation = {};
-        for (const field of this.fieldNames) {
-          copyStation[field] = { value: undefined };
-        }
-      }
-      //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
-      let index = 0;
-      for (const field of this.fieldNames) {
-        this[field] = new classNames[index](this, copyStation[field].value);
-        index++;
-      }
+      //Create option in station selector
+      const newNode = this.parentList.selector.appendChild(document.createElement("option"));
+
+      //New station initially takes default values
+      const newItem = new Task({
+        parentObj: this.parentList,
+        optionElement: newNode,
+        copyItem: undefined
+      });
+
+      //Name the new station
+      newItem.itemName.value = (this.parentList.items.length + 1).toString();
+      newNode.innerHTML = newItem.itemName.value;
+
+      //Check validity of data in new station including all fields
+      newStation.checkValidity(true);
+
+      //Add to the end
+      this.parentList.items.push(newItem);
+
+      //Try to change to new station. The add station button is disabled when on defaults.
+      newNode.selected = true;
+      this.parentList.refresh(true);
+    }
+
+    refresh() {
+
+    }
+  }
+
+  //Types of items
+  class IterableItem {
+    constructor(obj) {
+      this.parentList = obj.parentObj;
+      this.optionElement = obj.optionElement;
     }
 
     get index() {
       let thisIndex = 0;
-      while (this.stationList.items[thisIndex] !== this) { thisIndex++; }
+      while (this.parentList.items[thisIndex] !== this) { thisIndex++; }
       return thisIndex;
     }
 
     isActive() {
-      return this.stationList.activeItem === this;
+      return this.parentList.activeItem === this;
     }
 
     isDefault() {
-      return this.stationList.default === this;
-    }
-
-    isNonDefaultHidden() {
-      //Returns true if the station is hidden and the default station is not in focus
-      return !(this.showStation.value || this.isDefault());
+      return this.parentList.default === this;
     }
 
     deleteThis() {
@@ -151,12 +150,12 @@ const tcTemplate = (() => {
       //Check first
       if (confirm("Are you sure you want to delete? This cannot be undone.")) {
         this.optionElement.remove();
-        this.stationList.iteminFocus = 0;
-        this.stationList.selector.selectedIndex = 0;
+        this.parentList.iteminFocus = 0;
+        this.parentList.selector.selectedIndex = 0;
         //Remove this station from array
-        this.stationList.items.splice(this.index, 1);
+        this.parentList.items.splice(this.index, 1);
         //Don't save deleted values then refresh input fields
-        this.stationList.refresh(false);
+        this.parentList.refresh(false);
       }
     }
 
@@ -165,7 +164,7 @@ const tcTemplate = (() => {
 
       //Check target is in bounds
       const newPos = this.index + offset;
-      const arrayLength = this.stationList.items.length
+      const arrayLength = this.parentList.items.length
       if (newPos < 0 || newPos >= arrayLength) {
         throw "Moving station to position beyond bounds of array";
       }
@@ -177,21 +176,83 @@ const tcTemplate = (() => {
       this.optionElement.remove();
       let insertBeforeElement = null;
       if (newPos < arrayLength - 1) {
-        insertBeforeElement = this.stationList.items[newPos].optionElement;
+        insertBeforeElement = this.parentList.items[newPos].optionElement;
       } //Else move to end of list
       //Make sure to get a new element list, as it will have changed
-      this.stationList.selector.insertBefore(this.optionElement, insertBeforeElement);
+      this.parentList.selector.insertBefore(this.optionElement, insertBeforeElement);
 
       //Remove this from array
-      this.stationList.items.splice(this.index, 1);
+      this.parentList.items.splice(this.index, 1);
       //Insert into new position
-      this.stationList.items.splice(newPos, 0, this);
+      this.parentList.items.splice(newPos, 0, this);
 
       //Update active station number
-      this.stationList.itemInFocus = newPos;
+      this.parentList.itemInFocus = newPos;
 
       //Enable/disable move up/down buttons
-      this.stationList.showHideMoveBtns();
+      this.parentList.showHideMoveBtns();
+    }
+  }
+
+  class Station extends IterableItem {
+    constructor(obj) {
+      super(obj);
+
+      //Fields - populate with values given in copyStation, if present
+      const coreFieldClasses = [
+        StationName,
+        ShowStation,
+        NumKites,
+        Zeroes,
+        NumTasks,
+        Heading,
+        MapShape,
+        MapSize,
+        MapScale,
+        ContourInterval,
+        TaskAutoMethod
+      ];
+      const customLayoutClasses = [
+        IDFontSize,
+        CheckWidth,
+        CheckHeight,
+        CheckFontSize,
+        RemoveFontSize,
+        PointHeight,
+        LetterFontSize,
+        PhoneticFontSize
+      ];
+      const classNames = coreFieldClasses.concat(customLayoutClasses);
+      this.coreFields = coreFieldClasses.map((className) => className.getFieldName());
+      this.customLayoutFields = customLayoutClasses.map((className) => className.getFieldName());
+      this.fieldNames = this.coreFields.concat(this.customLayoutFields);
+      if (obj.copyStation === undefined) {
+        //Create an object to pass undefined parameters => triggers default values specified in class
+        obj.copyStation = {};
+        for (const field of this.fieldNames) {
+          obj.copyStation[field] = { value: undefined };
+        }
+      }
+      //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
+      let index = 0;
+      for (const field of this.fieldNames) {
+        this[field] = new classNames[index](this, obj.copyStation[field].value);
+        index++;
+      }
+      this.taskList = new TaskList({
+        selector: document.getElementById("taskSelect"),
+        addBtn: document.getElementById("addTask"),
+        deleteBtn: document.getElementById("deleteTask"),
+        upBtn: document.getElementById("moveUpTask"),
+        downBtn: document.getElementById("moveDownTask"),
+        defaultInFocus: false,
+        itemInFocus: 0
+      });
+    }
+
+    isNonDefaultHidden() {
+      //Returns true if the station is hidden and the default station is not in focus
+      return !(this.showStation.value || this.isDefault());
     }
 
     checkValidity(recheckFields = true) {
@@ -220,14 +281,52 @@ const tcTemplate = (() => {
     }
   }
 
+  class Task extends IterableItem {
+    constructor(obj) {
+      super(obj);
+
+      //Fields - populate with values given in copyTask, if present
+      const fieldClasses = [
+        ItemName,
+        CirclePage,
+        Circlex,
+        Circley,
+        CDpage,
+        CDx,
+        CDy,
+        CDwidth,
+        CDheight,
+        CDscale
+      ];
+      this.fieldNames = fieldClasses.map((className) => className.getFieldName());
+      if (obj.copyTask === undefined) {
+        //Create an object to pass undefined parameters => triggers default values specified in class
+        obj.copyTask = {};
+        for (const field of this.fieldNames) {
+          obj.copyTask[field] = { value: undefined };
+        }
+      }
+      //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
+      let index = 0;
+      for (const field of this.fieldNames) {
+        this[field] = new fieldClasses[index](this, obj.copyTask[field].value);
+        index++;
+      }
+    }
+  }
+
   //Fields
   class Field {
     //Generic field: string or select
     constructor(obj) {
       this.fieldName = this.constructor.getFieldName();
       this.station = obj.parentObj;
-      this.stationList = this.station.stationList; //Shortcut
-      this.value = obj.value;
+      this.stationList = this.station.parentList; //Shortcut
+      if (obj.value === undefined) {
+        this.value = this.constructor.getOriginalValue();
+      } else {
+        this.value = obj.value;
+      }
       this.inputElement = obj.inputElement;
       this.resetBtn = obj.resetBtn;
       this.setAllBtn = obj.setAllBtn;
@@ -276,8 +375,13 @@ const tcTemplate = (() => {
     }
 
     resetValue() {
-      //Resets to current default value
-      this.save(this.stationList.default[this.fieldName].value);
+      if (this.station.isDefault()) {
+        //Resets to original value
+        this.save(this.constructor.getOriginalValue());
+      } else {
+        //Resets to current default value
+        this.save(this.stationList.default[this.fieldName].value);
+      }
       this.refreshInput();
       this.station.checkValidity(false);
     }
@@ -389,7 +493,7 @@ const tcTemplate = (() => {
   }
 
   class StationName extends Field {
-    constructor(parentObj, value = "") {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -404,6 +508,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "stationName";
+    }
+
+    static getOriginalValue() {
+      return "";
     }
 
     checkValidity() {
@@ -442,7 +550,7 @@ const tcTemplate = (() => {
   }
 
   class ShowStation extends BooleanField {
-    constructor(parentObj, value = true) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -457,6 +565,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "showStation";
+    }
+
+    static getOriginalValue() {
+      return true;
     }
 
     checkValidity() {
@@ -475,7 +587,7 @@ const tcTemplate = (() => {
   }
 
   class NumKites extends NumberField {
-    constructor(parentObj, value = 6) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -493,6 +605,10 @@ const tcTemplate = (() => {
       return "numKites";
     }
 
+    static getOriginalValue() {
+      return 6;
+    }
+
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
       const ruleMsgStyle = this.errorElement1.style;
@@ -508,7 +624,7 @@ const tcTemplate = (() => {
   }
 
   class Zeroes extends BooleanField {
-    constructor(parentObj, value = false) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -523,6 +639,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "zeroes";
+    }
+
+    static getOriginalValue() {
+      return false;
     }
 
     updateMsgs() {
@@ -540,12 +660,12 @@ const tcTemplate = (() => {
   }
 
   class NumTasks extends NumberField {
-    constructor(parentObj, value = NaN) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
         inputElement: document.getElementById("numTasks"),
-        resetBtn: document.getElementById("resetNumTasks"),
+        resetBtn: undefined,
         setAllBtn: document.getElementById("setAllNumTasks"),
         errorElement1: document.getElementById("numTasksError"),
         errorElement2: document.getElementById("numTasksRule")
@@ -555,6 +675,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "numTasks";
+    }
+
+    static getOriginalValue() {
+      return NaN;
     }
 
     checkValidity() {
@@ -586,7 +710,7 @@ const tcTemplate = (() => {
   }
 
   class Heading extends NumberField {
-    constructor(parentObj, value = NaN) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -601,6 +725,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "heading";
+    }
+
+    static getOriginalValue() {
+      return NaN;
     }
 
     checkValidity() {
@@ -621,7 +749,7 @@ const tcTemplate = (() => {
   }
 
   class MapShape extends Field {
-    constructor(parentObj, value = "Circle") {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -637,6 +765,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "mapShape";
+    }
+
+    static getOriginalValue() {
+      return "Circle";
     }
 
     updateMsgs() {
@@ -664,7 +796,7 @@ const tcTemplate = (() => {
   }
 
   class MapSize extends NumberField {
-    constructor(parentObj, value = NaN) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -679,6 +811,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "mapSize";
+    }
+
+    static getOriginalValue() {
+      return NaN;
     }
 
     checkValidity() {
@@ -711,7 +847,7 @@ const tcTemplate = (() => {
   }
 
   class MapScale extends StrictPositiveField {
-    constructor(parentObj, value = NaN) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -726,6 +862,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "mapScale";
+    }
+
+    static getOriginalValue() {
+      return NaN;
     }
 
     updateMsgs() {
@@ -754,7 +894,7 @@ const tcTemplate = (() => {
   }
 
   class ContourInterval extends StrictPositiveField {
-    constructor(parentObj, value = NaN) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -769,6 +909,10 @@ const tcTemplate = (() => {
 
     static getFieldName() {
       return "contourInterval";
+    }
+
+    static getOriginalValue() {
+      return NaN;
     }
 
     updateMsgs() {
@@ -798,8 +942,35 @@ const tcTemplate = (() => {
     }
   }
 
+  class TaskAutoMethod extends Field {
+    constructor(parentObj, value) {
+      const inputObj = {
+        parentObj: parentObj,
+        value: value,
+        inputElement: document.getElementById("taskAutoMethod"),
+        resetBtn: document.getElementById("resetTaskAutoMethod"),
+        setAllBtn: document.getElementById("setAllTaskAutoMethod"),
+        errorElement1: undefined,
+        errorElement2: undefined
+      };
+      super(inputObj);
+    }
+
+    static getFieldName() {
+      return "taskAutoMethod";
+    }
+
+    static getOriginalValue() {
+      return "from Purple Pen automatically";
+    }
+
+    updateMsgs() {
+      //
+    }
+  }
+
   class IDFontSize extends StrictPositiveField {
-    constructor(parentObj, value = 0.7) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -815,10 +986,14 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "IDFontSize";
     }
+
+    static getOriginalValue() {
+      return 0.7;
+    }
   }
 
   class CheckWidth extends NonNegativeField {
-    constructor(parentObj, value = 1.5) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -834,10 +1009,14 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "checkWidth";
     }
+
+    static getOriginalValue() {
+      return 1.5;
+    }
   }
 
   class CheckHeight extends NonNegativeField {
-    constructor(parentObj, value = 1.5) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -853,10 +1032,14 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "checkHeight";
     }
+
+    static getOriginalValue() {
+      return 1.5;
+    }
   }
 
   class CheckFontSize extends StrictPositiveField {
-    constructor(parentObj, value = 0.8) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -872,10 +1055,14 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "checkFontSize";
     }
+
+    static getOriginalValue() {
+      return 0.8;
+    }
   }
 
   class RemoveFontSize extends StrictPositiveField {
-    constructor(parentObj, value = 0.3) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -891,10 +1078,14 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "removeFontSize";
     }
+
+    static getOriginalValue() {
+      return 0.3;
+    }
   }
 
   class PointHeight extends NonNegativeField {
-    constructor(parentObj, value = 2.5) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -910,10 +1101,14 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "pointHeight";
     }
+
+    static getOriginalValue() {
+      return 2.5;
+    }
   }
 
   class LetterFontSize extends StrictPositiveField {
-    constructor(parentObj, value = 1.8) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -929,10 +1124,14 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "letterFontSize";
     }
+
+    static getOriginalValue() {
+      return 1.8;
+    }
   }
 
   class PhoneticFontSize extends StrictPositiveField {
-    constructor(parentObj, value = 0.6) {
+    constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
@@ -948,6 +1147,10 @@ const tcTemplate = (() => {
     static getFieldName() {
       return "phoneticFontSize";
     }
+
+    static getOriginalValue() {
+      return 0.6;
+    }
   }
 
   //Create list of stations object and extend the class
@@ -958,27 +1161,29 @@ const tcTemplate = (() => {
     upBtn: document.getElementById("moveUpStation"),
     downBtn: document.getElementById("moveDownStation"),
     defaultInFocus: true,
-    itemInFocus: 0,
-    refresh: changeStationFocus,
-    add: addStation
+    itemInFocus: 0
   });
 
+  //Add some methods
+  stationList.refresh = changeStationFocus;
+  stationList.add = addStation;
+
   //Set up current/dynamic defaults
-  stationList.default = new Station(stationList, null, undefined);
+  stationList.default = new Station({
+    parentObj: stationList,
+    optionElement: undefined,
+    copyStation: undefined
+  });
   stationList.default.checkValidity(true);
 
   //Radio button options
   stationList.defaultRadio = document.getElementById("defaultRadio");
   stationList.stationRadio = document.getElementById("stationRadio");
 
-  stationList.setAllBtn = document.getElementById("setAllFieldsAllStations");
-  stationList.setAll = setAllFieldsStations;
-
   function changeStationFocus(storeValues = false) {
-    //Dynamic station editing. storeValues is a boolean stating whether to commit values in form fields to variables in memory.
+    //storeValues is a boolean stating whether to commit values in form fields to variables in memory.
 
     //Other DOM elements
-    const stopOnErrorProps = document.getElementById("coreProperties");
     const setAllResetCSS = document.getElementById("showSetAllCSS");
 
     if (storeValues) {
@@ -1037,7 +1242,11 @@ const tcTemplate = (() => {
     const newNode = stationList.selector.appendChild(document.createElement("option"));
 
     //New station initially takes default values
-    const newStation = new Station(stationList, newNode, stationList.default);
+    const newStation = new Station({
+      parentObj: stationList,
+      optionElement: newNode,
+      copyStation: stationList.default
+    });
 
     //Name the new station
     newStation.stationName.value = (stationList.items.length + 1).toString();
@@ -1054,14 +1263,6 @@ const tcTemplate = (() => {
     stationList.refresh(true);
   }
 
-  function setAllFieldsStations() {
-    //Sets all fields on all stations to the current defaults
-    for (const field of stationList.default.fieldNames) {
-      if (stationList.default[field].resetBtn !== undefined) {
-        stationList.default[field].setAll();
-      }
-    }
-  }
 
 
 
@@ -2353,7 +2554,9 @@ const tcTemplate = (() => {
   stationList.createEventListeners();
   stationList.defaultRadio.addEventListener("change", () => { stationList.refresh(true); });
   stationList.stationRadio.addEventListener("change", () => { stationList.refresh(true); });
-  stationList.setAllBtn.addEventListener("click", stationList.setAll);
+  document.getElementById("setAllCore").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.coreFields); });
+  document.getElementById("setAllCustomLayout").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.customLayoutFields); });
+  document.getElementById("resetAllCustomLayout").addEventListener("click", () => { stationList.applyAll("resetValue", stationList.default.customLayoutFields); });
   for (const field of stationList.default.fieldNames) {
     let inputEvent = "input";
     if (stationList.default[field].inputElement.tagName === "SELECT") {
@@ -2367,6 +2570,7 @@ const tcTemplate = (() => {
   }
 
   //Make required functions and objects globally visible
+  //TODO:This can probably all be removed: now using event listeners
   return {
     stationList: stationList,
     loadppen: loadppen,

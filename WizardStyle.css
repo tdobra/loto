@@ -45,7 +45,7 @@ input.coordinate {
   text-align: right;
 }
 
-details, .warning {
+.warning {
   background-color: #f5d2b8;
 }
 
