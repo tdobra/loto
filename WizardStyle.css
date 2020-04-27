@@ -16,13 +16,17 @@ th {
   text-align: center;
 }
 
-input.layoutLength, input.mapPage {
+input.layoutLength {
   /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
   width: 7ch;
 }
 
 input.coordinate {
   width: 20ch;
+}
+
+.pageNum {
+  width: 5ch;
 }
 
 #numTasks {

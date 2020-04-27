@@ -51,7 +51,7 @@
         <label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all stations</label><br />
         <label><input id="stationRadio" type="radio" name="editType" value="station" />Customise individual station:</label><br />
         <select id="stationSelect" size="5"></select><br />
-        Station:
+        Station
         <button id="addStation" type="button">+ Add</button>
         <button id="deleteStation" type="button">X Delete</button>
         <button id="moveUpStation" type="button">&uarr; Move up</button>
@@ -59,7 +59,7 @@
       </p>
 
       <details open="open">
-        <summary>Properties</summary>
+        <summary>Main properties</summary>
         <p><button id="setAllCore" type="button" class="setAllCourses">Set all stations to defaults</button></p>
         <table>
           <tr>
@@ -94,11 +94,6 @@
             <td><input id="zeroes" type="checkbox" /></td>
             <td><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="resetCourse" type="button">Reset</button></td>
             <td id="zeroesWarning" colspan="2">Not the same for all stations</td>
-          </tr>
-          <tr>
-            <td>Heading</td>
-            <td colspan="2"><input id="heading" type="number" step="any" />&deg</td><!--Plan: make this automatic-->
-            <td id="headingError" colspan="2">Must be a number</td>
           </tr>
           <tr>
             <td>Map shape</td>
@@ -142,7 +137,7 @@
           <span id="numTasksError">Must be an integer &ge; 1</span>
           <span id="numTasksRule">IOF rule: must be the same for all stations</span><br />
           <select id="taskSelect" size="5"></select><br />
-          Task:
+          Task
           <button id="addTask" type="button">+ Add</button>
           <button id="deleteTask" type="button">X Delete</button>
           <button id="moveUpTask" type="button">&uarr; Move up</button>
@@ -150,8 +145,8 @@
         </p>
         <p>Task name <input id="taskName" type="text" />
           <!--These error messages shouldn't be displayed together-->
-          <span id="taskNameSyntax">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</td>
-          <span id="taskNameUniqueness">Must be unique</td>
+          <span id="taskNameSyntax">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</span>
+          <span id="taskNameUniqueness">Must be unique</span>
         </p>
       </details><br />
 
@@ -225,6 +220,59 @@
             <td id="CDscaleError">Must be a number &gt; 0</td>
           </tr>
         </table>
+      </details><br />
+
+      <details>
+        <summary>Heading, kite and viewing point positions</summary>
+        <p><button id="autoAllKites" class="setAllCourses" type="button">Auto all stations</button><button id="autoKitesStation" class="resetCourse" type="button">Auto all</button></p>
+        <table>
+          <tr>
+            <td colspan="2">Heading</td>
+            <td><input id="heading" type="number" step="any" />&deg</td>
+            <td><button id="headingAuto" type="button" class="auto">Auto</button></td>
+            <td id="headingError">Must be a number</td>
+          </tr>
+          <tr>
+            <td rowspan="2">Viewing point</td>
+            <td>x</td>
+            <td><input id="VPx" class="coordinate" type="number" step="any" /> cm</td>
+            <td><button id="VPxAuto" type="button" class="auto">Auto</button></td>
+            <td id="VPxError">Must be a number</td>
+          </tr>
+          <tr>
+            <td>y</td>
+            <td><input id="VPy" class="coordinate" type="number" step="any" /> cm</td>
+            <td><button id="VPyAuto" type="button" class="auto">Auto</button></td>
+            <td id="VPyError">Must be a number</td>
+          </tr>
+          <tr>
+            <td colspan="2">Blank map page</td>
+            <td><input id="blankMapPage" class="pageNum" type="number" min="1" step="1" /></td>
+            <td><button id="circlePageAuto" type="button" class="auto">Auto</button><button id="setAllBlankMapPage" class="setAllCourses" type="button">Set all stations</button><button id="resetBlankMapPage" class="resetCourse" type="button">Reset</button></td>
+            <td id="circlePageError">Must be an integer &ge; 1</td>
+          </tr>
+        </table>
+
+        <p>Kite <select id="selectKite"></select>
+          <button id="moveUpKite" type="button">&uarr; Move up</button>
+          <button id="moveDownKite" type="button">&darr; Move down</button>
+          <button id="autoOrderKite" type="button">Auto reorder</button>
+        </p>
+        <table>
+          <tr>
+            <td>x</td>
+            <td><input id="kitex" class="coordinate" type="number" step="any" /> cm</td>
+            <td><button id="kitexAuto" type="button" class="auto">Auto</button></td>
+            <td id="kitexError">Must be a number</td>
+          </tr>
+          <tr>
+            <td>y</td>
+            <td><input id="kitey" class="coordinate" type="number" step="any" /> cm</td>
+            <td><button id="kiteyAuto" type="button" class="auto">Auto</button></td>
+            <td id="kiteyError">Must be a number</td>
+          </tr>
+        </table>
+
       </details><br />
 
       <details>
