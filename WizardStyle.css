@@ -49,10 +49,10 @@ input.coordinate {
   text-align: right;
 }
 
-.warning {
+summary, .warning {
   background-color: #f5d2b8;
 }
 
-summary, .setAll, .error {
+.error {
   background-color: #f56600;
 }

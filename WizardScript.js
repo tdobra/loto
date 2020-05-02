@@ -25,7 +25,7 @@ const tcTemplate = (() => {
   //Classes are not hoisted, so declare them first
   class IterableList {
     constructor(obj) {
-      this.selector = obj.selector;
+      this.selectorSpan = obj.selectorSpan;
       this.addBtn = obj.addBtn;
       this.deleteBtn = obj.deleteBtn;
       this.upBtn = obj.upBtn;
@@ -34,6 +34,9 @@ const tcTemplate = (() => {
       this.defaultInFocus = obj.defaultInFocus;
       this.itemInFocus = obj.itemInFocus;
       this.items = [];
+      //Create HTML select element, but don't insert yet
+      this.selector = document.createElement("select");
+      this.selector.addEventListener("change", () => { this.refresh(); });
     }
 
     get activeItem() {
@@ -44,13 +47,35 @@ const tcTemplate = (() => {
       }
     }
 
-    createEventListeners() {
+    createBtnListeners() {
       //Do not call until activeItem is defined
-      this.selector.addEventListener("change", this.refresh);
-      this.addBtn.addEventListener("click", this.add);
-      this.deleteBtn.addEventListener("click", () => { this.activeItem.deleteThis(); });
+      //Always use arrow functions to ensure this points to the IterableList rather than the calling DOM element
+      this.addBtn.addEventListener("click", () => { this.add(); });
+      this.deleteBtn.addEventListener("click", () => { this.activeItem.deleteThis(true); });
       this.upBtn.addEventListener("click", () => { this.activeItem.move(-1); });
       this.downBtn.addEventListener("click", () => { this.activeItem.move(1); });
+    }
+
+    add() {
+      //Create option in item selector
+      const newNode = this.selector.appendChild(document.createElement("option"));
+
+      //New item initially takes default values
+      const newItem = this.newItem(newNode);
+
+      //Name the new item
+      newItem.itemName.value = (this.items.length + 1).toString();
+      newNode.innerHTML = newItem.itemName.value;
+
+      //Check validity of data in new item including all fields
+      newItem.checkValidity(true);
+
+      //Add to the end
+      this.items.push(newItem);
+
+      //Try to change to new itme. The add station button is disabled when on defaults.
+      newNode.selected = true;
+      this.refresh(true);
     }
 
     applyAll(action, fieldList) {
@@ -90,37 +115,139 @@ const tcTemplate = (() => {
     }
   }
 
+  class StationList extends IterableList {
+    constructor() {
+      const obj = {
+        selectorSpan: document.getElementById("stationSelect"),
+        addBtn: document.getElementById("addStation"),
+        deleteBtn: document.getElementById("deleteStation"),
+        upBtn: document.getElementById("moveUpStation"),
+        downBtn: document.getElementById("moveDownStation"),
+        defaultInFocus: true,
+        itemInFocus: 0
+      };
+      super(obj);
+      //Insert selector of size 5
+      this.selectorSpan.appendChild(this.selector);
+      this.selector.size = 5;
+      //Radio button options
+      this.defaultRadio = document.getElementById("defaultRadio");
+      this.stationRadio = document.getElementById("stationRadio");
+      //Set up current/dynamic defaults
+      this.default = new Station({
+        parentObj: this,
+        optionElement: undefined,
+        copyStation: undefined
+      });
+      this.default.checkValidity(true);
+    }
+
+    newItem(newNode) {
+      return new Station({
+        parentObj: this,
+        optionElement: newNode,
+        copyStation: this.default
+      });
+    }
+
+    refresh(storeValues = false) {
+      //storeValues is a boolean stating whether to commit values in form fields to variables in memory.
+
+      //Other DOM elements
+      const setAllResetCSS = document.getElementById("showSetAllCSS");
+
+      if (storeValues) {
+        //Only permit change of station if the name is valid and unique
+        if (this.activeItem.itemName.valid === false) {
+          //Abort
+          alert("Please insert a valid and unique station name");
+          //Change radio buttons and selectors back to original values
+          if (this.defaultInFocus) {
+            this.defaultRadio.checked = true;
+          } else {
+            this.stationRadio.checked = true;
+            this.selector.selectedIndex = stationList.itemInFocus;
+          }
+          return;
+        }
+      }
+
+      //Remove task etc. selectors for station to be hidden
+      if (this.defaultInFocus === false) {
+        this.activeItem.taskList.selector.remove();
+      }
+
+      //Show/hide or enable/disable HTML elements according to new selected station
+      this.itemInFocus = this.selector.selectedIndex;
+      if (this.defaultRadio.checked) {
+        //Setting defaults for all stations
+        this.defaultInFocus = true;
+
+        //Show/hide any buttons as required
+        setAllResetCSS.innerHTML = ".hideIfDefault{ display: none; }";
+
+        //Some fields need disabling
+        this.selector.disabled = true;
+        this.addBtn.disabled = true;
+        this.deleteBtn.disabled = true;
+        this.upBtn.disabled = true;
+        this.downBtn.disabled = true;
+        this.default.itemName.inputElement.disabled = true;
+        this.default.heading.inputElement.disabled = true;
+      } else {
+        this.defaultInFocus = false;
+
+        //Show/hide any buttons as required
+        setAllResetCSS.innerHTML = ".setAllCourses{ display: none; }";
+
+        //Some fields may need enabling
+        this.selector.disabled = false;
+        this.addBtn.disabled = false;
+        this.showHideMoveBtns();
+        this.activeItem.itemName.inputElement.disabled = false;
+        this.activeItem.heading.inputElement.disabled = false;
+
+        //Insert new task etc. selectors
+        this.activeItem.taskList.selectorSpan.appendChild(this.activeItem.taskList.selector);
+      }
+
+      //Populate with values for new selected station and show error/warning messages
+      this.activeItem.refreshAllInput();
+    }
+  }
+
   class TaskList extends IterableList {
-    add() {
-      //TODO: Merge this with addStation and put in IterableList class
+    constructor(parentObj) {
+      const obj = {
+        selectorSpan: document.getElementById("taskSelect"),
+        addBtn: document.getElementById("addTask"),
+        deleteBtn: document.getElementById("deleteTask"),
+        upBtn: document.getElementById("moveUpTask"),
+        downBtn: document.getElementById("moveDownTask"),
+        defaultInFocus: false,
+        itemInFocus: 0
+      };
+      super(obj);
+      this.parentItem = parentObj;
+      this.selector.size = 5;
+    }
 
-      //Create option in station selector
-      const newNode = this.parentList.selector.appendChild(document.createElement("option"));
-
-      //New station initially takes default values
-      const newItem = new Task({
-        parentObj: this.parentList,
+    newItem(newNode) {
+      return new Task({
+        parentObj: this,
         optionElement: newNode,
         copyItem: undefined
       });
-
-      //Name the new station
-      newItem.itemName.value = (this.parentList.items.length + 1).toString();
-      newNode.innerHTML = newItem.itemName.value;
-
-      //Check validity of data in new station including all fields
-      newStation.checkValidity(true);
-
-      //Add to the end
-      this.parentList.items.push(newItem);
-
-      //Try to change to new station. The add station button is disabled when on defaults.
-      newNode.selected = true;
-      this.parentList.refresh(true);
     }
 
-    refresh() {
-
+    setNumItems() {
+      //Forcibly adds/removes items from end of list to get required length
+      while (this.items.length < this.numItems) {
+        this.add();
+      }
+      while (this.items.length > this.numItems) {
+        this.items[this.items.length - 1].deleteThis(false);
+      }
     }
   }
 
@@ -129,6 +256,11 @@ const tcTemplate = (() => {
     constructor(obj) {
       this.parentList = obj.parentObj;
       this.optionElement = obj.optionElement;
+      if (this.getItemType() === "station") {
+        this.station = this;
+      } else {
+        this.station = this.parentList.parentItem;
+      }
     }
 
     get index() {
@@ -145,18 +277,20 @@ const tcTemplate = (() => {
       return this.parentList.default === this;
     }
 
-    deleteThis() {
+    deleteThis(checkFirst = true) {
       //Deletes this item
-      //Check first
-      if (confirm("Are you sure you want to delete? This cannot be undone.")) {
-        this.optionElement.remove();
-        this.parentList.iteminFocus = 0;
-        this.parentList.selector.selectedIndex = 0;
-        //Remove this station from array
-        this.parentList.items.splice(this.index, 1);
-        //Don't save deleted values then refresh input fields
-        this.parentList.refresh(false);
+      if (checkFirst) {
+        if (!confirm("Are you sure you want to delete? This cannot be undone.")) {
+          return;
+        }
       }
+      this.optionElement.remove();
+      this.parentList.iteminFocus = 0;
+      this.parentList.selector.selectedIndex = 0;
+      //Remove this station from array
+      this.parentList.items.splice(this.index, 1);
+      //Don't save deleted values then refresh input fields
+      this.parentList.refresh(false);
     }
 
     move(offset = 0) {
@@ -210,7 +344,6 @@ const tcTemplate = (() => {
         MapSize,
         MapScale,
         ContourInterval,
-        TaskAutoMethod
       ];
       const customLayoutClasses = [
         IDFontSize,
@@ -239,15 +372,12 @@ const tcTemplate = (() => {
         this[field] = new classNames[index](this, obj.copyStation[field].value);
         index++;
       }
-      this.taskList = new TaskList({
-        selector: document.getElementById("taskSelect"),
-        addBtn: document.getElementById("addTask"),
-        deleteBtn: document.getElementById("deleteTask"),
-        upBtn: document.getElementById("moveUpTask"),
-        downBtn: document.getElementById("moveDownTask"),
-        defaultInFocus: false,
-        itemInFocus: 0
-      });
+      this.taskList = new TaskList();
+      this.taskList.setNumItems();
+    }
+
+    getItemType() {
+      return "station";
     }
 
     isNonDefaultHidden() {
@@ -287,7 +417,7 @@ const tcTemplate = (() => {
 
       //Fields - populate with values given in copyTask, if present
       const fieldClasses = [
-        ItemName,
+        TaskName,
         CirclePage,
         Circlex,
         Circley,
@@ -313,6 +443,10 @@ const tcTemplate = (() => {
         index++;
       }
     }
+
+    getItemType() {
+      return "task";
+    }
   }
 
   //Fields
@@ -320,7 +454,13 @@ const tcTemplate = (() => {
     //Generic field: string or select
     constructor(obj) {
       this.fieldName = this.constructor.getFieldName();
-      this.station = obj.parentObj;
+      this.parentItem = obj.parentObj;
+      this.parentList = this.parentItem.parentList;
+      if (this.parentItem.getItemType() === "station") {
+        this.station = this.parentItem;
+      } else {
+        this.station = this.parentList.parentItem;
+      }
       this.stationList = this.station.parentList; //Shortcut
       if (obj.value === undefined) {
         this.value = this.constructor.getOriginalValue();
@@ -343,28 +483,28 @@ const tcTemplate = (() => {
     }
 
     isDuplicate(ignoreHidden = false) {
-      //Determines whether this value is duplicated at another station. Ignores hidden stations on request.
+      //Determines whether this value is duplicated at another item in this list. Ignores hidden stations on request.
 
       //Return false if the tested index is ignored
       if (ignoreHidden && this.station.showStation.value === false) { return false; }
 
       if (ignoreHidden) {
-        return this.stationList.items.some((station) => (station[this.fieldName].value === this.value && station !== this.station && station.showStation.value === true));
+        return this.parentList.items.some((item) => (item[this.fieldName].value === this.value && item !== this.parentItem && this.station.showStation.value === true));
       } else {
-        return this.stationList.items.some((station) => (station[this.fieldName].value === this.value && station !== this.station));
+        this.parentList.items.some((item) => (item[this.fieldName].value === this.value && item !== this.parentItem));
       }
     }
 
     matchesAll(ignoreHidden = false) {
-      //Returns true if this field matches those on all other stations, excluding number fields set to NaN. Ignores NaN if number. Ignores hidden stations on request.
+      //Returns true if this field matches those on all other items in this list, excluding number fields set to NaN. Ignores NaN if number. Ignores hidden stations on request.
 
       //Return true if the tested index is ignored
       if (ignoreHidden && this.station.showStation.value === false) { return true; }
 
       if (ignoreHidden) {
-        return this.stationList.items.every((station) => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value) || station.showStation.value === false));
+        return this.parentList.items.every((item) => (item[this.fieldName].value === this.value || Number.isNaN(item[this.fieldName].value) || this.station.showStation.value === false));
       } else {
-        return this.stationList.items.every((station) => (station[this.fieldName].value === this.value || Number.isNaN(station[this.fieldName].value)));
+        return this.parentList.items.every((item) => (item[this.fieldName].value === this.value || Number.isNaN(item[this.fieldName].value)));
       }
     }
 
@@ -507,7 +647,7 @@ const tcTemplate = (() => {
     }
 
     static getFieldName() {
-      return "stationName";
+      return "itemName";
     }
 
     static getOriginalValue() {
@@ -942,30 +1082,58 @@ const tcTemplate = (() => {
     }
   }
 
-  class TaskAutoMethod extends Field {
+  class TaskName extends Field {
     constructor(parentObj, value) {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        inputElement: document.getElementById("taskAutoMethod"),
-        resetBtn: document.getElementById("resetTaskAutoMethod"),
-        setAllBtn: document.getElementById("setAllTaskAutoMethod"),
-        errorElement1: undefined,
-        errorElement2: undefined
+        inputElement: document.getElementById("taskName"),
+        resetBtn: undefined,
+        setAllBtn: undefined,
+        errorElement1: document.getElementById("taskNameSyntax"),
+        errorElement2: document.getElementById("taskNameUniqueness")
       };
       super(inputObj);
     }
 
     static getFieldName() {
-      return "taskAutoMethod";
+      return "itemName";
     }
 
     static getOriginalValue() {
-      return "from Purple Pen automatically";
+      return "";
+    }
+
+    checkValidity() {
+      //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
+      const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
+      this.syntaxError = !(this.station.isDefault() || stringFormat.test(this.value));
+      this.duplicateError = !(this.station.isDefault()) && this.isDuplicate(false) && this.value !== "Kites" && this.value !== "VP";
+      this.valid = !(this.syntaxError || this.duplicateError);
+
+      //Update task list
+      this.station.optionElement.innerHTML = this.value;
     }
 
     updateMsgs() {
-      //
+      const contentFieldClass = this.inputElement.classList;
+      const syntaxMsgStyle = this.errorElement1.style;
+      const uniquenessMsgStyle = this.errorElement2.style;
+      if (this.valid) {
+        contentFieldClass.remove("error");
+        syntaxMsgStyle.display = "none";
+        uniquenessMsgStyle.display = "none";
+      } else {
+        contentFieldClass.add("error");
+        //Don't show both error messages together
+        if (this.syntaxError) {
+          syntaxMsgStyle.display = "";
+          uniquenessMsgStyle.display = "none";
+        } else {
+          syntaxMsgStyle.display = "none";
+          uniquenessMsgStyle.display = "";
+        }
+      }
     }
   }
 
@@ -1153,115 +1321,17 @@ const tcTemplate = (() => {
     }
   }
 
-  //Create list of stations object and extend the class
-  const stationList = new IterableList({
-    selector: document.getElementById("stationSelect"),
-    addBtn: document.getElementById("addStation"),
-    deleteBtn: document.getElementById("deleteStation"),
-    upBtn: document.getElementById("moveUpStation"),
-    downBtn: document.getElementById("moveDownStation"),
-    defaultInFocus: true,
-    itemInFocus: 0
-  });
+  //Create root level objects
+  const stationList = new StationList();
 
-  //Add some methods
-  stationList.refresh = changeStationFocus;
-  stationList.add = addStation;
 
-  //Set up current/dynamic defaults
-  stationList.default = new Station({
-    parentObj: stationList,
-    optionElement: undefined,
-    copyStation: undefined
-  });
-  stationList.default.checkValidity(true);
 
-  //Radio button options
-  stationList.defaultRadio = document.getElementById("defaultRadio");
-  stationList.stationRadio = document.getElementById("stationRadio");
 
-  function changeStationFocus(storeValues = false) {
-    //storeValues is a boolean stating whether to commit values in form fields to variables in memory.
 
-    //Other DOM elements
-    const setAllResetCSS = document.getElementById("showSetAllCSS");
 
-    if (storeValues) {
-      //Only permit change of station if the name is valid and unique
-      if (stationList.activeItem.stationName.valid === false) {
-        //Abort
-        alert("Please insert a valid and unique station name");
-        //Change radio buttons and selectors back to original values
-        if (stationList.defaultInFocus) {
-          defaultRadio.checked = true;
-        } else {
-          stationRadio.checked = true;
-          stationList.selector.selectedIndex = stationList.itemInFocus;
-        }
-        return;
-      }
-    }
 
-    //Show/hide or enable/disable HTML elements according to new selected station
-    stationList.itemInFocus = stationList.selector.selectedIndex;
-    if (defaultRadio.checked) {
-      //Setting defaults for all stations
-      stationList.defaultInFocus = true;
 
-      //Show/hide any buttons as required
-      setAllResetCSS.innerHTML = ".resetCourse{ display: none; }";
 
-      //Some fields need disabling
-      stationList.selector.disabled = true;
-      stationList.addBtn.disabled = true;
-      stationList.deleteBtn.disabled = true;
-      stationList.upBtn.disabled = true;
-      stationList.downBtn.disabled = true;
-      stationList.default.stationName.inputElement.disabled = true;
-      stationList.default.heading.inputElement.disabled = true;
-    } else {
-      stationList.defaultInFocus = false;
-
-      //Show/hide any buttons as required
-      setAllResetCSS.innerHTML = ".setAllCourses{ display: none; }";
-
-      //Some fields may need enabling
-      stationList.selector.disabled = false;
-      stationList.addBtn.disabled = false;
-      stationList.showHideMoveBtns();
-      stationList.activeItem.stationName.inputElement.disabled = false;
-      stationList.activeItem.heading.inputElement.disabled = false;
-    }
-
-    //Populate with values for new selected station and show error/warning messages
-    stationList.activeItem.refreshAllInput();
-  }
-
-  function addStation() {
-    //Create option in station selector
-    const newNode = stationList.selector.appendChild(document.createElement("option"));
-
-    //New station initially takes default values
-    const newStation = new Station({
-      parentObj: stationList,
-      optionElement: newNode,
-      copyStation: stationList.default
-    });
-
-    //Name the new station
-    newStation.stationName.value = (stationList.items.length + 1).toString();
-    newNode.innerHTML = newStation.stationName.value;
-
-    //Check validity of data in new station including all fields
-    newStation.checkValidity(true);
-
-    //Add to the end
-    stationList.items.push(newStation);
-
-    //Try to change to new station. The add station button is disabled when on defaults.
-    newNode.selected = true;
-    stationList.refresh(true);
-  }
 
 
 
@@ -2542,7 +2612,7 @@ const tcTemplate = (() => {
 
   //Initialisation
   //TODO: From legacy UI
-  document.getElementById("stationProperties").hidden = true;
+  // document.getElementById("stationProperties").hidden = true;
   document.getElementById("savePDF").hidden = true;
   document.getElementById("viewLog").hidden = true;
 
@@ -2550,10 +2620,11 @@ const tcTemplate = (() => {
   stationList.add(stationList.default);
   stationList.refresh(false);
 
-  //Event listeners
-  stationList.createEventListeners();
+  //Event listeners - always call with arrow functions to ensure this doesn't point to calling DOM element
+  stationList.createBtnListeners();
   stationList.defaultRadio.addEventListener("change", () => { stationList.refresh(true); });
   stationList.stationRadio.addEventListener("change", () => { stationList.refresh(true); });
+  stationList.activeItem.taskList.createBtnListeners();
   document.getElementById("setAllCore").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.coreFields); });
   document.getElementById("setAllCustomLayout").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.customLayoutFields); });
   document.getElementById("resetAllCustomLayout").addEventListener("click", () => { stationList.applyAll("resetValue", stationList.default.customLayoutFields); });

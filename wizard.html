@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="WizardStyle.css" />
   <!--Reserved for editing in Javascript to show/hide all elements within a class-->
   <style id="showSetAllCSS"></style>
+  <style id="showAutoCSS"></style>
 
   <!--Favicons-->
   <link rel="apple-touch-icon" type="image/png" href="favicon/noborder152.png" sizes="152x152" />
@@ -43,14 +44,13 @@
 
     <!--New interface-->
     <section>
-      <ul>
-        <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
-        <li><button type="button" onclick="tcTemplate.saveParameters()">Save station data</button>&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
-      </ul>
+      <p>Open station data <input id="texSelector" type="file" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><br />
+        <button id="saveParameters" type="button" onclick="tcTemplate.saveParameters()">Save station data</button>&emsp;<label><input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</label>
+      </p>
       <p>
         <label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all stations</label><br />
         <label><input id="stationRadio" type="radio" name="editType" value="station" />Customise individual station:</label><br />
-        <select id="stationSelect" size="5"></select><br />
+        <span id="stationSelect"></span><br />
         Station
         <button id="addStation" type="button">+ Add</button>
         <button id="deleteStation" type="button">X Delete</button>
@@ -72,7 +72,7 @@
           <tr>
             <td>Print station?</td>
             <td><input id="showStation" type="checkbox" /></td>
-            <td><button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="resetCourse" type="button">Reset</button></td>
+            <td><button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></td>
           </tr>
           <tr>
             <td>Number of kites</td>
@@ -86,13 +86,13 @@
                 <option>6</option>
               </select>
             </td>
-            <td><button id="setAllNumKites" class="setAllCourses" type="button">Set all stations</button><button id="resetNumKites" class="resetCourse" type="button">Reset</button></td>
+            <td><button id="setAllNumKites" class="setAllCourses" type="button">Set all stations</button><button id="resetNumKites" class="hideIfDefault" type="button">Reset</button></td>
             <td id="kitesRule" colspan="2">IOF rule: number of kites = 6</td>
           </tr>
           <tr>
             <td>Zeroes?</td>
             <td><input id="zeroes" type="checkbox" /></td>
-            <td><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="resetCourse" type="button">Reset</button></td>
+            <td><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button></td>
             <td id="zeroesWarning" colspan="2">Not the same for all stations</td>
           </tr>
           <tr>
@@ -103,32 +103,32 @@
                 <option>Square</option>
               </select>
             </td>
-            <td><button id="setAllMapShape" class="setAllCourses" type="button">Set all stations</button><button id="resetMapShape" class="resetCourse" type="button">Reset</button></td>
+            <td><button id="setAllMapShape" class="setAllCourses" type="button">Set all stations</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button></td>
             <td id="mapShapeRule" colspan="2">IOF rule: must be the same for all stations</td>
           </tr>
           <tr>
             <td>Map <span id="mapSizeType">diameter</span></td>
             <td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" /> cm</td>
-            <td><button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="resetCourse" type="button">Reset</button></td>
+            <td><button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></td>
             <td id="mapSizePermitted">0 &lt; size &le; 12</td>
             <td id="mapSizeRule">IOF rules: 5 &le; size &le; 12; must be the same for all stations</td>
           </tr>
           <tr>
             <td>Map scale</td>
             <td>1:<input id="mapScale" type="number" min="0" step="any" /></td>
-            <td><button id="setAllMapScale" class="setAllCourses" type="button">Set all stations</button><button id="resetMapScale" class="resetCourse" type="button">Reset</button></td>
+            <td><button id="setAllMapScale" class="setAllCourses" type="button">Set all stations</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button></td>
             <td id="mapScalePermitted">Must be &gt; 0</td>
             <td id="mapScaleRule">IOF rules: normally 1:4000 or 1:5000; must be the same for all stations</td>
           </tr>
           <tr>
             <td>Contour interval</td>
             <td><input id="contourInterval" type="number" min="0" step="any" /> m</td>
-            <td><button id="setAllContourInterval" class="setAllCourses" type="button">Set all stations</button><button id="resetContourInterval" class="resetCourse" type="button">Reset</button></td>
+            <td><button id="setAllContourInterval" class="setAllCourses" type="button">Set all stations</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button></td>
             <td id="contourIntervalPermitted">Must be &gt; 0</td>
             <td id="contourIntervalRule">IOF rule: must be the same for all stations</td>
           </tr>
-        </table>
-      </details><br />
+        </table><br />
+      </details>
 
       <details open="open">
         <summary>Tasks</summary>
@@ -136,68 +136,76 @@
           <!--These error messages shouldn't be displayed together-->
           <span id="numTasksError">Must be an integer &ge; 1</span>
           <span id="numTasksRule">IOF rule: must be the same for all stations</span><br />
-          <select id="taskSelect" size="5"></select><br />
-          Task
-          <button id="addTask" type="button">+ Add</button>
-          <button id="deleteTask" type="button">X Delete</button>
-          <button id="moveUpTask" type="button">&uarr; Move up</button>
-          <button id="moveDownTask" type="button">&darr; Move down</button>
+          <span id="taskSelect"></span><br />
+          <span class="hideIfDefault">
+            Task
+            <button id="addTask" type="button">+ Add</button>
+            <button id="deleteTask" type="button">X Delete</button>
+            <button id="moveUpTask" type="button">&uarr; Move up</button>
+            <button id="moveDownTask" type="button">&darr; Move down</button>
+          </span>
         </p>
-        <p>Task name <input id="taskName" type="text" />
+        <p class="hideIfDefault">Task name <input id="taskName" type="text" />
           <!--These error messages shouldn't be displayed together-->
           <span id="taskNameSyntax">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</span>
-          <span id="taskNameUniqueness">Must be unique</span>
+          <span id="taskNameUniqueness">Must be unique and not <em>Kites</em> or <em>VP</em></span>
         </p>
-      </details><br />
+      </details>
+
+      <details open="open">
+        <summary>Calculate positions and make maps in Purple Pen</summary>
+        <p>Open Purple Pen file <input id="ppenSelector" type="file" accept=".ppen" /></p>
+        <p><span id="ppenStatus"></span> <button id="ppenSave" type="button">Save modified Purple Pen file</button></p>
+        <details>
+          <summary>Open/save Purple Pen options</summary>
+          <p>
+            <label><input id="ppenAutoUpdateFields" type="checkbox" />Automatically calculate circle and kite positions on load</label><br />
+            <label><input id="ppenReorder" type="checkbox" />Reorder courses in Purple Pen file to match station and task order</label><br />
+            <label><input id="ppenClean" type="checkbox" />Remove unused courses and controls from Purple Pen file</label>
+          </p>
+        </details><br />
+      </details>
 
       <details>
         <summary>Task positions</summary>
-        <p>Calculate positions
-          <select id="taskAutoMethod">
-            <option>from Purple Pen automatically</option>
-            <option>on request from Purple Pen</option>
-            <option>manually</option>
-          </select>
-          <button id="setAllTaskAutoMethod" class="setAllCourses" type="button">Set all stations</button>
-          <button id="resetTaskAutoMethod" class="resetCourse" type="button">Reset</button>
-        </p>
-        <p>Positions are measured from the bottom-left corner of the page.</p>
+        <p>TODO: MOVE TO HELP FILE Positions are measured from the bottom-left corner of the page.</p>
+        <p><button id="autoAllTasks" class="setAllCourses" type="button">Auto all stations</button><button id="autoTasksStation" class="hideIfDefault" type="button">Auto all</button></p>
         <table>
           <tr>
             <td rowspan="3">Control circle</td>
             <td>Page</td>
-            <td><input id="circlePage" class="layoutLength" type="number" min="1" step="1" /></td>
+            <td><input id="circlePage" class="pageNum" type="number" min="1" step="1" /></td>
             <td><button id="circlePageAuto" type="button" class="auto">Auto</button></td>
             <td id="circlePageError">Must be an integer &ge; 1</td>
           </tr>
           <tr>
             <td>x</td>
-            <td><input id="circlex" class="layoutLength" type="number" step="any" /> cm</td>
+            <td><input id="circlex" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="circlexAuto" type="button" class="auto">Auto</button></td>
             <td id="circlexError">Must be a number</td>
           </tr>
           <tr>
             <td>y</td>
-            <td><input id="circley" class="layoutLength" type="number" step="any" /> cm</td>
+            <td><input id="circley" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="circleyAuto" type="button" class="auto">Auto</button></td>
             <td id="circleyError">Must be a number</td>
           </tr>
           <tr>
             <td rowspan="6">Control description</td>
             <td>Page</td>
-            <td><input id="CDpage" class="layoutLength" type="number" min="1" step="1" /></td>
+            <td><input id="CDpage" class="pageNum" type="number" min="1" step="1" /></td>
             <td><button id="CDpageAuto" type="button" class="auto">Auto</button></td>
             <td id="CDpageError">Must be an integer &ge; 1</td>
           </tr>
           <tr>
             <td>x</td>
-            <td><input id="CDx" class="layoutLength" type="number" step="any" /> cm</td>
+            <td><input id="CDx" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="CDxAuto" type="button" class="auto">Auto</button></td>
             <td id="CDxError">Must be a number</td>
           </tr>
           <tr>
             <td>y</td>
-            <td><input id="CDy" class="layoutLength" type="number" step="any" /> cm</td>
+            <td><input id="CDy" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="CDyAuto" type="button" class="auto">Auto</button></td>
             <td id="CDyError">Must be a number</td>
           </tr>
@@ -219,16 +227,16 @@
             <td><button id="CDscaleAuto" type="button" class="auto">Auto</button></td>
             <td id="CDscaleError">Must be a number &gt; 0</td>
           </tr>
-        </table>
-      </details><br />
+        </table><br />
+      </details>
 
       <details>
         <summary>Heading, kite and viewing point positions</summary>
-        <p><button id="autoAllKites" class="setAllCourses" type="button">Auto all stations</button><button id="autoKitesStation" class="resetCourse" type="button">Auto all</button></p>
+        <p><button id="autoAllKites" class="setAllCourses" type="button">Auto all stations</button><button id="autoKitesStation" class="hideIfDefault" type="button">Auto all</button></p>
         <table>
           <tr>
             <td colspan="2">Heading</td>
-            <td><input id="heading" type="number" step="any" />&deg</td>
+            <td><input id="heading" type="number" step="any" />&deg;</td>
             <td><button id="headingAuto" type="button" class="auto">Auto</button></td>
             <td id="headingError">Must be a number</td>
           </tr>
@@ -248,12 +256,11 @@
           <tr>
             <td colspan="2">Blank map page</td>
             <td><input id="blankMapPage" class="pageNum" type="number" min="1" step="1" /></td>
-            <td><button id="circlePageAuto" type="button" class="auto">Auto</button><button id="setAllBlankMapPage" class="setAllCourses" type="button">Set all stations</button><button id="resetBlankMapPage" class="resetCourse" type="button">Reset</button></td>
-            <td id="circlePageError">Must be an integer &ge; 1</td>
+            <td><button id="blankMapPageAuto" type="button" class="auto">Auto</button><button id="setAllBlankMapPage" class="setAllCourses" type="button">Set all stations</button><button id="resetBlankMapPage" class="hideIfDefault" type="button">Reset</button></td>
+            <td id="blankMapPageError">Must be an integer &ge; 1</td>
           </tr>
         </table>
-
-        <p>Kite <select id="selectKite"></select>
+        <p>Kite <select id="selectKite"></select>&emsp;
           <button id="moveUpKite" type="button">&uarr; Move up</button>
           <button id="moveDownKite" type="button">&darr; Move down</button>
           <button id="autoOrderKite" type="button">Auto reorder</button>
@@ -271,9 +278,8 @@
             <td><button id="kiteyAuto" type="button" class="auto">Auto</button></td>
             <td id="kiteyError">Must be a number</td>
           </tr>
-        </table>
-
-      </details><br />
+        </table><br />
+      </details>
 
       <details>
         <summary>Customise layout</summary>
@@ -332,7 +338,16 @@
             <td><button id="setAllPhoneticFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetPhoneticFontSize" type="button">Reset</button></td>
             <td id="phoneticFontSizeError">Must be &gt; 0</td>
           </tr>
-        </table>
+        </table><br />
+      </details>
+
+      <details open="open">
+        <summary>Compile map cards</summary>
+        <p>
+          PDF of maps <input id="coursePDFSelector" type="file" accept=".pdf" /><br />
+          PDF of control descriptions <input id="CDPDFSelector" type="file" accept=".pdf" />
+        </p>
+        <p><button id="compileLaTeXBtn" type="button">Generate map cards</button>&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></p>
       </details>
     </section>
 
