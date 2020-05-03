@@ -148,7 +148,7 @@
         <p class="hideIfDefault">Task name <input id="taskName" type="text" />
           <!--These error messages shouldn't be displayed together-->
           <span id="taskNameSyntax">Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=</span>
-          <span id="taskNameUniqueness">Must be unique and not <em>Kites</em> or <em>VP</em></span>
+          <span id="taskNameUniqueness">Must be unique and neither <em>Kites</em> nor <em>VP</em></span>
         </p>
       </details>
 
@@ -182,50 +182,50 @@
             <td>x</td>
             <td><input id="circlex" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="circlexAuto" type="button" class="auto">Auto</button></td>
-            <td id="circlexError">Must be a number</td>
+            <td id="circlexError">Must be a number &ge; 0</td>
           </tr>
           <tr>
             <td>y</td>
             <td><input id="circley" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="circleyAuto" type="button" class="auto">Auto</button></td>
-            <td id="circleyError">Must be a number</td>
+            <td id="circleyError">Must be a number &ge; 0</td>
           </tr>
           <tr>
             <td rowspan="6">Control description</td>
             <td>Page</td>
-            <td><input id="CDpage" class="pageNum" type="number" min="1" step="1" /></td>
-            <td><button id="CDpageAuto" type="button" class="auto">Auto</button></td>
-            <td id="CDpageError">Must be an integer &ge; 1</td>
+            <td><input id="CDPage" class="pageNum" type="number" min="1" step="1" /></td>
+            <td><button id="CDPageAuto" type="button" class="auto">Auto</button></td>
+            <td id="CDPageError">Must be an integer &ge; 1</td>
           </tr>
           <tr>
             <td>x</td>
             <td><input id="CDx" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="CDxAuto" type="button" class="auto">Auto</button></td>
-            <td id="CDxError">Must be a number</td>
+            <td id="CDxError">Must be a number &ge; 0</td>
           </tr>
           <tr>
             <td>y</td>
             <td><input id="CDy" class="coordinate" type="number" step="any" /> cm</td>
             <td><button id="CDyAuto" type="button" class="auto">Auto</button></td>
-            <td id="CDyError">Must be a number</td>
+            <td id="CDyError">Must be a number &ge; 0</td>
           </tr>
           <tr>
             <td>Width</td>
-            <td><input id="CDwidth" class="layoutLength" type="number" step="any" min="0" /> cm</td>
-            <td><button id="CDwidthAuto" type="button" class="auto">Auto</button></td>
-            <td id="CDwidthError">Must be a number &ge; 0</td>
+            <td><input id="CDWidth" class="layoutLength" type="number" step="any" min="0" /> cm</td>
+            <td><button id="CDWidthAuto" type="button" class="auto">Auto</button></td>
+            <td id="CDWidthError">Must be a number &ge; 0</td>
           </tr>
           <tr>
             <td>Height</td>
-            <td><input id="CDheight" class="layoutLength" type="number" step="any" min="0" /> cm</td>
-            <td><button id="CDheightAuto" type="button" class="auto">Auto</button></td>
-            <td id="CDheightError">Must be a number &ge; 0</td>
+            <td><input id="CDHeight" class="layoutLength" type="number" step="any" min="0" /> cm</td>
+            <td><button id="CDHeightAuto" type="button" class="auto">Auto</button></td>
+            <td id="CDHeightError">Must be a number &ge; 0</td>
           </tr>
           <tr>
             <td>Scale</td>
-            <td><input id="CDscale" class="layoutLength" type="number" step="any" min="0" /></td>
-            <td><button id="CDscaleAuto" type="button" class="auto">Auto</button></td>
-            <td id="CDscaleError">Must be a number &gt; 0</td>
+            <td><input id="CDScale" class="layoutLength" type="number" step="any" min="0" /></td>
+            <td><button id="CDScaleAuto" type="button" class="auto">Auto</button></td>
+            <td id="CDScaleError">Must be a number &gt; 0</td>
           </tr>
         </table><br />
       </details>
