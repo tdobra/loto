@@ -62,36 +62,22 @@
         <summary>Main properties</summary>
         <p><button id="setAllCore" type="button" class="setAllCourses">Set all stations to defaults</button></p>
         <table>
-          <tr>
-            <td>Station name</td>
+          <tr class="hideIfDefault">
+            <td><label for="stationName">Station name</label></td>
             <td colspan="2"><input id="stationName" type="text" /> <span id="nameError"></span></td>
           </tr>
           <tr>
-            <td>Print station?</td>
+            <td><label for="showStation">Print station?</label></td>
             <td><input id="showStation" type="checkbox" /></td>
             <td><button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></td>
           </tr>
           <tr>
-            <td>Number of kites</td>
-            <td>
-              <select id="numKites">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6</option>
-              </select>
-            </td>
-            <td><button id="setAllNumKites" class="setAllCourses" type="button">Set all stations</button><button id="resetNumKites" class="hideIfDefault" type="button">Reset</button> <span id="kitesError"></span></td>
-          </tr>
-          <tr>
-            <td>Zeroes?</td>
+            <td><label for="zeroes">Zeroes?</label></td>
             <td><input id="zeroes" type="checkbox" /></td>
             <td><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button> <span id="zeroesWarning"></span></td>
           </tr>
           <tr>
-            <td>Map shape</td>
+            <td><label for="mapShape">Map shape</label></td>
             <td>
               <select id="mapShape">
                 <option>Circle</option>
@@ -101,17 +87,17 @@
             <td><button id="setAllMapShape" class="setAllCourses" type="button">Set all stations</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button> <span id="mapShapeRule"></span></td>
           </tr>
           <tr>
-            <td>Map <span id="mapSizeType">diameter</span></td>
+            <td><label for="mapSize">Map <span id="mapSizeType"></span></label></td>
             <td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" /> cm</td>
             <td><button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button> <span id="mapSizeError"></span></td>
           </tr>
           <tr>
-            <td>Map scale</td>
+            <td><label for="mapScale">Map scale</label></td>
             <td>1:<input id="mapScale" type="number" min="0" step="any" /></td>
             <td><button id="setAllMapScale" class="setAllCourses" type="button">Set all stations</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button> <span id="mapScaleError"></span></td>
           </tr>
           <tr>
-            <td>Contour interval</td>
+            <td><label for="contourInterval">Contour interval</label></td>
             <td><input id="contourInterval" type="number" min="0" step="any" /> m</td>
             <td><button id="setAllContourInterval" class="setAllCourses" type="button">Set all stations</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button> <span id="contourIntervalError"></span></td>
           </tr>
@@ -119,9 +105,88 @@
       </details>
 
       <details open="open">
+        <summary>Kites and zeroes</summary>
+        <p><label>Number of kites
+          <select id="numKites">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+          </select></label>
+          <button id="setAllNumKites" class="setAllCourses" type="button">Set all stations</button> <button id="autoAllOrderKite" class="setAllCourses" type="button">Auto reorder at all stations</button> <span id="numKitesError"></span>
+          <span class="hideIfDefault">
+            <br /><span id="kiteSelect"></span><br />
+            Kite/zero
+            <button id="addKite" type="button">+ Add</button>
+            <button id="deleteKite" type="button">X Delete</button>
+            <button id="moveUpKite" type="button">&uarr; Move up</button>
+            <button id="moveDownKite" type="button">&darr; Move down</button>
+            <button id="autoOrderKite" type="button">Auto reorder</button>
+          </span>
+        </p>
+        <table class="hideIfDefault">
+          <tr>
+            <td><label for="kiteName">Kite/zero name</label></td>
+            <td><input id="kiteName" type="text" /> <span id="kiteNameError"></span></td>
+          </tr>
+          <tr>
+            <td><label for="zero">Zero</label></td>
+            <td><input id="zero" type="checkbox" /></td>
+          </tr>
+        </table><br />
+
+        <details>
+          <summary>Kite and zero positions</summary>
+          <p><button id="autoAllKites" class="setAllCourses" type="button">Auto all stations</button><button id="autoKitesStation" class="hideIfDefault" type="button">Auto all at this station</button></p>
+          <table class="hideIfDefault">
+            <tr>
+              <td><label for="kitex">x</label></td>
+              <td><input id="kitex" class="coordinate" type="number" min="0" step="any" /> cm</td>
+              <td><button id="kitexAuto" type="button" class="auto">Auto</button> <span id="kitexError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="kitey">y</label></td>
+              <td><input id="kitey" class="coordinate" type="number" min="0" step="any" /> cm</td>
+              <td><button id="kiteyAuto" type="button" class="auto">Auto</button> <span id="kiteyError"></span></td>
+            </tr>
+          </table><br />
+        </details>
+      </details>
+
+      <details>
+        <summary>Heading and viewing point</summary>
+        <p><button id="autoAllHeadingVP" class="setAllCourses" type="button">Auto all stations</button><button id="autoHeadingVPStation" class="hideIfDefault" type="button">Auto all</button></p>
+        <table>
+          <tr class="hideIfDefault">
+            <td colspan="2"><label for="heading">Heading</label></td>
+            <td><input id="heading" type="number" step="any" />&deg;</td>
+            <td><button id="headingAuto" type="button" class="auto">Auto</button> <span id="headingError"></span></td>
+          </tr>
+          <tr class="hideIfDefault">
+            <td rowspan="2">Viewing point</td>
+            <td><label for="VPx">x</label></td>
+            <td><input id="VPx" class="coordinate" type="number" min="0" step="any" /> cm</td>
+            <td><button id="VPxAuto" type="button" class="auto">Auto</button> <span id="VPxError"></span></td>
+          </tr>
+          <tr class="hideIfDefault">
+            <td><label for="VPy">y</label></td>
+            <td><input id="VPy" class="coordinate" type="number" min="0" step="any" /> cm</td>
+            <td><button id="VPyAuto" type="button" class="auto">Auto</button> <span id="VPyError"></span></td>
+          </tr>
+          <tr>
+            <td colspan="2"><label for="blankMapPage">Blank map page</label></td>
+            <td><input id="blankMapPage" class="pageNum" type="number" min="1" step="1" /></td>
+            <td><button id="blankMapPageAuto" type="button" class="auto">Auto</button><button id="setAllBlankMapPage" class="setAllCourses" type="button">Set all stations</button><button id="resetBlankMapPage" class="hideIfDefault" type="button">Reset</button> <span id="blankMapPageError"></span></td>
+          </tr>
+        </table><br />
+      </details>
+
+      <details open="open">
         <summary>Tasks</summary>
-        <p>Number of tasks <input id="numTasks" type="number" min="1" step="1" /> <button id="setAllNumTasks" class="setAllCourses" type="button">Set all stations</button> <span id="numTasksError"></span><br />
-          <span id="taskSelect"></span><br />
+        <p><label>Number of tasks <input id="numTasks" type="number" min="1" step="1" /></label> <button id="setAllNumTasks" class="setAllCourses" type="button">Set all stations</button> <span id="numTasksError"></span><br />
+          <span id="taskSelect" class="hideIfDefault"></span><br />
           <span class="hideIfDefault">
             Task
             <button id="addTask" type="button">+ Add</button>
@@ -130,12 +195,76 @@
             <button id="moveDownTask" type="button">&darr; Move down</button>
           </span>
         </p>
-        <p class="hideIfDefault">Task name <input id="taskName" type="text" /> <span id="taskNameError"></span></p>
+        <table class="hideIfDefault">
+          <tr>
+            <td><label for="taskName">Task name</label></td>
+            <td><input id="taskName" type="text" /> <span id="taskNameError"></span></td>
+          </tr>
+          <tr>
+            <td><label for="solution">Solution</label></td>
+            <td><select id="solution"></select> <span id="solutionError"></span></td>
+          </tr>
+        </table><br />
+
+        <details>
+          <summary>Task positions</summary>
+          <p>TODO: MOVE TO HELP FILE Positions are measured from the bottom-left corner of the page.</p>
+          <p><button id="autoAllTasks" class="setAllCourses" type="button">Auto all stations</button><button id="autoTasksStation" class="hideIfDefault" type="button">Auto all</button></p>
+          <table>
+            <tr>
+              <td rowspan="3">Control circle</td>
+              <td><label for="circlePage">Page</label></td>
+              <td><input id="circlePage" class="pageNum" type="number" min="1" step="1" /></td>
+              <td><button id="circlePageAuto" type="button" class="auto">Auto</button> <span id="circlePageError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="circlex">x</label></td>
+              <td><input id="circlex" class="coordinate" type="number" min="0" step="any" /> cm</td>
+              <td><button id="circlexAuto" type="button" class="auto">Auto</button> <span id="circlexError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="circley">y</label></td>
+              <td><input id="circley" class="coordinate" type="number" min="0" step="any" /> cm</td>
+              <td><button id="circleyAuto" type="button" class="auto">Auto</button> <span id="circleyError"></span></td>
+            </tr>
+            <tr>
+              <td rowspan="6">Control description</td>
+              <td><label for="CDPage">Page</label></td>
+              <td><input id="CDPage" class="pageNum" type="number" min="1" step="1" /></td>
+              <td><button id="CDPageAuto" type="button" class="auto">Auto</button> <span id="CDPageError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="CDx">x</label></td>
+              <td><input id="CDx" class="coordinate" type="number" min="0" step="any" /> cm</td>
+              <td><button id="CDxAuto" type="button" class="auto">Auto</button> <span id="CDxError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="CDy">y</label></td>
+              <td><input id="CDy" class="coordinate" type="number" min="0" step="any" /> cm</td>
+              <td><button id="CDyAuto" type="button" class="auto">Auto</button> <span id="CDyError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="CDWidth">Width</label></td>
+              <td><input id="CDWidth" class="layoutLength" type="number" min="0" step="any" /> cm</td>
+              <td><button id="CDWidthAuto" type="button" class="auto">Auto</button> <span id="CDWidthError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="CDHeight">Height</label></td>
+              <td><input id="CDHeight" class="layoutLength" type="number" min="0" step="any" /> cm</td>
+              <td><button id="CDHeightAuto" type="button" class="auto">Auto</button> <span id="CDHeightError"></span></td>
+            </tr>
+            <tr>
+              <td><label for="CDScale">Scale</label></td>
+              <td><input id="CDScale" class="layoutLength" type="number" min="0" step="any" /></td>
+              <td><button id="CDScaleAuto" type="button" class="auto">Auto</button> <span id="CDScaleError"></span></td>
+            </tr>
+          </table><br />
+        </details>
       </details>
 
       <details open="open">
         <summary>Calculate positions and make maps in Purple Pen</summary>
-        <p>Open Purple Pen file <input id="ppenSelector" type="file" accept=".ppen" /></p>
+        <p><label>Open Purple Pen file <input id="ppenSelector" type="file" accept=".ppen" /></label></p>
         <p><span id="ppenStatus"></span> <button id="ppenSave" type="button">Save modified Purple Pen file</button></p>
         <details>
           <summary>Open/save Purple Pen options</summary>
@@ -144,107 +273,7 @@
             <label><input id="ppenReorder" type="checkbox" />Reorder courses in Purple Pen file to match station and task order</label><br />
             <label><input id="ppenClean" type="checkbox" />Remove unused courses and controls from Purple Pen file</label>
           </p>
-        </details><br />
-      </details>
-
-      <details>
-        <summary>Task positions</summary>
-        <p>TODO: MOVE TO HELP FILE Positions are measured from the bottom-left corner of the page.</p>
-        <p><button id="autoAllTasks" class="setAllCourses" type="button">Auto all stations</button><button id="autoTasksStation" class="hideIfDefault" type="button">Auto all</button></p>
-        <table>
-          <tr>
-            <td rowspan="3">Control circle</td>
-            <td>Page</td>
-            <td><input id="circlePage" class="pageNum" type="number" min="1" step="1" /></td>
-            <td><button id="circlePageAuto" type="button" class="auto">Auto</button> <span id="circlePageError"></span></td>
-          </tr>
-          <tr>
-            <td>x</td>
-            <td><input id="circlex" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="circlexAuto" type="button" class="auto">Auto</button> <span id="circlexError"></span></td>
-          </tr>
-          <tr>
-            <td>y</td>
-            <td><input id="circley" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="circleyAuto" type="button" class="auto">Auto</button> <span id="circleyError"></span></td>
-          </tr>
-          <tr>
-            <td rowspan="6">Control description</td>
-            <td>Page</td>
-            <td><input id="CDPage" class="pageNum" type="number" min="1" step="1" /></td>
-            <td><button id="CDPageAuto" type="button" class="auto">Auto</button> <span id="CDPageError"></span></td>
-          </tr>
-          <tr>
-            <td>x</td>
-            <td><input id="CDx" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="CDxAuto" type="button" class="auto">Auto</button> <span id="CDxError"></span></td>
-          </tr>
-          <tr>
-            <td>y</td>
-            <td><input id="CDy" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="CDyAuto" type="button" class="auto">Auto</button> <span id="CDyError"></span></td>
-          </tr>
-          <tr>
-            <td>Width</td>
-            <td><input id="CDWidth" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="CDWidthAuto" type="button" class="auto">Auto</button> <span id="CDWidthError"></span></td>
-          </tr>
-          <tr>
-            <td>Height</td>
-            <td><input id="CDHeight" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="CDHeightAuto" type="button" class="auto">Auto</button> <span id="CDHeightError"></span></td>
-          </tr>
-          <tr>
-            <td>Scale</td>
-            <td><input id="CDScale" class="layoutLength" type="number" min="0" step="any" /></td>
-            <td><button id="CDScaleAuto" type="button" class="auto">Auto</button> <span id="CDScaleError"></span></td>
-          </tr>
-        </table><br />
-      </details>
-
-      <details>
-        <summary>Heading, kite and viewing point positions</summary>
-        <p><button id="autoAllKites" class="setAllCourses" type="button">Auto all stations</button><button id="autoKitesStation" class="hideIfDefault" type="button">Auto all</button></p>
-        <table>
-          <tr>
-            <td colspan="2">Heading</td>
-            <td><input id="heading" type="number" step="any" />&deg;</td>
-            <td><button id="headingAuto" type="button" class="auto">Auto</button> <span id="headingError"></span></td>
-          </tr>
-          <tr>
-            <td rowspan="2">Viewing point</td>
-            <td>x</td>
-            <td><input id="VPx" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="VPxAuto" type="button" class="auto">Auto</button> <span id="VPxError"></span></td>
-          </tr>
-          <tr>
-            <td>y</td>
-            <td><input id="VPy" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="VPyAuto" type="button" class="auto">Auto</button> <span id="VPyError"></span></td>
-          </tr>
-          <tr>
-            <td colspan="2">Blank map page</td>
-            <td><input id="blankMapPage" class="pageNum" type="number" min="1" step="1" /></td>
-            <td><button id="blankMapPageAuto" type="button" class="auto">Auto</button><button id="setAllBlankMapPage" class="setAllCourses" type="button">Set all stations</button><button id="resetBlankMapPage" class="hideIfDefault" type="button">Reset</button> <span id="blankMapPageError"></span></td>
-          </tr>
-        </table>
-        <p>Kite <select id="selectKite"></select>&emsp;
-          <button id="moveUpKite" type="button">&uarr; Move up</button>
-          <button id="moveDownKite" type="button">&darr; Move down</button>
-          <button id="autoOrderKite" type="button">Auto reorder</button>
-        </p>
-        <table>
-          <tr>
-            <td>x</td>
-            <td><input id="kitex" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="kitexAuto" type="button" class="auto">Auto</button> <span id="kitexError"></span></td>
-          </tr>
-          <tr>
-            <td>y</td>
-            <td><input id="kitey" class="coordinate" type="number" min="0" step="any" /> cm</td>
-            <td><button id="kiteyAuto" type="button" class="auto">Auto</button> <span id="kiteyError"></span></td>
-          </tr>
-        </table><br />
+        </details>
       </details>
 
       <details>
@@ -255,44 +284,44 @@
         <table>
           <tr>
             <td>Station name</td>
-            <td>Font size</td>
+            <td><label for="IDFontSize">Font size</label></td>
             <td><input id="IDFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllIDFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetIDFontSize" type="button">Reset</button> <span id="IDFontSizeError"></span></td>
           </tr>
           <tr>
             <td rowspan="4">Page order boxes</td>
-            <td>Width</td>
+            <td><label for="checkWidth">Width</label></td>
             <td><input id="checkWidth" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllCheckWidth" class="setAllCourses" type="button">Set all stations</button><button id="resetCheckWidth" type="button">Reset</button> <span id="checkWidthError"></span></td>
           </tr>
           <tr>
-            <td>Height</td>
+            <td><label for="checkHeight">Height</label></td>
             <td><input id="checkHeight" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllCheckHeight" class="setAllCourses" type="button">Set all stations</button><button id="resetCheckHeight" type="button">Reset</button> <span id="checkHeightError"></span></td>
           </tr>
           <tr>
-            <td>Number font size</td>
+            <td><label for="checkFontSize">Number font size</label></td>
             <td><input id="checkFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllCheckFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetCheckFontSize" type="button">Reset</button> <span id="checkFontSizeError"></span></td>
           </tr>
           <tr>
-            <td><em>Remove</em> font size</td>
+            <td><label for="removeFontSize"><em>Remove</em> font size</label></td>
             <td><input id="removeFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllRemoveFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetRemoveFontSize" type="button">Reset</button> <span id="removeFontSizeError"></span></td>
           </tr>
           <tr>
             <td rowspan="3">Pointing boxes</td>
-            <td>Height</td>
+            <td><label for="pointHeight">Height</label></td>
             <td><input id="pointHeight" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllPointHeight" class="setAllCourses" type="button">Set all stations</button><button id="resetPointHeight" type="button">Reset</button> <span id="pointHeightError"></span></td>
           </tr>
           <tr>
-            <td>Letter font size</td>
+            <td><label for="letterFontSize">Letter font size</label></td>
             <td><input id="letterFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllLetterFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetLetterFontSize" type="button">Reset</button> <span id="letterFontSizeError"></span></td>
           </tr>
           <tr>
-            <td>Phonetic font size</td>
+            <td><label for="phoneticFontSize">Phonetic font size</label></td>
             <td><input id="phoneticFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
             <td><button id="setAllPhoneticFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetPhoneticFontSize" type="button">Reset</button> <span id="phoneticFontSizeError"></span></td>
           </tr>
@@ -302,10 +331,10 @@
       <details open="open">
         <summary>Compile map cards</summary>
         <p>
-          PDF of maps <input id="coursePDFSelector" type="file" accept=".pdf" /><br />
-          PDF of control descriptions <input id="CDPDFSelector" type="file" accept=".pdf" />
+          <label>PDF of maps <input id="coursePDFSelector" type="file" accept=".pdf" /></label><br />
+          <label>PDF of control descriptions <input id="CDPDFSelector" type="file" accept=".pdf" /></label>
         </p>
-        <p><button id="compileLaTeXBtn" type="button">Generate map cards</button>&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></p>
+        <p><button id="compileLaTeXBtn" type="button">Generate map cards</button>&ensp;<span id="compileStatus"></span> <a id="savePDF" href="" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" href="" target="log">View debug log</a></p>
       </details>
     </section>
 
