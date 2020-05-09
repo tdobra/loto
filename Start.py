@@ -20,7 +20,7 @@ while portok == False:
             if PORT >= MAXPORT:
                 print("ERROR: Could not find a port for server.")
                 break
-                
+
             PORT = PORT + 1
 
     else:
@@ -34,7 +34,7 @@ if portok == True:
     server_thread.start()
 
     # Display status
-    urlstr = "http://localhost:" + str(PORT) + "/wizard.html"
+    urlstr = "http://localhost:" + str(PORT) + "/wizard.xhtml"
     print("Open " + urlstr + " in your web browser.")
     print("Press Enter to exit.")
     webbrowser.open(urlstr)

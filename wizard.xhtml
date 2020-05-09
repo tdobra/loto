@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
 <head>
-  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="WizardStyle.css" />
   <!--Reserved for editing in Javascript to show/hide all elements within a class-->
@@ -24,7 +23,7 @@
     <noscript>Enable Javascript for this wizard to work.</noscript>
     <p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
     <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try updating your browser to the latest version or use a different one.</p>
-    <p class="right"><a href="help/index.html" target="help">Help</a>&emsp;<a href="index.html">Home</a></p>
+    <p class="right"><a href="help/index.xhtml" target="help">Help</a> <a href="index.xhtml">Home</a></p>
   </header>
   <main id="mainView">
     <section>
@@ -45,7 +44,7 @@
     <!--New interface-->
     <section>
       <p>Open station data <input id="texSelector" type="file" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><br />
-        <button id="saveParameters" type="button" onclick="tcTemplate.saveParameters()">Save station data</button>&emsp;<label><input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</label>
+        <button id="saveParameters" type="button" onclick="tcTemplate.saveParameters()">Save station data</button> <label><input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</label>
       </p>
       <p>
         <label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all stations</label><br />
@@ -54,8 +53,8 @@
         Station
         <button id="addStation" type="button">+ Add</button>
         <button id="deleteStation" type="button">X Delete</button>
-        <button id="moveUpStation" type="button">&uarr; Move up</button>
-        <button id="moveDownStation" type="button">&darr; Move down</button>
+        <button id="moveUpStation" type="button">↑ Move up</button>
+        <button id="moveDownStation" type="button">↓ Move down</button>
       </p>
 
       <details open="open">
@@ -121,8 +120,8 @@
             Kite/zero
             <button id="addKite" type="button">+ Add</button>
             <button id="deleteKite" type="button">X Delete</button>
-            <button id="moveUpKite" type="button">&uarr; Move up</button>
-            <button id="moveDownKite" type="button">&darr; Move down</button>
+            <button id="moveUpKite" type="button">↑ Move up</button>
+            <button id="moveDownKite" type="button">↓ Move down</button>
             <button id="autoOrderKite" type="button">Auto reorder</button>
           </span>
         </p>
@@ -161,7 +160,7 @@
         <table>
           <tr class="hideIfDefault">
             <td colspan="2"><label for="heading">Heading</label></td>
-            <td><input id="heading" type="number" step="any" />&deg;</td>
+            <td><input id="heading" type="number" step="any" />°</td>
             <td><button id="headingAuto" type="button" class="auto">Auto</button> <span id="headingError"></span></td>
           </tr>
           <tr class="hideIfDefault">
@@ -191,8 +190,8 @@
             Task
             <button id="addTask" type="button">+ Add</button>
             <button id="deleteTask" type="button">X Delete</button>
-            <button id="moveUpTask" type="button">&uarr; Move up</button>
-            <button id="moveDownTask" type="button">&darr; Move down</button>
+            <button id="moveUpTask" type="button">↑ Move up</button>
+            <button id="moveDownTask" type="button">↓ Move down</button>
           </span>
         </p>
         <table class="hideIfDefault">
@@ -334,7 +333,7 @@
           <label>PDF of maps <input id="coursePDFSelector" type="file" accept=".pdf" /></label><br />
           <label>PDF of control descriptions <input id="CDPDFSelector" type="file" accept=".pdf" /></label>
         </p>
-        <p><button id="compileLaTeXBtn" type="button">Generate map cards</button>&ensp;<span id="compileStatus"></span> <a id="savePDF" href="" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" href="" target="log">View debug log</a></p>
+        <p><button id="compileLaTeXBtn" type="button">Generate map cards</button> <span id="compileStatus"></span> <a id="savePDF" href="" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" href="" target="log">View debug log</a></p>
       </details>
     </section>
 
@@ -361,7 +360,7 @@
 
       <ul>
         <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
-        <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
+        <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" /> <input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
       </ul>
 
       <table>
@@ -451,8 +450,8 @@
       </details>
 
       <ol start="12">
-        <li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
-        <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page. See <a href="help/printingadjustments.html" target="help">instructions for professional printing</a>.</li>
+        <li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" /> <span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
+        <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page. See <a href="help/printingadjustments.xhtml" target="help">instructions for professional printing</a>.</li>
         <li>Cut along all of the red lines.</li>
         <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
         <li>Have a successful competition!</li>
@@ -461,11 +460,11 @@
   </main>
   <footer>
     <p class="right">Last updated (UTC): 15<sup>th</sup> April 2020 21:19</p>
-    <p class="right">Copyright (c) 2017-20 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
+    <p class="right">Copyright (c) 2017-20 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.xhtml" target="help">view license</a></p>
   </footer>
 
   <script src="texlive.js/promisejs/promise.js"></script>
   <script src="texlive.js/pdftex.js"></script>
-  <script src="WizardScript.js"></script>
+  <script src="WizardScript.js" charset="utf-8"></script>
 </body>
 </html>

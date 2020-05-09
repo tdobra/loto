@@ -708,7 +708,7 @@ const tcTemplate = (() => {
   class NonNegativeField extends NumberField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = "Must be &ge; 0";
+      this.errorMsg = "Must be ≥ 0";
     }
 
     checkValidity() {
@@ -719,7 +719,7 @@ const tcTemplate = (() => {
   class StrictPositiveField extends NonNegativeField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = "Must be &gt; 0";
+      this.errorMsg = "Must be > 0";
     }
 
     checkValidity() {
@@ -731,7 +731,7 @@ const tcTemplate = (() => {
   class NaturalNumberField extends NonNegativeField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = "Must be an integer &ge; 1";
+      this.errorMsg = "Must be an integer ≥ 1";
     }
 
     checkValidity() {
@@ -985,12 +985,12 @@ const tcTemplate = (() => {
           this.errorElement.innerHTML = "";
         } else {
           contentFieldClass.add("warning");
-          this.errorElement.innerHTML = "IOF rules: 5 &le; size &le; 12; must be the same for all stations";
+          this.errorElement.innerHTML = "IOF rules: 5 ≤ size ≤ 12; must be the same for all stations";
         }
       } else {
         contentFieldClass.add("error");
         contentFieldClass.remove("warning");
-        this.errorElement.innerHTML = "0 &lt; size &le; 12";
+        this.errorElement.innerHTML = "0 &lt; size ≤ 12";
       }
     }
   }
