@@ -8,7 +8,7 @@ trim_trailing_whitespace = true
 charset = utf-8
 
 # Indenting
-[*.{html,js,css}]
+[*.{xhtml,js,css}]
 indent_style = space
 indent_size = 2
 

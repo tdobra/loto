@@ -20,15 +20,14 @@
 <body>
   <header>
     <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
-    <noscript>Enable Javascript for this wizard to work.</noscript>
-    <p id="missingAPIs">Web browser does not support required APIs. Need to update to newer browser to use this wizard.</p>
+    <p id="missingAPIs">Web browser does not support required APIs, or Javascript is disabled. Try updating your browser and/or enabling Javascript.</p>
     <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try updating your browser to the latest version or use a different one.</p>
-    <p class="right"><a href="help/index.xhtml" target="help">Help</a> <a href="index.xhtml">Home</a></p>
   </header>
+  <nav class="right"><a href="help/index.xhtml" target="help" rel="help">Help</a> <a href="index.xhtml">Home</a></nav>
   <main id="mainView">
     <section>
       <ol>
-        <li>Set up an event in <a href="http://purplepen.golde.org" target="prequisites">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
+        <li>Set up an event in <a href="http://purplepen.golde.org" target="prequisites" rel="external">Purple Pen</a>, ensuring the print scale is set correctly. Keep the event title short, so that it fits on one line in the control descriptions (it will not be shown in the finished product anyway).</li>
         <li>Go to Event->Customize Appearance. Untick <em>Use IOF standard sizes</em>. Set the <em>Control circle diameter</em> to 6 mm (current recommended size) and <em>Scale item sizes</em> to <em>Do not scale</em>. Tick <em>Blend purple with underlying map colours</em> and <em>Use overprint effect for colors marked "overprint"</em>. Click OK.</li>
         <li>Mark each question control to be used, cut the circles as required and set the control description. The content of columns A and B does not matter, nor do the control codes.</li>
         <li>Create a course for each problem. Name it in the format <em>name of station.i</em>, where <em>i</em> is the problem number counting from 1. It is not recommended to include the word <em>station</em> in the name, and it is simplest to be just a number, although it could be <em>warm-up</em>. For example, the 3<sup>rd</sup> problem at the 2<sup>nd</sup> could be be named <em>2.3</em>. Set the course type to score. The stations will be printed in the order of the 1<sup>st</sup> map at each station.</li>
@@ -348,7 +347,7 @@
           <li>Use the first row to overwrite the values for all stations. The values will update automatically.</li>
           <li>Untick the box in the show column to exclude the station from the printed output.</li>
           <li>The station name is read-only; to change it, rename the courses in Purple Pen, then reload the file.</li>
-          <li>The number of kites must be less than or equal to 6, and should be 5 or 6 (rule 16.10, <a href="http://orienteering.org/trail-orienteering/rules/" target="rules">IOF Trail Orienteering Competition Rules 2018</a>).</li>
+          <li>The number of kites must be less than or equal to 6, and should be 5 or 6 (rule 16.10, <a href="http://orienteering.org/trail-orienteering/rules/" target="rules" rel="external">IOF Trail Orienteering Competition Rules 2018</a>).</li>
           <li>Tick the zeroes box if zero (no kite correct) is a permitted answer. This should be ticked for TempO and unticked for PreO.</li>
           <li>Heading is the bearing in degrees of the line subtending the left-most and right-most kite from the observation point.</li>
           <li>The printed map can either be circular or square (IOF rule 15.7).</li>
@@ -460,11 +459,11 @@
   </main>
   <footer>
     <p class="right">Last updated (UTC): 15<sup>th</sup> April 2020 21:19</p>
-    <p class="right">Copyright (c) 2017-20 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.xhtml" target="help">view license</a></p>
+    <p class="right">Copyright (c) 2017-20 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.xhtml" target="help" rel="license">view license</a></p>
   </footer>
 
   <script src="texlive.js/promisejs/promise.js"></script>
   <script src="texlive.js/pdftex.js"></script>
-  <script src="WizardScript.js" charset="utf-8"></script>
+  <script src="WizardScript.js"></script>
 </body>
 </html>
