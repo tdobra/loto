@@ -41,65 +41,30 @@
     </section>
 
     <!--New interface-->
-    <section>
-      <p>Open station data <input id="texSelector" type="file" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><br />
-        <button id="saveParameters" type="button" onclick="tcTemplate.saveParameters()">Save station data</button> <label><input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</label>
-      </p>
-      <p>
-        <label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all stations</label><br />
-        <label><input id="stationRadio" type="radio" name="editType" value="station" />Customise individual station:</label><br />
-        <span id="stationSelect"></span><br />
-        Station
-        <button id="addStation" type="button">+ Add</button>
-        <button id="deleteStation" type="button">X Delete</button>
-        <button id="moveUpStation" type="button">↑ Move up</button>
-        <button id="moveDownStation" type="button">↓ Move down</button>
-      </p>
+    <section id="fields">
+      <ul>
+        <li><label for="texSelector">Open station data <input id="texSelector" type="file" accept=".tex" onchange="tcTemplate.loadTeX(this)" /></label></li>
+        <li><button id="saveParameters" type="button" onclick="tcTemplate.saveParameters()">Save station data</button> <label for="autoSave"><input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</label></li>
+      </ul>
+      <ul>
+        <li><label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all stations</label></li>
+        <li><label><input id="stationRadio" type="radio" name="editType" value="station" />Customise individual station:</label> <span id="stationSelect"></span> <span class="btnGroup"><button id="addStation" type="button">+ Add</button> <button id="deleteStation" type="button">X Delete</button> <button id="moveUpStation" type="button">↑ Move up</button> <button id="moveDownStation" type="button">↓ Move down</button></span></li>
+      </ul>
 
       <details open="open">
         <summary>Main properties</summary>
-        <p><button id="setAllCore" type="button" class="setAllCourses">Set all stations to defaults</button></p>
-        <table>
-          <tr class="hideIfDefault">
-            <td><label for="stationName">Station name</label></td>
-            <td colspan="2"><input id="stationName" type="text" /> <span id="nameError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="showStation">Print station?</label></td>
-            <td><input id="showStation" type="checkbox" /></td>
-            <td><button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></td>
-          </tr>
-          <tr>
-            <td><label for="zeroes">Zeroes?</label></td>
-            <td><input id="zeroes" type="checkbox" /></td>
-            <td><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button> <span id="zeroesWarning"></span></td>
-          </tr>
-          <tr>
-            <td><label for="mapShape">Map shape</label></td>
-            <td>
-              <select id="mapShape">
-                <option>Circle</option>
-                <option>Square</option>
-              </select>
-            </td>
-            <td><button id="setAllMapShape" class="setAllCourses" type="button">Set all stations</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button> <span id="mapShapeRule"></span></td>
-          </tr>
-          <tr>
-            <td><label for="mapSize">Map <span id="mapSizeType"></span></label></td>
-            <td><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" /> cm</td>
-            <td><button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button> <span id="mapSizeError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="mapScale">Map scale</label></td>
-            <td>1:<input id="mapScale" type="number" min="0" step="any" /></td>
-            <td><button id="setAllMapScale" class="setAllCourses" type="button">Set all stations</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button> <span id="mapScaleError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="contourInterval">Contour interval</label></td>
-            <td><input id="contourInterval" type="number" min="0" step="any" /> m</td>
-            <td><button id="setAllContourInterval" class="setAllCourses" type="button">Set all stations</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button> <span id="contourIntervalError"></span></td>
-          </tr>
-        </table><br />
+        <ul>
+          <li><button id="setAllCore" type="button" class="setAllCourses">Set all stations to defaults</button></li>
+        </ul>
+        <ul class="fieldList">
+          <li class="hideIfDefault"><label for="stationName">Station name</label><span class="inputBlock"><input id="stationName" type="text" /></span><span id="nameError" class="errorMsg"></span></li>
+          <li><label for="showStation">Print station?</label><span class="inputBlock"><input id="showStation" type="checkbox" /> <button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></span></li>
+          <li><label for="zeroes">Zeroes?</label><span class="inputBlock"><input id="zeroes" type="checkbox" /><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button></span> <span id="zeroesWarning" class="errorMsg"></span></li>
+          <li><label for="mapShape">Map shape</label><span class="inputBlock"><select id="mapShape"><option>Circle</option><option>Square</option></select><button id="setAllMapShape" class="setAllCourses" type="button">Set all stations</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button></span><span id="mapShapeRule" class="errorMsg"></span></li>
+          <li><label for="mapSize">Map <span id="mapSizeType"></span></label><span class="inputBlock"><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" /><span class="unit">cm</span><button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></span><span id="mapSizeError" class="errorMsg"></span></li>
+          <li><label for="mapScale">Map scale</label><span class="inputBlock">1:<input id="mapScale" type="number" min="0" step="any" /><button id="setAllMapScale" class="setAllCourses" type="button">Set all stations</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button></span><span id="mapScaleError" class="errorMsg"></span></li>
+          <li><label for="contourInterval">Contour interval</label><span class="inputBlock"><input id="contourInterval" type="number" min="0" step="any" /><span>m</span><button id="setAllContourInterval" class="setAllCourses" type="button">Set all stations</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button></span><span id="contourIntervalError" class="errorMsg"></span></li>
+        </ul>
       </details>
 
       <details open="open">

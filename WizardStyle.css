@@ -15,11 +15,11 @@ th, td {
 th {
   text-align: center;
 }
-
+/*
 input.layoutLength {
-  /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0*/
+  /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0
   width: 7ch;
-}
+  }
 
 input.coordinate {
   width: 20ch;
@@ -40,7 +40,7 @@ input.coordinate {
 #contourInterval {
   width: 6ch;
 }
-
+*/
 .centre {
   text-align: center;
 }
@@ -56,3 +56,56 @@ summary, .warning {
 .error {
   background-color: #f56600;
 }
+
+#fields ul {
+  list-style-type:none;
+/*  margin:  0;*/
+  padding: 0;
+}
+
+select {
+  vertical-align: middle;
+}
+
+.btnGroup {
+  display: inline-block;
+}
+
+/*.fieldList {
+  display: grid;
+  grid-template-columns: 10em 5em auto;
+}*/
+
+.fieldList li {
+  display: flex;
+  align-items: center;
+}
+
+.inputBlock > * {
+  margin-right: 1ch;
+}
+
+.fieldList label {
+  width: 13ch;
+  flex: 0 0 auto;
+/*  display: inline-block;*/
+}
+
+.inputBlock {
+  width: 24ch;
+  margin-right: 0.4em;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.inputBlock input, .inputBlock select, .errorMsg {
+  display: inline-block;
+  flex: 1 1 auto;
+}
+
+/*.unit {
+  flex: 0 0 auto;
+/*  margin-left: 0.5ch;
+  margin-right: 1ch;
+}*/
