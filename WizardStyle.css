@@ -71,29 +71,26 @@ select {
   display: inline-block;
 }
 
-/*.fieldList {
-  display: grid;
-  grid-template-columns: 10em 5em auto;
-}*/
-
 .fieldList li {
   display: flex;
   align-items: center;
 }
 
-.inputBlock > * {
-  margin-right: 1ch;
+@media screen and (max-width: 60ch) {
+  .fieldList li {
+    flex-wrap: wrap;
+    margin-bottom: 2ex;
+  }
 }
 
 .fieldList label {
   width: 13ch;
   flex: 0 0 auto;
-/*  display: inline-block;*/
+  display: inline-block;
 }
 
 .inputBlock {
   width: 24ch;
-  margin-right: 0.4em;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -104,8 +101,11 @@ select {
   flex: 1 1 auto;
 }
 
-/*.unit {
-  flex: 0 0 auto;
-/*  margin-left: 0.5ch;
+.inputBlock > * {
   margin-right: 1ch;
-}*/
+  min-width: 6ch;
+}
+
+.inputBlock button {
+  margin-left: 1ch;
+}
