@@ -17,28 +17,28 @@ th {
 }
 /*
 input.layoutLength {
-  /*Good for parameters with 1dp up to value of 99; 1ch = width of character 0
-  width: 7ch;
-  }
+/*Good for parameters with 1dp up to value of 99; 1ch = width of character 0
+width: 7ch;
+}
 
 input.coordinate {
-  width: 20ch;
+width: 20ch;
 }
 
 .pageNum {
-  width: 5ch;
+width: 5ch;
 }
 
 #numTasks {
-  width: 4ch;
+width: 4ch;
 }
 
 #heading, #mapScale {
-  width: 8ch;
+width: 8ch;
 }
 
 #contourInterval {
-  width: 6ch;
+width: 6ch;
 }
 */
 .centre {
@@ -59,7 +59,7 @@ summary, .warning {
 
 #fields ul {
   list-style-type:none;
-/*  margin:  0;*/
+  /*  margin:  0;*/
   padding: 0;
 }
 
@@ -76,7 +76,7 @@ select {
   align-items: center;
 }
 
-@media screen and (max-width: 60ch) {
+@media (max-width: 60ch) {
   .fieldList li {
     flex-wrap: wrap;
     margin-bottom: 2ex;
@@ -91,9 +91,15 @@ select {
 
 .inputBlock {
   width: 24ch;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   display: inline-flex;
   align-items: center;
+}
+
+@media (max-width: 31ch) {
+  .inputBlock {
+    flex-wrap: wrap;
+  }
 }
 
 .inputBlock input, .inputBlock select, .errorMsg {

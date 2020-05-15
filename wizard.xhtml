@@ -43,7 +43,7 @@
     <!--New interface-->
     <section id="fields">
       <ul>
-        <li><label for="texSelector">Open station data <input id="texSelector" type="file" accept=".tex" onchange="tcTemplate.loadTeX(this)" /></label></li>
+        <li><label for="texSelector">Open file <input id="texSelector" type="file" accept=".tex" onchange="tcTemplate.loadTeX(this)" /></label></li>
         <li><button id="saveParameters" type="button" onclick="tcTemplate.saveParameters()">Save station data</button> <label for="autoSave"><input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</label></li>
       </ul>
       <ul>
@@ -51,6 +51,13 @@
         <li><label><input id="stationRadio" type="radio" name="editType" value="station" />Customise individual station:</label> <span id="stationSelect"></span> <span class="btnGroup"><button id="addStation" type="button">+ Add</button> <button id="deleteStation" type="button">X Delete</button> <button id="moveUpStation" type="button">↑ Move up</button> <button id="moveDownStation" type="button">↓ Move down</button></span></li>
       </ul>
 
+      <details>
+        <summary>Course</summary>
+        <ul>
+          <li><label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all courses</label></li>
+          <li><label><input id="stationRadio" type="radio" name="editType" value="station" />Customise course:</label> <span id="courseSelect"></span> <span class="btnGroup"><button id="addCourse" type="button">+ Add</button> <button id="deleteCourse" type="button">X Delete</button> <button id="moveUpCourse" type="button">↑ Move up</button> <button id="moveDownCourse" type="button">↓ Move down</button></span></li>
+        </ul>
+      </details>
       <details open="open">
         <summary>Main properties</summary>
         <ul>
