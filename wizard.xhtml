@@ -42,50 +42,57 @@
 
     <!--New interface-->
     <section id="fields">
+      <!--Initial view has only essential fields visible-->
       <ul>
         <li><label for="texSelector">Open file <input id="texSelector" type="file" accept=".tex" onchange="tcTemplate.loadTeX(this)" /></label></li>
         <li><button id="saveParameters" type="button" onclick="tcTemplate.saveParameters()">Save station data</button> <label for="autoSave"><input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</label></li>
       </ul>
-      <ul>
-        <li><label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all stations</label></li>
-        <li><label><input id="stationRadio" type="radio" name="editType" value="station" />Customise individual station:</label> <span id="stationSelect"></span> <span class="btnGroup"><button id="addStation" type="button">+ Add</button> <button id="deleteStation" type="button">X Delete</button> <button id="moveUpStation" type="button">↑ Move up</button> <button id="moveDownStation" type="button">↓ Move down</button></span></li>
-      </ul>
 
       <details>
-        <summary>Course</summary>
+        <summary>Courses</summary>
         <ul>
-          <li><label><input id="defaultRadio" type="radio" name="editType" value="default" checked="checked" />Set defaults for all courses</label></li>
-          <li><label><input id="stationRadio" type="radio" name="editType" value="station" />Customise course:</label> <span id="courseSelect"></span> <span class="btnGroup"><button id="addCourse" type="button">+ Add</button> <button id="deleteCourse" type="button">X Delete</button> <button id="moveUpCourse" type="button">↑ Move up</button> <button id="moveDownCourse" type="button">↓ Move down</button></span></li>
-        </ul>
-      </details>
-      <details open="open">
-        <summary>Main properties</summary>
-        <ul>
-          <li><button id="setAllCore" type="button" class="setAllCourses">Set all stations to defaults</button></li>
+          <li><label><input id="defaultRadio" type="radio" name="editType" value="default" />Set defaults for all courses</label></li>
+          <li><label><input id="courseRadio" type="radio" name="editType" value="course" />Customise course</label> <span id="courseSelect"></span> <span class="btnGroup"><button id="addCourse" type="button">+ Add</button> <button id="deleteCourse" type="button">X Delete</button> <button id="moveUpCourse" type="button">↑ Move up</button> <button id="moveDownCourse" type="button">↓ Move down</button></span></li>
         </ul>
         <ul class="fieldList">
-          <li class="hideIfDefault"><label for="stationName">Station name</label><span class="inputBlock"><input id="stationName" type="text" /></span><span id="nameError" class="errorMsg"></span></li>
-          <li><label for="showStation">Print station?</label><span class="inputBlock"><input id="showStation" type="checkbox" /> <button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></span></li>
-          <li><label for="zeroes">Zeroes?</label><span class="inputBlock"><input id="zeroes" type="checkbox" /><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button></span> <span id="zeroesWarning" class="errorMsg"></span></li>
           <li><label for="mapShape">Map shape</label><span class="inputBlock"><select id="mapShape"><option>Circle</option><option>Square</option></select><button id="setAllMapShape" class="setAllCourses" type="button">Set all stations</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button></span><span id="mapShapeRule" class="errorMsg"></span></li>
-          <li><label for="mapSize">Map <span id="mapSizeType"></span></label><span class="inputBlock"><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" />cm<button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></span><span id="mapSizeError" class="errorMsg"></span></li>
+          <li><label for="mapSize">Map <span id="mapSizeType"></span></label><span class="inputBlock"><input id="mapSizeAuto" type="checkbox" /><label for="mapSizeAuto">Auto</label><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" />cm<button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></span><span id="mapSizeError" class="errorMsg"></span></li>
+          <li><label for="numKites">Number of kites</label><span class="inputBlock"><select id="numKites"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><button id="setAllNumKites" class="setAllCourses" type="button">Set all stations</button><button id="resetNumKites" class="hideIfDefault" type="button">Reset</button></span><span id="numKitesError"></span></li>
+        </ul>
+      </details>
+
+      <details open="open">
+        <summary>Main course properties</summary>
+        <ul class="fieldList">
+          <li><label for="numTasks">Number of tasks</label><span class="inputBlock"><input id="numTasks" type="number" min="1" step="1" /><button id="setAllNumTasks" class="setAllCourses" type="button">Set all stations</button></span><span id="numTasksError"></span></li>
+          <li><label for="zeroes">Zeroes?</label><span class="inputBlock"><input id="zeroes" type="checkbox" /><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button></span> <span id="zeroesWarning" class="errorMsg"></span></li>
           <li><label for="mapScale">Map scale</label><span class="inputBlock">1:<input id="mapScale" type="number" min="0" step="any" /><button id="setAllMapScale" class="setAllCourses" type="button">Set all stations</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button></span><span id="mapScaleError" class="errorMsg"></span></li>
           <li><label for="contourInterval">Contour interval</label><span class="inputBlock"><input id="contourInterval" type="number" min="0" step="any" />m<button id="setAllContourInterval" class="setAllCourses" type="button">Set all stations</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button></span><span id="contourIntervalError" class="errorMsg"></span></li>
         </ul>
       </details>
 
       <details open="open">
+        <summary>Stations</summary>
+        <ul><li><label>Station <span id="stationSelect"></span></label> <span class="btnGroup"><button id="addStation" type="button">+ Add</button> <button id="deleteStation" type="button">X Delete</button> <button id="moveUpStation" type="button">↑ Move up</button> <button id="moveDownStation" type="button">↓ Move down</button></span></li></ul>
+        <ul>
+          <li><button id="setAllCore" type="button" class="setAllCourses">Set all stations to defaults</button></li>
+        </ul>
+        <ul class="fieldList">
+          <li class="hideIfDefault"><label for="stationName">Station name</label><span class="inputBlock"><input id="stationName" type="text" /></span><span id="nameError" class="errorMsg"></span></li>
+        </ul>
+        <details>
+          <summary>Additional station properties</summary>
+          <ul class="fieldList">
+            <li><label for="course">Course</label><span class="inputBlock"><select id="course"></select><button id="setAllCourse" class="setAllCourses" type="button">Set all stations</button><button id="resetCourse" class="hideIfDefault" type="button">Reset</button></span></li>
+            <li><label for="showStation">Print station?</label><span class="inputBlock"><input id="showStation" type="checkbox" /> <button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></span></li>
+          </ul>
+        </details>
+      </details>
+
+      <details open="open">
         <summary>Kites and zeroes</summary>
-        <p><label>Number of kites
-          <select id="numKites">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-            <option>6</option>
-          </select></label>
-          <button id="setAllNumKites" class="setAllCourses" type="button">Set all stations</button> <button id="autoAllOrderKite" class="setAllCourses" type="button">Auto reorder at all stations</button> <span id="numKitesError"></span>
+        <p>
+          <button id="autoAllOrderKite" class="setAllCourses" type="button">Auto reorder at all stations</button>
           <span class="hideIfDefault">
             <br /><span id="kiteSelect"></span><br />
             Kite/zero
@@ -155,7 +162,7 @@
 
       <details open="open">
         <summary>Tasks</summary>
-        <p><label>Number of tasks <input id="numTasks" type="number" min="1" step="1" /></label> <button id="setAllNumTasks" class="setAllCourses" type="button">Set all stations</button> <span id="numTasksError"></span><br />
+        <p>
           <span id="taskSelect" class="hideIfDefault"></span><br />
           <span class="hideIfDefault">
             Task

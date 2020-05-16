@@ -83,7 +83,7 @@ select {
   }
 }
 
-.fieldList label {
+.fieldList li > label {
   width: 13ch;
   flex: 0 0 auto;
   display: inline-block;
@@ -107,9 +107,12 @@ select {
   flex: 1 1 auto;
 }
 
+.inputBlock input:not([type="checkbox"]) {
+  min-width: 6ch;
+}
+
 .inputBlock > * {
   margin-right: 1ch;
-  min-width: 6ch;
 }
 
 .inputBlock button {
