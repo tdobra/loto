@@ -190,7 +190,7 @@ const tcTemplate = (() => {
         //Only permit change of station if the name is valid and unique
         if (this.activeItem.itemName.valid === false) {
           //Abort
-          alert("Please insert a valid and unique station name");
+          alert(tcTemplateMsg.stationNameAlert);
           //Change radio buttons and selectors back to original values
           if (this.defaultInFocus) {
             this.defaultRadio.checked = true;
@@ -281,7 +281,7 @@ const tcTemplate = (() => {
         //Only permit change of station if the name is valid and unique
         if (this.activeItem.itemName.valid === false) {
           //Abort
-          alert("Please insert a valid and unique task name");
+          alert(tcTemplateMsg.taskNameAlert);
           //Change radio buttons and selectors back to original values
           this.selector.selectedIndex = this.itemInFocus;
           return;
@@ -334,7 +334,7 @@ const tcTemplate = (() => {
     deleteThis(checkFirst = true) {
       //Deletes this item
       if (checkFirst) {
-        if (!confirm("Are you sure you want to delete? This cannot be undone.")) {
+        if (!confirm(tcTemplateMsg.confirmDelete)) {
           return;
         }
       }
@@ -656,7 +656,7 @@ const tcTemplate = (() => {
   class NumberField extends Field {
     constructor(obj) {
       super(obj);
-      this.errorMsg = "Must be a number";
+      this.errorMsg = tcTemplateMsg.numberFieldError;
     }
 
     get inputValue() {
@@ -708,7 +708,7 @@ const tcTemplate = (() => {
   class NonNegativeField extends NumberField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = "Must be ≥ 0";
+      this.errorMsg = tcTemplateMsg.nonNegativeFieldError;
     }
 
     checkValidity() {
@@ -719,7 +719,7 @@ const tcTemplate = (() => {
   class StrictPositiveField extends NonNegativeField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = "Must be > 0";
+      this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
     }
 
     checkValidity() {
@@ -731,7 +731,7 @@ const tcTemplate = (() => {
   class NaturalNumberField extends NonNegativeField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = "Must be an integer ≥ 1";
+      this.errorMsg = tcTemplateMsg.naturalNumberFieldError;
     }
 
     checkValidity() {
@@ -777,9 +777,9 @@ const tcTemplate = (() => {
       } else {
         contentFieldClass.add("error");
         if (this.syntaxError) {
-          this.errorElement.innerHTML = "Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=";
+          this.errorElement.innerHTML = tcTemplateMsg.nameSyntax;
         } else {
-          this.errorElement.innerHTML = "Must be unique";
+          this.errorElement.innerHTML = tcTemplateMsg.notUnique;
         }
       }
     }
@@ -851,7 +851,7 @@ const tcTemplate = (() => {
         this.errorElement.innerHTML = "";
       } else {
         contentFieldClass.add("warning");
-        this.errorElement.innerHTML = "IOF rule: number of kites = 6";
+        this.errorElement.innerHTML = tcTemplateMsg.numKitesRule;
       }
     }
   }
@@ -881,7 +881,7 @@ const tcTemplate = (() => {
         this.errorElement.innerHTML = "";
       } else {
         contentFieldClass.add("warning");
-        this.errorElement.innerHTML = "Not the same for all stations";
+        this.errorElement.innerHTML = tcTemplateMsg.notSameForAllStations;
       }
     }
   }
@@ -927,7 +927,7 @@ const tcTemplate = (() => {
     }
 
     static getOriginalValue() {
-      return "Circle";
+      return tcTemplateMsg.circle;
     }
 
     updateMsgs() {
@@ -941,14 +941,14 @@ const tcTemplate = (() => {
         this.errorElement.innerHTML = "";
       } else {
         contentFieldClass.add("warning");
-        this.errorElement.innerHTML = "IOF rule: must be the same for all stations";
+        this.errorElement.innerHTML = tcTemplateMsg.notSameForAllStationsRule;
       }
 
       //Update labels for map size description
-      if (this.value === "Circle") {
-        sizeTypeElement.innerHTML = "diameter";
+      if (this.value === tcTemplateMsg.circle) {
+        sizeTypeElement.innerHTML = tcTemplateMsg.diameter;
       } else {
-        sizeTypeElement.innerHTML = "side length";
+        sizeTypeElement.innerHTML = tcTemplateMsg.sideLength;
       }
     }
   }
@@ -985,12 +985,12 @@ const tcTemplate = (() => {
           this.errorElement.innerHTML = "";
         } else {
           contentFieldClass.add("warning");
-          this.errorElement.innerHTML = "IOF rules: 5 ≤ size ≤ 12; must be the same for all stations";
+          this.errorElement.innerHTML = tcTemplateMsg.mapSizeRule;
         }
       } else {
         contentFieldClass.add("error");
         contentFieldClass.remove("warning");
-        this.errorElement.innerHTML = "0 &lt; size ≤ 12";
+        this.errorElement.innerHTML = tcTemplateMsg.mapSizeError;
       }
     }
   }
@@ -1023,7 +1023,7 @@ const tcTemplate = (() => {
           this.errorElement.innerHTML = "";
         } else {
           contentFieldClass.add("warning");
-          this.errorElement.innerHTML = "IOF rules: normally 1:4000 or 1:5000; must be the same for all stations";
+          this.errorElement.innerHTML = tcTemplateMsg.mapScaleRule;
         }
       } else {
         contentFieldClass.add("error");
@@ -1062,7 +1062,7 @@ const tcTemplate = (() => {
           this.errorElement.innerHTML = "";
         } else {
           contentFieldClass.add("warning");
-          this.errorElement.innerHTML = "IOF rule: must be the same for all stations";
+          this.errorElement.innerHTML = tcTemplateMsg.notSameForAllStationsRule;
         }
       } else {
         contentFieldClass.add("error");
@@ -1098,7 +1098,7 @@ const tcTemplate = (() => {
       if (this.valid) {
         for (const station of this.stationList.items) {
           if (this.value < station.numTasks.value) {
-            if (!confirm("Some tasks will be removed from station " + station.itemName.value + ". Are you sure you want to delete these?")) {
+            if (!confirm(tcTemplateMsg.confirmRemoveTasks(station.itemName.value))) {
               continue;
             }
           }
@@ -1119,7 +1119,7 @@ const tcTemplate = (() => {
           this.errorElement.innerHTML = "";
         } else {
           contentFieldClass.add("warning");
-          this.errorElement.innerHTML = "IOF rule: must be the same for all stations";
+          this.errorElement.innerHTML = tcTemplateMsg.notSameForAllStationsRule;
         }
       } else {
         contentFieldClass.add("error");
@@ -1166,9 +1166,9 @@ const tcTemplate = (() => {
         contentFieldClass.add("error");
         //Don't show both error messages together
         if (this.syntaxError) {
-          this.errorElement.innerHTML = "Must start with an alphanumeric character and then use only alphanumeric characters, spaces and ,.-_+=";
+          this.errorElement.innerHTML = tcTemplateMsg.nameSyntax;
         } else {
-          this.errorElement.innerHTML = "Must be unique and neither <em>Kites</em> nor <em>VP</em>";
+          this.errorElement.innerHTML = tcTemplateMsg.taskNameNotUnique;
         }
       }
     }
@@ -2783,7 +2783,7 @@ const tcTemplate = (() => {
 
       resourceURLs = result.slice(0);
       //Load LaTeX code
-      return fetch("TCTemplate.tex");
+      return fetch("maps.tex");
     }).then((response) => {
       if (response.ok === true) {
         return response.text();
@@ -2794,7 +2794,7 @@ const tcTemplate = (() => {
       compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
     }, (err) => {
       if (err !== "handled") {
-        statusBox.innerHTML = "Failed to load TCTemplate.tex: " + err;
+        statusBox.innerHTML = "Failed to load maps.tex: " + err;
       }
       //Enable generate PDF button
       btn.disabled = false;

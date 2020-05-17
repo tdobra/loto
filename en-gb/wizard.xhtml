@@ -1,20 +1,10 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="WizardStyle.css" />
+  <script src="headerfooter.js"></script>
   <!--Reserved for editing in Javascript to show/hide all elements within a class-->
   <style id="showSetAllCSS"></style>
   <style id="showAutoCSS"></style>
-
-  <!--Favicons-->
-  <link rel="apple-touch-icon" type="image/png" href="favicon/noborder152.png" sizes="152x152" />
-  <link rel="icon" type="image/png" href="favicon/favicon512.png" sizes="512x512" />
-  <link rel="icon" type="image/png" href="favicon/favicon256.png" sizes="256x256" />
-  <link rel="icon" type="image/png" href="favicon/favicon192.png" sizes="192x192" />
-  <link rel="icon" type="image/png" href="favicon/favicon32.png" sizes="32x32" />
-  <link rel="icon" type="image/png" href="favicon/favicon16.png" sizes="16x16" />
-
   <title>TCTemplate</title>
 </head>
 <body>
@@ -81,9 +71,9 @@
           <li class="hideIfDefault"><label for="stationName">Station name</label><span class="inputBlock"><input id="stationName" type="text" /></span><span id="nameError" class="errorMsg"></span></li>
         </ul>
         <details>
-          <summary>Additional station properties</summary>
+          <summary>Station options</summary>
           <ul class="fieldList">
-            <li><label for="course">Course</label><span class="inputBlock"><select id="course"></select><button id="setAllCourse" class="setAllCourses" type="button">Set all stations</button><button id="resetCourse" class="hideIfDefault" type="button">Reset</button></span></li>
+            <li><label for="course">Move to course</label><span class="inputBlock"><select id="moveToCourseDestination"></select><button id="moveToCourseBtn" class="hideIfDefault" type="button">Move</button></span></li>
             <li><label for="showStation">Print station?</label><span class="inputBlock"><input id="showStation" type="checkbox" /> <button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></span></li>
           </ul>
         </details>
@@ -436,13 +426,10 @@
       </ol>
     </section>
   </main>
-  <footer>
-    <p class="right">Last updated (UTC): 15<sup>th</sup> April 2020 21:19</p>
-    <p class="right">Copyright (c) 2017-20 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.xhtml" target="help" rel="license">view license</a></p>
-  </footer>
 
-  <script src="texlive.js/promisejs/promise.js"></script>
-  <script src="texlive.js/pdftex.js"></script>
-  <script src="WizardScript.js"></script>
+  <script src="../texlive.js/promisejs/promise.js"></script>
+  <script src="../texlive.js/pdftex.js"></script>
+  <script src="messages.js"></script>
+  <script src="../wizard.js"></script>
 </body>
 </html>

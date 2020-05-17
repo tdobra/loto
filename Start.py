@@ -34,7 +34,7 @@ if portok == True:
     server_thread.start()
 
     # Display status
-    urlstr = "http://localhost:" + str(PORT) + "/wizard.xhtml"
+    urlstr = "http://localhost:" + str(PORT) + "/en-gb/wizard.xhtml"
     print("Open " + urlstr + " in your web browser.")
     print("Press Enter to exit.")
     webbrowser.open(urlstr)
