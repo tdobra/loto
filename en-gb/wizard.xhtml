@@ -5,6 +5,7 @@
   <!--Reserved for editing in Javascript to show/hide all elements within a class-->
   <style id="showSetAllCSS"></style>
   <style id="showAutoCSS"></style>
+  <style id="zeroesCSS"></style>
   <title>TCTemplate</title>
 </head>
 <body>
@@ -41,68 +42,102 @@
       <details>
         <summary>Courses</summary>
         <ul>
-          <li><label><input id="defaultRadio" type="radio" name="editType" value="default" />Set defaults for all courses</label></li>
-          <li><label><input id="courseRadio" type="radio" name="editType" value="course" />Customise course</label> <span id="courseSelect"></span> <span class="btnGroup"><button id="addCourse" type="button">+ Add</button> <button id="deleteCourse" type="button">X Delete</button> <button id="moveUpCourse" type="button">↑ Move up</button> <button id="moveDownCourse" type="button">↓ Move down</button></span></li>
+          <li><label><input id="defaultRadio" type="radio" name="editType" value="default" /> Set defaults for all courses</label></li>
+          <li><label><input id="courseRadio" type="radio" name="editType" value="course" /> Customise course</label> <span id="courseSelect"></span> <span class="btnGroup"><button id="addCourse" type="button">+ Add</button> <button id="deleteCourse" type="button">X Delete</button> <button id="moveUpCourse" type="button">↑ Move up</button> <button id="moveDownCourse" type="button">↓ Move down</button></span></li>
         </ul>
         <ul class="fieldList">
-          <li><label for="mapShape">Map shape</label><span class="inputBlock"><select id="mapShape"><option>Circle</option><option>Square</option></select><button id="setAllMapShape" class="setAllCourses" type="button">Set all stations</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button></span><span id="mapShapeRule" class="errorMsg"></span></li>
-          <li><label for="mapSize">Map <span id="mapSizeType"></span></label><span class="inputBlock"><input id="mapSizeAuto" type="checkbox" /><label for="mapSizeAuto">Auto</label><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" />cm<button id="setAllMapSize" class="setAllCourses" type="button">Set all stations</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></span><span id="mapSizeError" class="errorMsg"></span></li>
-          <li><label for="numKites">Number of kites</label><span class="inputBlock"><select id="numKites"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><button id="setAllNumKites" class="setAllCourses" type="button">Set all stations</button><button id="resetNumKites" class="hideIfDefault" type="button">Reset</button></span><span id="numKitesError"></span></li>
+          <li class="hideIfDefault"><label for="courseName">Course name</label><span class="inputBlock"><input id="courseName" type="text" /></span><span id="courseNameError"></span></li>
+          <li><label for="showCourseTasks">Print tasks</label><span class="inputBlock"><input id="showCourseTasks" type="checkbox" /><button id="setAllShowCourseTasks" class="setAllCourses" type="button">Set all courses</button><button id="resetShowCourseTasks" class="hideIfDefault" type="button">Reset</button></span></li>
+          <li style="display:none"><label for="showCourseSolution">Print solutions</label><span class="inputBlock"><input id="showCourseSolution" type="checkbox" /><button id="setAllShowCourseSolution" class="setAllCourses" type="button">Set all courses</button><button id="resetShowCourseSolution" class="hideIfDefault" type="button">Reset</button></span></li>
+          <li><label for="mapShape">Map shape</label><span class="inputBlock"><select id="mapShape"><option>Circle</option><option>Square</option></select><button id="setAllMapShape" class="setAllCourses" type="button">Set all courses</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button></span><span id="mapShapeRule"></span></li>
+          <li><label for="mapSize">Map <span id="mapSizeType"></span></label><span class="inputBlock"><input id="mapSizeAuto" type="checkbox" /><label for="mapSizeAuto">Auto</label><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" />cm<button id="setAllMapSize" class="setAllCourses" type="button">Set all courses</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></span><span id="mapSizeError"></span></li>
+          <li><label for="numKites">Number of kites</label><span class="inputBlock"><select id="numKites"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><button id="setAllNumKites" class="setAllCourses" type="button">Set all courses</button><button id="resetNumKites" class="hideIfDefault" type="button">Reset</button></span><span id="numKitesError"></span></li>
         </ul>
       </details>
 
       <details open="open">
         <summary>Main course properties</summary>
         <ul class="fieldList">
-          <li><label for="numTasks">Number of tasks</label><span class="inputBlock"><input id="numTasks" type="number" min="1" step="1" /><button id="setAllNumTasks" class="setAllCourses" type="button">Set all stations</button></span><span id="numTasksError"></span></li>
-          <li><label for="zeroes">Zeroes?</label><span class="inputBlock"><input id="zeroes" type="checkbox" /><button id="setAllZeroes" class="setAllCourses" type="button">Set all stations</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button></span> <span id="zeroesWarning" class="errorMsg"></span></li>
-          <li><label for="mapScale">Map scale</label><span class="inputBlock">1:<input id="mapScale" type="number" min="0" step="any" /><button id="setAllMapScale" class="setAllCourses" type="button">Set all stations</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button></span><span id="mapScaleError" class="errorMsg"></span></li>
-          <li><label for="contourInterval">Contour interval</label><span class="inputBlock"><input id="contourInterval" type="number" min="0" step="any" />m<button id="setAllContourInterval" class="setAllCourses" type="button">Set all stations</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button></span><span id="contourIntervalError" class="errorMsg"></span></li>
+          <li><label for="numTasks">Number of tasks</label><span class="inputBlock"><input id="numTasks" type="number" min="1" step="1" /><button id="setAllNumTasks" class="setAllCourses" type="button">Set all courses</button></span><span id="numTasksError"></span></li>
+          <li><label for="zeroes">Zeroes</label><span class="inputBlock"><input id="zeroes" type="checkbox" /><button id="setAllZeroes" class="setAllCourses" type="button">Set all courses</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button></span> <span id="zeroesWarning"></span></li>
+          <li><label for="mapScale">Map scale</label><span class="inputBlock">1:<input id="mapScale" type="number" min="0" step="any" /><button id="setAllMapScale" class="setAllCourses" type="button">Set all courses</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button></span><span id="mapScaleError"></span></li>
+          <li><label for="contourInterval">Contour interval</label><span class="inputBlock"><input id="contourInterval" type="number" min="0" step="any" />m<button id="setAllContourInterval" class="setAllCourses" type="button">Set all courses</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button></span><span id="contourIntervalError"></span></li>
         </ul>
+      </details>
+
+      <details>
+        <summary>Customise layout</summary>
+        <p>TODO: MOVE THIS TO HELP? There are no sanity checks here, so check the output carefully.</p>
+        <ul>
+          <li><label for="debugCircle">Show construction marks to verify position of control circle</label> <input id="debugCircle" type="checkbox" /></li>
+          <li><button id="setAllCustomLayout" type="button" class="setAllCourses">Set all courses to defaults</button> <button id="resetAllCustomLayout" type="button">Reset all</button></li>
+        </ul>
+        <fieldset>
+          <legend>Station name</legend>
+          <ul class="fieldList">
+            <li><label for="IDFontSize">Font size</label><span class="inputBlock"><input id="IDFontSize" type="number" min="0" step="any" />cm<button id="setAllIDFontSize" class="setAllCourses" type="button">Set all courses</button><button id="resetIDFontSize" type="button">Reset</button></span><span id="IDFontSizeError"></span></li>
+          </ul>
+        </fieldset>
+        <fieldset>
+          <legend>Page order boxes</legend>
+          <ul class="fieldList">
+            <li><label for="checkWidth">Width</label><span class="inputBlock"><input id="checkWidth" type="number" min="0" step="any" />cm<button id="setAllCheckWidth" class="setAllCourses" type="button">Set all courses</button><button id="resetCheckWidth" type="button">Reset</button></span><span id="checkWidthError"></span></li>
+            <li><label for="checkHeight">Height</label><span class="inputBlock"><input id="checkHeight" type="number" min="0" step="any" />cm<button id="setAllCheckHeight" class="setAllCourses" type="button">Set all courses</button><button id="resetCheckHeight" type="button">Reset</button></span><span id="checkHeightError"></span></li>
+            <li><label for="checkFontSize">Number font size</label><span class="inputBlock"><input id="checkFontSize" type="number" min="0" step="any" />cm<button id="setAllCheckFontSize" class="setAllCourses" type="button">Set all courses</button><button id="resetCheckFontSize" type="button">Reset</button></span><span id="checkFontSizeError"></span></li>
+            <li><label for="removeFontSize"><em>Remove</em> font size</label><span class="inputBlock"><input id="removeFontSize" type="number" min="0" step="any" />cm<button id="setAllRemoveFontSize" class="setAllCourses" type="button">Set all courses</button><button id="resetRemoveFontSize" type="button">Reset</button></span><span id="removeFontSizeError"></span></li>
+          </ul>
+        </fieldset>
+        <fieldset>
+          <legend>Pointing boxes</legend>
+          <ul class="fieldList">
+            <li><label for="pointHeight">Height</label><span class="inputBlock"><input id="pointHeight" type="number" min="0" step="any" />cm<button id="setAllPointHeight" class="setAllCourses" type="button">Set all courses</button><button id="resetPointHeight" type="button">Reset</button></span><span id="pointHeightError"></span></li>
+            <li><label for="letterFontSize">Letter font size</label><span class="inputBlock"><input id="letterFontSize" type="number" min="0" step="any" />cm<button id="setAllLetterFontSize" class="setAllCourses" type="button">Set all courses</button><button id="resetLetterFontSize" type="button">Reset</button></span><span id="letterFontSizeError"></span></li>
+            <li><label for="phoneticFontSize">Phonetic font size</label><span class="inputBlock"><input id="phoneticFontSize" type="number" min="0" step="any" />cm<button id="setAllPhoneticFontSize" class="setAllCourses" type="button">Set all courses</button><button id="resetPhoneticFontSize" type="button">Reset</button></span><span id="phoneticFontSizeError"></span></li>
+          </ul>
+        </fieldset>
       </details>
 
       <details open="open">
         <summary>Stations</summary>
-        <ul><li><label>Station <span id="stationSelect"></span></label> <span class="btnGroup"><button id="addStation" type="button">+ Add</button> <button id="deleteStation" type="button">X Delete</button> <button id="moveUpStation" type="button">↑ Move up</button> <button id="moveDownStation" type="button">↓ Move down</button></span></li></ul>
-        <ul>
-          <li><button id="setAllCore" type="button" class="setAllCourses">Set all stations to defaults</button></li>
+        <ul class="hideIfDefault">
+          <li><label>Station <span id="stationSelect"></span></label> <span class="btnGroup"><button id="addStation" type="button">+ Add</button> <button id="deleteStation" type="button">X Delete</button> <button id="moveUpStation" type="button">↑ Move up</button> <button id="moveDownStation" type="button">↓ Move down</button></span></li>
         </ul>
-        <ul class="fieldList">
-          <li class="hideIfDefault"><label for="stationName">Station name</label><span class="inputBlock"><input id="stationName" type="text" /></span><span id="nameError" class="errorMsg"></span></li>
+        <ul class="fieldList hideIfDefault">
+          <li class="hideIfDefault"><label for="stationName">Station name</label><span class="inputBlock"><input id="stationName" type="text" /></span><span id="stationNameError"></span></li>
         </ul>
         <details>
           <summary>Station options</summary>
           <ul class="fieldList">
-            <li><label for="course">Move to course</label><span class="inputBlock"><select id="moveToCourseDestination"></select><button id="moveToCourseBtn" class="hideIfDefault" type="button">Move</button></span></li>
-            <li><label for="showStation">Print station?</label><span class="inputBlock"><input id="showStation" type="checkbox" /> <button id="setAllShowStation" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStation" class="hideIfDefault" type="button">Reset</button></span></li>
+            <li class="hideIfDefault"><label for="moveToCourseDestination">Move to course</label><span class="inputBlock"><select id="moveToCourseDestination"></select><button id="moveToCourseBtn" class="hideIfDefault" type="button">Move</button></span></li>
+            <li><label for="showStationTasks">Print tasks</label><span class="inputBlock"><input id="showStationTasks" type="checkbox" /><button id="setAllShowStationTasks" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStationTasks" class="hideIfDefault" type="button">Reset</button></span></li>
+            <li style="display:none"><label for="showStationSolution">Print solutions</label><span class="inputBlock"><input id="showStationSolution" type="checkbox" /><button id="setAllShowStationSolution" class="setAllCourses" type="button">Set all stations</button><button id="resetShowStationSolution" class="hideIfDefault" type="button">Reset</button></span>Solutions maps coming soon</li>
           </ul>
         </details>
       </details>
 
-      <details open="open">
-        <summary>Kites and zeroes</summary>
-        <p>
-          <button id="autoAllOrderKite" class="setAllCourses" type="button">Auto reorder at all stations</button>
-          <span class="hideIfDefault">
-            <br /><span id="kiteSelect"></span><br />
-            Kite/zero
-            <button id="addKite" type="button">+ Add</button>
-            <button id="deleteKite" type="button">X Delete</button>
-            <button id="moveUpKite" type="button">↑ Move up</button>
-            <button id="moveDownKite" type="button">↓ Move down</button>
-            <button id="autoOrderKite" type="button">Auto reorder</button>
-          </span>
-        </p>
-        <table class="hideIfDefault">
-          <tr>
-            <td><label for="kiteName">Kite/zero name</label></td>
-            <td><input id="kiteName" type="text" /> <span id="kiteNameError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="zero">Zero</label></td>
-            <td><input id="zero" type="checkbox" /></td>
-          </tr>
-        </table><br />
+      <details>
+        <summary>Kites<span class="zeroes"> and zeroes</span></summary>
+        <ul>
+          <li>
+            <label class="hideIfDefault">Kite<span class="zeroes">/zero</span> <span id="kiteSelect"></span></label>
+            <span class="btnGroup hideIfDefault">
+              <button id="addKite" type="button" class="zeroes">+ Add</button>
+              <button id="deleteKite" type="button" class="zeroes">X Delete</button>
+              <button id="moveUpKite" type="button" class="manualOrder">↑ Move up</button>
+              <button id="moveDownKite" type="button" class="manualOrder">↓ Move down</button>
+            </span>
+            <span class="btnGroup">
+              <label for="autoOrderKites">Auto order</label>
+              <input id="autoOrderKites" type="checkbox" />
+              <button id="setAllAutoOrderKites" class="setAllCourses" type="button">Set all stations</button>
+              <button id="resetAutoOrderKites" class="hideIfDefault" type="button">Reset</button>
+            </span>
+          </li>
+        </ul>
+        <ul class="fieldList hideIfDefault">
+          <li><label for="kiteName">Kite<span class="zeroes">/zero</span> name</label><span class="inputBlock"><input id="kiteName" type="text" /></span><span id="kiteNameError"></span></li>
+          <li class="zeroes"><label for="zero">Zero</label><span class="inputBlock"><input id="zero" type="checkbox" /></span></li>
+        </ul>
 
         <details>
           <summary>Kite and zero positions</summary>
@@ -241,58 +276,6 @@
             <label><input id="ppenClean" type="checkbox" />Remove unused courses and controls from Purple Pen file</label>
           </p>
         </details>
-      </details>
-
-      <details>
-        <summary>Customise layout</summary>
-        <p><label><input id="debugCircle" type="checkbox" />Show construction marks to verify position of control circle</label></p>
-        <p>TODO: MOVE THIS TO HELP? There are no sanity checks here, so check the output carefully.</p>
-        <p><button id="setAllCustomLayout" type="button" class="setAllCourses">Set all stations to defaults</button><button id="resetAllCustomLayout" type="button">Reset all</button></p>
-        <table>
-          <tr>
-            <td>Station name</td>
-            <td><label for="IDFontSize">Font size</label></td>
-            <td><input id="IDFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllIDFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetIDFontSize" type="button">Reset</button> <span id="IDFontSizeError"></span></td>
-          </tr>
-          <tr>
-            <td rowspan="4">Page order boxes</td>
-            <td><label for="checkWidth">Width</label></td>
-            <td><input id="checkWidth" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllCheckWidth" class="setAllCourses" type="button">Set all stations</button><button id="resetCheckWidth" type="button">Reset</button> <span id="checkWidthError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="checkHeight">Height</label></td>
-            <td><input id="checkHeight" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllCheckHeight" class="setAllCourses" type="button">Set all stations</button><button id="resetCheckHeight" type="button">Reset</button> <span id="checkHeightError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="checkFontSize">Number font size</label></td>
-            <td><input id="checkFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllCheckFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetCheckFontSize" type="button">Reset</button> <span id="checkFontSizeError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="removeFontSize"><em>Remove</em> font size</label></td>
-            <td><input id="removeFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllRemoveFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetRemoveFontSize" type="button">Reset</button> <span id="removeFontSizeError"></span></td>
-          </tr>
-          <tr>
-            <td rowspan="3">Pointing boxes</td>
-            <td><label for="pointHeight">Height</label></td>
-            <td><input id="pointHeight" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllPointHeight" class="setAllCourses" type="button">Set all stations</button><button id="resetPointHeight" type="button">Reset</button> <span id="pointHeightError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="letterFontSize">Letter font size</label></td>
-            <td><input id="letterFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllLetterFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetLetterFontSize" type="button">Reset</button> <span id="letterFontSizeError"></span></td>
-          </tr>
-          <tr>
-            <td><label for="phoneticFontSize">Phonetic font size</label></td>
-            <td><input id="phoneticFontSize" class="layoutLength" type="number" min="0" step="any" /> cm</td>
-            <td><button id="setAllPhoneticFontSize" class="setAllCourses" type="button">Set all stations</button><button id="resetPhoneticFontSize" type="button">Reset</button> <span id="phoneticFontSizeError"></span></td>
-          </tr>
-        </table><br />
       </details>
 
       <details open="open">

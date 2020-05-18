@@ -747,7 +747,7 @@ const tcTemplate = (() => {
         inputElement: document.getElementById("stationName"),
         resetBtn: undefined,
         setAllBtn: undefined,
-        errorElement: document.getElementById("nameError")
+        errorElement: document.getElementById("stationNameError")
       };
       super(inputObj);
     }
