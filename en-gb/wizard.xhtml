@@ -50,7 +50,7 @@
           <li><label for="showCourseTasks">Print tasks</label><span class="inputBlock"><input id="showCourseTasks" type="checkbox" /><button id="setAllShowCourseTasks" class="setAllCourses" type="button">Set all courses</button><button id="resetShowCourseTasks" class="hideIfDefault" type="button">Reset</button></span></li>
           <li style="display:none"><label for="showCourseSolution">Print solutions</label><span class="inputBlock"><input id="showCourseSolution" type="checkbox" /><button id="setAllShowCourseSolution" class="setAllCourses" type="button">Set all courses</button><button id="resetShowCourseSolution" class="hideIfDefault" type="button">Reset</button></span></li>
           <li><label for="mapShape">Map shape</label><span class="inputBlock"><select id="mapShape"><option>Circle</option><option>Square</option></select><button id="setAllMapShape" class="setAllCourses" type="button">Set all courses</button><button id="resetMapShape" class="hideIfDefault" type="button">Reset</button></span><span id="mapShapeRule"></span></li>
-          <li><label for="mapSize">Map <span id="mapSizeType"></span></label><span class="inputBlock"><input id="mapSizeAuto" type="checkbox" /><label for="mapSizeAuto">Auto</label><input id="mapSize" class="layoutLength" type="number" min="0" max="12" step="any" />cm<button id="setAllMapSize" class="setAllCourses" type="button">Set all courses</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></span><span id="mapSizeError"></span></li>
+          <li><label for="mapSize">Map <span id="mapSizeType"></span></label><span class="inputBlock"><input id="mapSizeAuto" type="checkbox" /><label for="mapSizeAuto">Auto</label><input id="mapSize" type="number" min="0" max="12" step="any" /><span>cm</span><button id="setAllMapSize" class="setAllCourses" type="button">Set all courses</button><button id="resetMapSize" class="hideIfDefault" type="button">Reset</button></span><span id="mapSizeError"></span></li>
           <li><label for="numKites">Number of kites</label><span class="inputBlock"><select id="numKites"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><button id="setAllNumKites" class="setAllCourses" type="button">Set all courses</button><button id="resetNumKites" class="hideIfDefault" type="button">Reset</button></span><span id="numKitesError"></span></li>
         </ul>
       </details>
@@ -61,7 +61,7 @@
           <li><label for="numTasks">Number of tasks</label><span class="inputBlock"><input id="numTasks" type="number" min="1" step="1" /><button id="setAllNumTasks" class="setAllCourses" type="button">Set all courses</button></span><span id="numTasksError"></span></li>
           <li><label for="zeroes">Zeroes</label><span class="inputBlock"><input id="zeroes" type="checkbox" /><button id="setAllZeroes" class="setAllCourses" type="button">Set all courses</button><button id="resetZeroes" class="hideIfDefault" type="button">Reset</button></span> <span id="zeroesWarning"></span></li>
           <li><label for="mapScale">Map scale</label><span class="inputBlock">1:<input id="mapScale" type="number" min="0" step="any" /><button id="setAllMapScale" class="setAllCourses" type="button">Set all courses</button><button id="resetMapScale" class="hideIfDefault" type="button">Reset</button></span><span id="mapScaleError"></span></li>
-          <li><label for="contourInterval">Contour interval</label><span class="inputBlock"><input id="contourInterval" type="number" min="0" step="any" />m<button id="setAllContourInterval" class="setAllCourses" type="button">Set all courses</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button></span><span id="contourIntervalError"></span></li>
+          <li><label for="contourInterval">Contour interval</label><span class="inputBlock"><input id="contourInterval" type="number" min="0" step="any" /><span>m</span><button id="setAllContourInterval" class="setAllCourses" type="button">Set all courses</button><button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button></span><span id="contourIntervalError"></span></li>
         </ul>
       </details>
 
@@ -69,7 +69,7 @@
         <summary>Customise layout</summary>
         <p>TODO: MOVE THIS TO HELP? There are no sanity checks here, so check the output carefully.</p>
         <ul>
-          <li><label for="debugCircle">Show construction marks to verify position of control circle</label> <input id="debugCircle" type="checkbox" /></li>
+          <li><input id="debugCircle" type="checkbox" /> <label for="debugCircle">Show construction marks to verify position of control circle</label></li>
           <li><button id="setAllCustomLayout" type="button" class="setAllCourses">Set all courses to defaults</button> <button id="resetAllCustomLayout" type="button">Reset all</button></li>
         </ul>
         <fieldset>
@@ -126,11 +126,11 @@
               <button id="moveUpKite" type="button" class="manualOrder">↑ Move up</button>
               <button id="moveDownKite" type="button" class="manualOrder">↓ Move down</button>
             </span>
-            <span class="btnGroup">
-              <label for="autoOrderKites">Auto order</label>
-              <input id="autoOrderKites" type="checkbox" />
-              <button id="setAllAutoOrderKites" class="setAllCourses" type="button">Set all stations</button>
-              <button id="resetAutoOrderKites" class="hideIfDefault" type="button">Reset</button>
+            <span class="autoOrder">
+              <input id="autoOrderKites" type="checkbox" class="hideIfDefault" />
+              <label for="autoOrderKites" class="hideIfDefault">Auto order</label>
+              <button id="autoOrderKitesAll" type="button">Automatically order at all stations</button>
+              <button id="manualOrderKitesAll" type="button">Manually order at all stations</button>
             </span>
           </li>
         </ul>
@@ -141,19 +141,14 @@
 
         <details>
           <summary>Kite and zero positions</summary>
-          <p><button id="autoAllKites" class="setAllCourses" type="button">Auto all stations</button><button id="autoKitesStation" class="hideIfDefault" type="button">Auto all at this station</button></p>
-          <table class="hideIfDefault">
-            <tr>
-              <td><label for="kitex">x</label></td>
-              <td><input id="kitex" class="coordinate" type="number" min="0" step="any" /> cm</td>
-              <td><button id="kitexAuto" type="button" class="auto">Auto</button> <span id="kitexError"></span></td>
-            </tr>
-            <tr>
-              <td><label for="kitey">y</label></td>
-              <td><input id="kitey" class="coordinate" type="number" min="0" step="any" /> cm</td>
-              <td><button id="kiteyAuto" type="button" class="auto">Auto</button> <span id="kiteyError"></span></td>
-            </tr>
-          </table><br />
+          <ul class="autoBtnList">
+            <li><span>All stations</span><button id="autoAllKitePosAll" type="button">Automatically set all</button><button id="manualAllKitePosAll" type="button">Manually set all</button></li>
+            <li class="hideIfDefault"><span>This station</span><button id="autoAllKitePosStation" type="button">Automatically set all</button><button id="manualAllKitePosStation" type="button">Manually set all</button></li>
+          </ul>
+          <ul class="fieldList hideIfDefault">
+            <li><label for="kitex">x</label><span class="inputBlock cm"><input id="kitexAuto" type="checkbox" /><label for="kitexAuto">Auto</label><input id="kitex" type="number" min="0" step="any" /></span><span id="kitexError"></span></li>
+            <li><label for="kitey">y</label><span class="inputBlock cm"><input id="kiteyAuto" type="checkbox" /><label for="kiteyAuto">Auto</label><input id="kitey" type="number" min="0" step="any" /></span><span id="kiteyError"></span></li>
+          </ul>
         </details>
       </details>
 

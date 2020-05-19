@@ -15,32 +15,7 @@ th, td {
 th {
   text-align: center;
 }
-/*
-input.layoutLength {
-/*Good for parameters with 1dp up to value of 99; 1ch = width of character 0
-width: 7ch;
-}
 
-input.coordinate {
-width: 20ch;
-}
-
-.pageNum {
-width: 5ch;
-}
-
-#numTasks {
-width: 4ch;
-}
-
-#heading, #mapScale {
-width: 8ch;
-}
-
-#contourInterval {
-width: 6ch;
-}
-*/
 .centre {
   text-align: center;
 }
@@ -62,23 +37,44 @@ summary, .warning {
   padding: 0;
 }
 
+button {
+  align-self: stretch;
+}
+
 select {
   vertical-align: middle;
+}
+
+fieldset {
+  margin-bottom: 2ex;
+}
+
+fieldset > ul {
+  margin-top: 0ex;
+  margin-bottom: 0ex;
 }
 
 .btnGroup {
   display: inline-block;
 }
 
-.fieldList li {
+.fieldList li, .autoOrder {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 2ex;
 }
 
-@media (max-width: 60ch) {
+@media (min-width: 60ch) {
   .fieldList li {
-    flex-wrap: wrap;
-    margin-bottom: 2ex;
+    flex-wrap: nowrap;
+    margin-bottom: initial;
+  }
+}
+
+@media (min-width: 32ch) {
+  .autoOrder {
+    flex-wrap: nowrap;
   }
 }
 
@@ -92,17 +88,17 @@ select {
   width: 24ch;
   flex: 0 1 auto;
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
 }
 
-@media (max-width: 31ch) {
+@media (min-width: 31ch) {
   .inputBlock {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 }
 
 .inputBlock input, .inputBlock select, .errorMsg {
-  display: inline-block;
   flex: 1 1 auto;
 }
 
@@ -110,19 +106,37 @@ select {
   min-width: 6ch;
 }
 
-.inputBlock > * {
+.inputBlock > *, .autoOrder > *, .cm::after {
+  display: inline-block;
   margin-right: 1ch;
 }
 
-.inputBlock button {
-  margin-left: 1ch;
+.cm::after {
+  content: "cm";
 }
 
-fieldset {
+.autoBtnList li {
   margin-bottom: 2ex;
+  align-items: center;
 }
 
-fieldset > ul {
-  margin-top: 0ex;
-  margin-bottom: 0ex;
+.autoBtnList li > * {
+  display: block;
+}
+
+.autoBtnList span {
+  width: 10ch;
+  flex: 0 0 auto;
+}
+
+@media (min-width: 36ch) {
+  .autoBtnList li {
+    margin-bottom: initial;
+    display: flex;
+  }
+
+  .autoBtnList li > * {
+    display: inline-block;
+    margin-right: 1ch;
+  }
 }
