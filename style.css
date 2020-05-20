@@ -51,7 +51,10 @@ fieldset {
 
 fieldset > ul {
   margin-top: 0ex;
-  margin-bottom: 0ex;
+}
+
+fieldset > ul:last-child {
+    margin-bottom: 0ex;
 }
 
 .btnGroup {
@@ -129,7 +132,7 @@ fieldset > ul {
   flex: 0 0 auto;
 }
 
-@media (min-width: 36ch) {
+@media (min-width: 41ch) {
   .autoBtnList li {
     margin-bottom: initial;
     display: flex;
