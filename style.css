@@ -54,7 +54,7 @@ fieldset > ul {
 }
 
 fieldset > ul:last-child {
-    margin-bottom: 0ex;
+  margin-bottom: 0ex;
 }
 
 .btnGroup {
@@ -142,4 +142,14 @@ fieldset > ul:last-child {
     display: inline-block;
     margin-right: 1ch;
   }
+}
+
+#selectForPrint {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 2ex;
+}
+
+#selectForPrint fieldset {
+  flex: 1 1 auto;
 }
