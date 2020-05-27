@@ -19,6 +19,7 @@ if ('open' in document.createElement('details')) {
 }
 
 document.getElementById("stationProperties").hidden = true;
+document.getElementById("compileLaTeXBtn").disabled = true;
 document.getElementById("savePDF").hidden = true;
 document.getElementById("viewLog").hidden = true;
 
@@ -1383,6 +1384,7 @@ tcTemplate = function() {
         document.head.appendChild(scriptEl);
       });
     }
+    return scriptPromises[name];
   }
 
   async function downloadPNGs(pdfURL, fileName, statusBox, scriptPromise) {
@@ -1510,6 +1512,40 @@ tcTemplate = function() {
       break;
     }
   }
+
+  class Compiler {
+    constructor(obj) {
+      this.startBtn = obj.startBtn;
+      this.statusBox = obj.statusBox;
+      this.createTeXLive(obj);
+    }
+
+    async createTeXLive(obj) {
+      try {
+        await Compiler.texliveLoaded;
+        this.texlive = new TeXLive({
+          texURL: obj.texsrc,
+          workerFolder: obj.folder
+        });
+        await this.texlive.ready;
+        this.startBtn.disabled = false;
+      } catch (err) {
+        alert(err.message);
+        alert(err.stack);
+        this.statusBox.innerHTML = "Loading error: " + err.message;
+      }
+    }
+  }
+
+  //Load TeXLive
+  Compiler.texliveLoaded = loadScript(texlive, "texlive.js/pdftexlight.js");
+
+  const mapsCompiler = new Compiler({
+    texsrc: "TCTemplate.tex",
+    folder: "texlive.js/",
+    startBtn: document.getElementById("compileLaTeXBtn"),
+    statusBox: document.getElementById("compileStatus")
+  });
 
   document.getElementById("selectTemplate").addEventListener("change", updateTemplate);
   updateTemplate.call(document.getElementById("selectTemplate"));
