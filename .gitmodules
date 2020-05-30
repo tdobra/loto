@@ -1,3 +1,6 @@
 [submodule "texlive.js"]
 	path = texlive.js
 	url = https://github.com/tdobra/texlive.js.git
+[submodule "jszip"]
+	path = jszip
+	url = https://github.com/Stuk/jszip.git

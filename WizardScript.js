@@ -24,6 +24,10 @@ document.getElementById("viewLog").hidden = true;
 
 //Keep all functions private and put those with events in HTML tags in a namespace
 tcTemplate = function() {
+  //Scripts are only loaded if required
+  var scriptPromises = {};
+  var pdfjsLib;
+
   //Keep track of whether an input file has been changed in a table to disable autosave
   var paramsSaved = true;
 
@@ -1154,10 +1158,10 @@ tcTemplate = function() {
   }
 
   function generatePDF(btn) {
-    var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray;
+    var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray, texlive, pdfApply, scriptPromise;
 
-    function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
-      var statusBox, texlive, pdftex, texliveEvent;
+    async function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
+      var statusBox, pdftex, texliveEvent;
 
       texliveEvent = (function(msg) {
         //Called everytime a status message is outputted by TeXLive. Worker thread will crash shortly after an error, so all handling to be done here.
@@ -1195,9 +1199,7 @@ tcTemplate = function() {
                 downloadElement.href = logURL;
                 downloadElement.hidden = false;
               }
-              //Cleanup
-              btn.disabled = false;
-              texlive.terminate();
+              throw new Error("Compile error");
             } else {
               statusBox.innerHTML = "Preparing map cards (" + numEvents.toString() + ").";
             }
@@ -1214,48 +1216,27 @@ tcTemplate = function() {
       pdftex = texlive.pdftex;
 
       //Use promises of promise.js
-      pdftex.set_TOTAL_MEMORY(80*1024*1024).then(function() {
-        promise.join(resourceNames.map(function(name, index) {
-          return pdftex.FS_createLazyFile('/', name, resourceURLs[index], true, false);
-        })).then(function() {
-          pdftex.on_stdout = texliveEvent;
-          pdftex.on_stderr = texliveEvent;
-          return pdftex.compile(source_code);
-        }).then(function(pdf_dataurl) {
-          var downloadElement;
-          if (pdf_dataurl === false) {
-            statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
-          } else {
-            //Save PDF
-            pdftex.FS_readFile("./input.pdf").then(outfile => {
-              var outBlob, outURL, outLen, outArray, index;
-              downloadElement = document.getElementById("savePDF");
-              //Revoke old URL
-              outURL = downloadElement.href;
-              if (outURL) {
-                URL.revokeObjectURL(outURL);
-              }
-              //Make new one, but first need file stream as array buffer
-              outLen = outfile.length;
-              outArray = new Uint8Array(outLen);
-              for (index = 0; index < outLen; index++) {
-                //Populate array with unicode value of each character
-                outArray[index] = outfile.charCodeAt(index);
-              }
-              outBlob = new Blob([outArray], { type: "application/pdf" });
-              outURL = URL.createObjectURL(outBlob);
-              downloadElement.href = outURL;
-              downloadElement.hidden = false;
-              downloadElement.click();
-
-              //Final clean
-              texlive.terminate();
-              btn.disabled = false;
-              statusBox.innerHTML = "Map cards PDF produced successfully and is now in your downloads folder.";
-            });
-          }
-        });
+      await pdftex.set_TOTAL_MEMORY(80*1024*1024);
+      const pdf_dataurl = await promise.join(resourceNames.map(function(name, index) {
+        return pdftex.FS_createLazyFile('/', name, resourceURLs[index], true, false);
+      })).then(function() {
+        pdftex.on_stdout = texliveEvent;
+        pdftex.on_stderr = texliveEvent;
+        return pdftex.compile(source_code);
       });
+      if (pdf_dataurl === false) {
+        throw new Error("PDF compile failed");
+      }
+      const outfile = await pdftex.FS_readFile("./input.pdf");
+      //Create data URL, but first need file stream as array buffer
+      const outLen = outfile.length;
+      const outArray = new Uint8Array(outLen);
+      for (let index = 0; index < outLen; index++) {
+        //Populate array with unicode value of each character
+        outArray[index] = outfile.charCodeAt(index);
+      }
+      const outBlob = new Blob([outArray], { type: "application/pdf" });
+      return URL.createObjectURL(outBlob);
     }
 
     //Disable button to avoid double press
@@ -1309,13 +1290,19 @@ tcTemplate = function() {
       switch (document.getElementById("selectTemplate").value) {
       case "printA5onA4":
         src = "TCTemplate.tex";
+        pdfApply = downloadPDF;
         break;
       case "YQTempO":
         src = "temposim.tex";
+        pdfApply = downloadPNGs;
         break;
       default:
         throw new Error("Unrecognised template selected");
       }
+      if (pdfApply === downloadPNGs) {
+         loadScript("pdfjs", "//mozilla.github.io/pdf.js/build/pdf.js");
+         loadScript("jszip", "jszip/dist/jszip.min.js");
+        }
       return fetch(src);
     }).then(response => {
       if (response.ok === true) {
@@ -1324,14 +1311,150 @@ tcTemplate = function() {
         throw response.status;
       }
     }).then(sourceCode => {
-      compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
+      return compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
     }, err => {
       if (err !== "handled") {
         statusBox.innerHTML = "Failed to load template: " + err;
       }
       //Enable generate PDF button
+      return Promise.reject("handled");
+    }).then((outURL) => pdfApply(outURL, statusBox, scriptPromise) /* ).catch((err) => {
+      if (err !== "handled") {
+        statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
+      } */
+    ).finally(() => {
+      //Final clean
+      texlive.terminate();
       btn.disabled = false;
     });
+  }
+
+  function downloadPDF(newURL, statusBox) {
+    const downloadElement = document.getElementById("savePDF");
+    //Revoke old URL
+    const oldURL = downloadElement.href;
+    if (oldURL) {
+      URL.revokeObjectURL(oldURL);
+    }
+    downloadElement.href = newURL;
+    downloadElement.hidden = false;
+    downloadElement.click();
+
+    statusBox.innerHTML = "Map cards produced successfully and are now in your downloads folder.";
+  }
+
+  function loadScript(name, url) {
+    //Load pdf.js for later
+    scriptPromises[name] = new Promise((resolve, reject) => {
+      const scriptEl = document.createElement("script");
+      if (name === "pdfjs") {
+        scriptEl.addEventListener("load", () => {
+          //Create shortcut to access PDF.js exports
+          pdfjsLib = window['pdfjs-dist/build/pdf'];
+          //The workerSrc property shall be specified
+          pdfjsLib.GlobalWorkerOptions.workerSrc = "//mozilla.github.io/pdf.js/build/pdf.worker.js";
+        })
+      }
+      scriptEl.addEventListener("load", resolve, { once: true, passive: true });
+      scriptEl.addEventListener("error", reject, { once: true, passive: true });
+      scriptEl.src = url;
+      document.head.appendChild(scriptEl);
+    });
+  }
+
+  async function downloadPNGs(pdfURL, statusBox, scriptPromise) {
+    statusBox.innerHTML = "Splitting into images";
+    await scriptPromises.pdfjs;
+    const pdfObj = await pdfjsLib.getDocument(pdfURL).promise;
+    const imPromises = [];
+    let pageNum = 1;
+    const tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
+    const numStations = tableRows.length;
+    const imDPI = 150;
+    const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
+    await scriptPromises.jszip;
+    const zip = new JSZip();
+    for (let stationId = 0; stationId < numStations; stationId++) {
+      if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
+        const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].innerHTML);
+        for (let taskId = 0; taskId < numTasks; taskId++) {
+          //Read page into canvas
+          const page = await pdfObj.getPage(pageNum);
+          const viewport = page.getViewport({ scale: pdfScale });
+          const canvas = document.createElement("canvas");
+
+          //DEBUG
+          document.body.appendChild(canvas);
+
+          const context = canvas.getContext("2d");
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+          await page.render(renderContext).promise;
+
+          //Work out blank margins around items on page
+          //One page = 147kB
+          let im = context.getImageData(0, 0, canvas.width, canvas.height);
+
+          function pixelHasContent(row, column) {
+            //ImageData is a single array going RGBA, left-to-right then top-to-bottom
+            //White or alpha = 0
+            const pixelStart = (row * canvas.width + column) * 4;
+            return (im[pixelStart] < 255 || im[pixelStart + 1] < 255 || im[pixelStart + 2] < 255) && im[pixelStart + 3] > 0;
+          }
+
+          //Find first nonblank row - white or alpha = 100%
+          let topRow;
+          for (topRow = 0; topRow < canvas.height; topRow++) {
+            for (let colId = 0; colId < canvas.width; colId++) {
+              if (pixelHasContent(topRow, colId)) { break; }
+            }
+          }
+          if (topRow === canvas.height) { throw new Error("Image blank"); }
+          //Find bottom row
+          let bottomRow;
+          for (bottomRow = canvas.height - 1; bottomRow > topRow; bottomRow--) {
+            for (let colId = 0; colId < canvas.width; colId++) {
+              if (pixelHasContent(bottomRow, colId)) { break; }
+            }
+          }
+          //Find left column
+          let leftCol;
+          for (leftCol = 0; leftCol < canvas.width; leftCol++) {
+            for (let rowId = topRow; rowId <= bottomRow; rowId++) {
+              if (pixelHasContent(rowId, leftCol)) { break; }
+            }
+          }
+          //Find right column
+          let rightCol;
+          for (rightCol = canvas.width - 1; rightCol > leftCol; rightCol--) {
+            for (let rowId = topRow; rowId <= bottomRow; rowId++) {
+              if (pixelHasContent(rowId, rightCol)) { break; }
+            }
+          }
+
+          //Put cropped image onto resized canvas
+          const croppedHeight = bottomRow - topRow + 1;
+          const croppedWidth = rightCol - leftCol + 1;
+          im = context.getImageData(leftCol, topRow, croppedWidth, croppedHeight);
+          canvas.height = croppedHeight;
+          canvas.width = croppedWidth;
+          context.putImageData(im, 0, 0);
+
+          //Save to zip
+          canvas.toBlob((blob) => {
+            imPromises.push(zip.file("map-" + (stationId + 1) + "." + (taskId + 1) + "z.png", blob));
+          });
+        }
+      }
+      pageNum++;
+    }
+    await Promise.all(imPromises);
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    downloadPDF(URL.createObjectURL(zipBlob), statusBox);
   }
 
   function updateTemplate() {
