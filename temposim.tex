@@ -1,0 +1,149 @@
+\documentclass{article}
+
+%Condes PDFs are v1.7
+\pdfminorversion=7
+
+\usepackage[a4paper, portrait, vmargin=1cm, hmargin=0cm]{geometry}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{rotating}
+\usepackage{anyfontsize}
+\usepackage{forloop}
+
+%Set font to TeX Gyre Heros - very similar to Helvetica
+\renewcommand{\familydefault}{qhv}
+
+%No headers or footers
+\pagestyle{empty}
+
+\input{TemplateParameters}
+
+\begin{document}
+
+%Make horizontal position independent of page margins - more flexible in future
+\begin{center}
+
+%Remove paragraph indentation
+\noindent
+%Reduce line spacing. Need to create a TikZ picture first to set pgflinewidth.
+\begin{tikzpicture}
+\end{tikzpicture}%
+\setlength{\lineskip}{-\pgflinewidth}%
+%Avoid adding any spaces between TikZ pictures
+\newcounter{StationNumber}%
+\newcounter{ProblemNumber}%
+\forloop{StationNumber}{0}{\value{StationNumber} < \NumStations}{%
+\forloop{ProblemNumber}{1}{\not{\value{ProblemNumber} > \MaxProblemsPerStation}}{%
+%\linebreak[0]%Can break line here without inserting a horizontal space
+\begin{tikzpicture}
+\pgfmathtruncatemacro{\SheetNumber}{\value{ProblemNumber}}	%Sheet 0 is the cover sheet
+\def\StaNumber{\value{StationNumber}}
+
+%Check whether station is hidden
+\pgfmathtruncatemacro{\ShowStation}{\ShowStationList[\StaNumber]}
+\ifthenelse{\ShowStation = 0}{}{
+
+% Check whether all problems have already been set for this station - the for loop cannot handle a variable ProblemsPerStation
+\pgfmathsetmacro{\ProblemsPerStation}{\ProblemsPerStationList[\StaNumber]}
+\ifthenelse{\SheetNumber > \ProblemsPerStation}{}{
+
+% Read in arrays of file data
+\pgfmathsetmacro{\MapScale}{\MapScaleList[\StaNumber]}
+\pgfmathsetmacro{\ContourInterval}{\ContourIntervalList[\StaNumber]}
+\pgfmathsetmacro{\CircleRadius}{\CircleRadiusList[\StaNumber]}
+\pgfmathsetmacro{\BriefingWidth}{\BriefingWidthList[\StaNumber]}
+\pgfmathsetmacro{\SquareMap}{\SquareMapList[\StaNumber]}
+\pgfmathsetmacro{\StationID}{\StationIDList[\StaNumber]}
+\pgfmathsetmacro{\StationIDFontSize}{\StationIDFontSizeList[\StaNumber]}
+\pgfmathtruncatemacro{\NumKites}{\NumKitesList[\StaNumber]}
+\pgfmathsetmacro{\ZeroOption}{\ZeroOptionList[\StaNumber]}
+\pgfmathsetmacro{\MapHeading}{\MapHeadingList[\StaNumber]}
+\pgfmathsetmacro{\CDaFontSize}{\CDaFontSizeList[\StaNumber]}
+\pgfmathsetmacro{\CDbFontSize}{\CDbFontSizeList[\StaNumber]}
+
+
+\pgfmathsetmacro{\MapFile}{\MapFileList[\StaNumber][\SheetNumber-1]}
+\pgfmathtruncatemacro{\MapPage}{\MapPageList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\ControlxCoordinate}{\ControlxCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\ControlyCoordinate}{\ControlyCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionFile}{\DescriptionFileList[\StaNumber][\SheetNumber-1]}
+\pgfmathtruncatemacro{\DescriptionPage}{\DescriptionPageList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionxCoordinate}{\DescriptionxCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionyCoordinate}{\DescriptionyCoordinateList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionHeight}{\DescriptionHeightList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionWidth}{\DescriptionWidthList[\StaNumber][\SheetNumber-1]}
+\pgfmathsetmacro{\DescriptionPDFScale}{\DescriptionPDFScaleList[\StaNumber][\SheetNumber-1]}
+
+% Define variables/constants - these are macros, so need brackets when combining
+\newcommand{\CardHalfHeight}{4.75}
+\newcommand{\CardHalfWidth}{8.5}
+
+% Check for adjust mode
+\ifthenelse{\AdjustMode = 1}{\newcommand{\Heading}{0}}{\newcommand{\Heading}{\MapHeading}}
+
+\pgfmathsetmacro{\MapDescriptionSeparation}{1/3*(2*\CardHalfHeight-2*\CircleRadius-\DescriptionHeight)}
+\pgfmathsetmacro{\MapCentreyCoordinate}{\CardHalfHeight-\CircleRadius-\MapDescriptionSeparation}
+\pgfmathsetmacro{\DescriptionBaseyCoordinate}{-\CardHalfHeight+\MapDescriptionSeparation}
+\pgfmathsetmacro{\NorthArrowCentrexCoordinate}{-0.5*(\CardHalfWidth+\CircleRadius)}
+
+% Map excerpt
+\begin{scope}[shift={(0,\MapCentreyCoordinate)}]
+\ifthenelse{\SheetNumber = 0}{
+\pgfmathtruncatemacro{\TimeLimit}{30*\ProblemsPerStation}
+\node at (0,0) {\resizebox{\BriefingWidth}{!}{\parbox{5.1cm}{\centering \fontsize{1cm}{1.2cm}\selectfont \ProblemsPerStation{} tasks \\ Limit: \TimeLimit{}\,s \\ \fontsize{0.8cm}{0.96cm}\selectfont 1:\MapScale \\ \fontsize{0.6cm}{0.72cm}\selectfont \ContourInterval{}\,m contours}}};
+}{
+\ifthenelse{\SquareMap = 1}{\clip (-\CircleRadius, -\CircleRadius) rectangle (\CircleRadius, \CircleRadius);}{\clip (0,0) circle (\CircleRadius cm);}
+{\pgfmathsetmacro{\cliplx}{\ControlxCoordinate-1.5*\CircleRadius}
+  \pgfmathsetmacro{\cliprx}{\ControlxCoordinate+1.5*\CircleRadius}
+  \pgfmathsetmacro{\cliply}{\ControlyCoordinate-1.5*\CircleRadius}
+  \pgfmathsetmacro{\clipry}{\ControlyCoordinate+1.5*\CircleRadius}
+  \newcommand{\cliplxc}{\cliplx cm}
+  \newcommand{\cliprxc}{\cliprx cm}
+  \newcommand{\cliplyc}{\cliply cm}
+  \newcommand{\clipryc}{\clipry cm}
+  \node at (0,0) {
+    \rotatebox{\Heading}{
+      \includegraphics[page=\MapPage, clip, viewport=\cliplxc{} \cliplyc{} \cliprxc{} \clipryc{}]{\MapFile}
+    }};}
+% Alignment circle
+\ifthenelse{\AdjustMode = 1}{\draw[ultra thick, blue] (0,0) circle (0.4 cm);}{}
+}
+% Border round map
+\ifthenelse{\SquareMap = 1}{\draw[ultra thick] (-\CircleRadius, -\CircleRadius) rectangle (\CircleRadius, \CircleRadius);}{\draw[ultra thick] (0,0) circle (\CircleRadius cm);}
+\end{scope}
+
+% Control descriptions
+\begin{scope}[shift={(-0.5*\DescriptionWidth,\DescriptionBaseyCoordinate)}]
+\clip (0,0) rectangle (\DescriptionWidth,\DescriptionHeight);
+\node[anchor=south west, inner sep=0] at (-\DescriptionxCoordinate*\DescriptionPDFScale,-\DescriptionyCoordinate*\DescriptionPDFScale) {\includegraphics[page=\DescriptionPage, scale=\DescriptionPDFScale]{\DescriptionFile}};
+% Problem number
+\node[anchor=center, inner sep=0cm, minimum size=0.6cm, fill=white] at (0.07*\DescriptionWidth,0.52*\DescriptionHeight) {\fontseries{b}\fontsize{\CDaFontSize}{\CDaFontSize}\selectfont \SheetNumber{}};
+% Number of kites
+\ifcase \NumKites
+\or \def\ColB{A}
+\or \def\ColB{A-B}
+\or \def\ColB{A-C}
+\or \def\ColB{A-D}
+\or \def\ColB{A-E}
+\else \def\ColB{A-F}
+\fi
+\node[anchor=center, inner sep=0cm, minimum size=0.6cm, fill=white] at (0.192*\DescriptionWidth,0.52*\DescriptionHeight) {\fontseries{m}\fontsize{\CDbFontSize}{\CDbFontSize}\selectfont \ColB};
+\end{scope}
+
+% Print TCTemplate stamp
+\node[anchor=south west] at (-\CardHalfWidth,\DescriptionBaseyCoordinate) {\fontsize{0.35cm}{0.35cm}\selectfont Made in TCTemplate};
+
+% North arrow
+\begin{scope}[shift={(\NorthArrowCentrexCoordinate,\MapCentreyCoordinate)}, rotate=\Heading]
+\draw[-latex,ultra thick, blue, line width=0.3cm] (0,-1.5) -- (0,1.5);
+\node[blue] at (0,-0.5) {\rotatebox{\Heading}{\resizebox{!}{1.5cm}{\Huge N}}};
+\end{scope}
+
+}	%End ProblemsPerStation if statement
+}	%End ShowStation if statement
+\end{tikzpicture}%Comments to ensure no spaces are added between pictures
+\newpage
+}} % End forloop
+
+\end{center}
+\end{document}

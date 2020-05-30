@@ -1305,7 +1305,18 @@ tcTemplate = function() {
 
       resourceURLs = result.slice(0);
       //Load LaTeX code
-      return fetch("TCTemplate.tex");
+      let src;
+      switch (document.getElementById("selectTemplate").value) {
+      case "printA5onA4":
+        src = "TCTemplate.tex";
+        break;
+      case "YQTempO":
+        src = "temposim.tex";
+        break;
+      default:
+        throw new Error("Unrecognised template selected");
+      }
+      return fetch(src);
     }).then(response => {
       if (response.ok === true) {
         return response.text();
@@ -1316,12 +1327,28 @@ tcTemplate = function() {
       compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
     }, err => {
       if (err !== "handled") {
-        statusBox.innerHTML = "Failed to load TCTemplate.tex: " + err;
+        statusBox.innerHTML = "Failed to load template: " + err;
       }
       //Enable generate PDF button
       btn.disabled = false;
     });
   }
+
+  function updateTemplate() {
+    switch (this.value) {
+    case "printA5onA4":
+      document.getElementById("printInstructions").hidden = false;
+      document.getElementById("yqTempOInstructions").hidden = true;
+      break;
+    case "YQTempO":
+      document.getElementById("printInstructions").hidden = true;
+      document.getElementById("yqTempOInstructions").hidden = false;
+      break;
+    }
+  }
+
+  document.getElementById("selectTemplate").addEventListener("change", updateTemplate);
+  updateTemplate.call(document.getElementById("selectTemplate"));
 
   //Make required functions globally visible
   return {
