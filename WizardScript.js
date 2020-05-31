@@ -1158,17 +1158,16 @@ tcTemplate = function() {
   }
 
   function generatePDF(btn) {
-    var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray, texlive, pdfApply, scriptPromise;
+    var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray, texlive, pdfApply, scriptPromise, downloadFileName;
 
     async function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
-      var statusBox, pdftex, texliveEvent;
+      var pdftex, texliveEvent;
 
       texliveEvent = (function(msg) {
         //Called everytime a status message is outputted by TeXLive. Worker thread will crash shortly after an error, so all handling to be done here.
-        var logContent, numEvents, statusBox;
+        var logContent, numEvents;
         logContent = [];
         numEvents = 0;
-        statusBox = document.getElementById("compileStatus");
         return msg => {
           var logStr, rowId, logBlob, downloadElement, logURL;
           console.log(msg);
@@ -1209,7 +1208,6 @@ tcTemplate = function() {
       }());
 
       //Update status
-      statusBox = document.getElementById("compileStatus");
       statusBox.innerHTML = "Preparing map cards. This may take a minute.";
 
       texlive = new TeXLive("texlive.js/");
@@ -1291,16 +1289,18 @@ tcTemplate = function() {
       case "printA5onA4":
         src = "TCTemplate.tex";
         pdfApply = downloadPDF;
+        downloadFileName = "TCMapCards.pdf";
         break;
       case "YQTempO":
         src = "temposim.tex";
         pdfApply = downloadPNGs;
+        downloadFileName = "TCMapCards.zip";
         break;
       default:
         throw new Error("Unrecognised template selected");
       }
       if (pdfApply === downloadPNGs) {
-         loadScript("pdfjs", "//mozilla.github.io/pdf.js/build/pdf.js");
+         loadScript("pdfjs", "pdfjs/build/pdf.js", "pdfjs/build/pdf.worker.js");
          loadScript("jszip", "jszip/dist/jszip.min.js");
         }
       return fetch(src);
@@ -1318,18 +1318,19 @@ tcTemplate = function() {
       }
       //Enable generate PDF button
       return Promise.reject("handled");
-    }).then((outURL) => pdfApply(outURL, statusBox, scriptPromise) /* ).catch((err) => {
+    }).then((outURL) => pdfApply(outURL, downloadFileName, statusBox, scriptPromise)).catch((err) => {
       if (err !== "handled") {
+        alert(err);
         statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
-      } */
-    ).finally(() => {
+      }
+    }).finally(() => {
       //Final clean
       texlive.terminate();
       btn.disabled = false;
     });
   }
 
-  function downloadPDF(newURL, statusBox) {
+  function downloadPDF(newURL, fileName, statusBox) {
     const downloadElement = document.getElementById("savePDF");
     //Revoke old URL
     const oldURL = downloadElement.href;
@@ -1337,124 +1338,145 @@ tcTemplate = function() {
       URL.revokeObjectURL(oldURL);
     }
     downloadElement.href = newURL;
+    downloadElement.download = fileName;
     downloadElement.hidden = false;
     downloadElement.click();
 
     statusBox.innerHTML = "Map cards produced successfully and are now in your downloads folder.";
   }
 
-  function loadScript(name, url) {
-    //Load pdf.js for later
-    scriptPromises[name] = new Promise((resolve, reject) => {
-      const scriptEl = document.createElement("script");
-      if (name === "pdfjs") {
-        scriptEl.addEventListener("load", () => {
-          //Create shortcut to access PDF.js exports
-          pdfjsLib = window['pdfjs-dist/build/pdf'];
-          //The workerSrc property shall be specified
-          pdfjsLib.GlobalWorkerOptions.workerSrc = "//mozilla.github.io/pdf.js/build/pdf.worker.js";
-        })
-      }
-      scriptEl.addEventListener("load", resolve, { once: true, passive: true });
-      scriptEl.addEventListener("error", reject, { once: true, passive: true });
-      scriptEl.src = url;
-      document.head.appendChild(scriptEl);
-    });
+  function loadScript(name, url, workerURL) {
+    //Load script for later
+    if (scriptPromises[name] === undefined) {
+      scriptPromises[name] = new Promise((resolve, reject) => {
+        const scriptEl = document.createElement("script");
+        if (name === "pdfjs") {
+          scriptEl.addEventListener("load", () => {
+            //Create shortcut to access PDF.js exports
+            pdfjsLib = window["pdfjs-dist/build/pdf"];
+            //The workerSrc property shall be specified
+            pdfjsLib.GlobalWorkerOptions.workerSrc = workerURL;
+          })
+        }
+        scriptEl.addEventListener("load", resolve, { once: true, passive: true });
+        scriptEl.addEventListener("error", reject, { once: true, passive: true });
+        scriptEl.src = url;
+        document.head.appendChild(scriptEl);
+      });
+    }
   }
 
-  async function downloadPNGs(pdfURL, statusBox, scriptPromise) {
-    statusBox.innerHTML = "Splitting into images";
-    await scriptPromises.pdfjs;
-    const pdfObj = await pdfjsLib.getDocument(pdfURL).promise;
-    const imPromises = [];
+  async function downloadPNGs(pdfURL, fileName, statusBox, scriptPromise) {
+    statusBox.innerHTML = "Splitting into images.";
+
+    //Create objects
+    const canvasFull = document.createElement("canvas");
+    const canvasCropped = document.createElement("canvas");
+    const ctxFull = canvasFull.getContext("2d");
+    const ctxCropped = canvasCropped.getContext("2d");
     let pageNum = 1;
     const tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
-    const numStations = tableRows.length;
-    const imDPI = 150;
-    const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
+    //Row 0 of table is set all stations
+    const numStations = tableRows.length - 1;
+    const imPromises = [];
+
+    await scriptPromises.pdfjs;
+    const pdfDoc = await pdfjsLib.getDocument(pdfURL).promise;
+    const numPages = pdfDoc.numPages;
+
     await scriptPromises.jszip;
     const zip = new JSZip();
-    for (let stationId = 0; stationId < numStations; stationId++) {
+
+    for (let stationId = 1; stationId <= numStations; stationId++) {
+      const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].innerHTML);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
-        const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].innerHTML);
-        for (let taskId = 0; taskId < numTasks; taskId++) {
+        const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].innerHTML;
+
+        //Calculate scale required to render PDF at correct resolution
+        const circleDiameter = Number(tableRows[stationId].getElementsByClassName("mapSize")[0].value);
+        const mapDescriptionSeparation = (9.5 - circleDiameter - 0.77) / 3;
+        const pdfHeight = 9.5 - 2 * mapDescriptionSeparation; //cm
+        const imDPI = 300 / pdfHeight * 2.54;
+        const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
+
+        for (let taskId = 1; taskId <= numTasks; taskId++) {
           //Read page into canvas
-          const page = await pdfObj.getPage(pageNum);
+          const page = await pdfDoc.getPage(pageNum);
           const viewport = page.getViewport({ scale: pdfScale });
-          const canvas = document.createElement("canvas");
-
-          //DEBUG
-          document.body.appendChild(canvas);
-
-          const context = canvas.getContext("2d");
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
+          canvasFull.height = viewport.height;
+          canvasFull.width = viewport.width;
           const renderContext = {
-            canvasContext: context,
+            canvasContext: ctxFull,
             viewport: viewport
           };
           await page.render(renderContext).promise;
 
           //Work out blank margins around items on page
-          //One page = 147kB
-          let im = context.getImageData(0, 0, canvas.width, canvas.height);
+          //Use canvasFull rather than viewport dimensions to ensure integers
+          const im = ctxFull.getImageData(0, 0, canvasFull.width, canvasFull.height).data;
 
           function pixelHasContent(row, column) {
             //ImageData is a single array going RGBA, left-to-right then top-to-bottom
             //White or alpha = 0
-            const pixelStart = (row * canvas.width + column) * 4;
-            return (im[pixelStart] < 255 || im[pixelStart + 1] < 255 || im[pixelStart + 2] < 255) && im[pixelStart + 3] > 0;
+            const pixelStart = (row * canvasFull.width + column) * 4;
+            return ((im[pixelStart] < 255 || im[pixelStart + 1] < 255 || im[pixelStart + 2] < 255) && im[pixelStart + 3] > 0);
           }
 
           //Find first nonblank row - white or alpha = 100%
           let topRow;
-          for (topRow = 0; topRow < canvas.height; topRow++) {
-            for (let colId = 0; colId < canvas.width; colId++) {
-              if (pixelHasContent(topRow, colId)) { break; }
+          outerLoop:
+          for (topRow = 0; topRow < canvasFull.height; topRow++) {
+            for (let colId = 0; colId < canvasFull.width; colId++) {
+              if (pixelHasContent(topRow, colId)) { break outerLoop; }
             }
           }
-          if (topRow === canvas.height) { throw new Error("Image blank"); }
+          if (topRow === canvasFull.height) { throw new Error("Image blank"); }
           //Find bottom row
           let bottomRow;
-          for (bottomRow = canvas.height - 1; bottomRow > topRow; bottomRow--) {
-            for (let colId = 0; colId < canvas.width; colId++) {
-              if (pixelHasContent(bottomRow, colId)) { break; }
+          outerLoop:
+          for (bottomRow = canvasFull.height - 1; bottomRow > topRow; bottomRow--) {
+            for (let colId = 0; colId < canvasFull.width; colId++) {
+              if (pixelHasContent(bottomRow, colId)) { break outerLoop; }
             }
           }
           //Find left column
           let leftCol;
-          for (leftCol = 0; leftCol < canvas.width; leftCol++) {
+          outerLoop:
+          for (leftCol = 0; leftCol < canvasFull.width; leftCol++) {
             for (let rowId = topRow; rowId <= bottomRow; rowId++) {
-              if (pixelHasContent(rowId, leftCol)) { break; }
+              if (pixelHasContent(rowId, leftCol)) { break outerLoop; }
             }
           }
           //Find right column
           let rightCol;
-          for (rightCol = canvas.width - 1; rightCol > leftCol; rightCol--) {
+          outerLoop:
+          for (rightCol = canvasFull.width - 1; rightCol > leftCol; rightCol--) {
             for (let rowId = topRow; rowId <= bottomRow; rowId++) {
-              if (pixelHasContent(rowId, rightCol)) { break; }
+              if (pixelHasContent(rowId, rightCol)) { break outerLoop; }
             }
           }
 
-          //Put cropped image onto resized canvas
+          //Put cropped image onto cropped canvas
           const croppedHeight = bottomRow - topRow + 1;
           const croppedWidth = rightCol - leftCol + 1;
-          im = context.getImageData(leftCol, topRow, croppedWidth, croppedHeight);
-          canvas.height = croppedHeight;
-          canvas.width = croppedWidth;
-          context.putImageData(im, 0, 0);
+          canvasCropped.height = croppedHeight;
+          canvasCropped.width = croppedWidth;
+          ctxCropped.drawImage(canvasFull, leftCol, topRow, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
 
           //Save to zip
-          canvas.toBlob((blob) => {
-            imPromises.push(zip.file("map-" + (stationId + 1) + "." + (taskId + 1) + "z.png", blob));
-          });
+          const blob = await new Promise((resolve) => { canvasCropped.toBlob(resolve); });
+          imPromises.push(zip.file("map-" + stationName + "." + taskId + "z.png", blob));
+
+          statusBox.innerHTML = "Splitting into images (" + (pageNum / numPages * 100).toFixed() + "%).";
+          pageNum++;
         }
+      } else {
+        pageNum += numTasks;
       }
-      pageNum++;
     }
     await Promise.all(imPromises);
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    downloadPDF(URL.createObjectURL(zipBlob), statusBox);
+    downloadPDF(URL.createObjectURL(zipBlob), fileName, statusBox);
   }
 
   function updateTemplate() {
