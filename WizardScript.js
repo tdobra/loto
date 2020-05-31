@@ -1320,7 +1320,6 @@ tcTemplate = function() {
       return Promise.reject("handled");
     }).then((outURL) => pdfApply(outURL, downloadFileName, statusBox, scriptPromise)).catch((err) => {
       if (err !== "handled") {
-        alert(err);
         statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
       }
     }).finally(() => {
