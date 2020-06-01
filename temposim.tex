@@ -84,7 +84,8 @@
 \pgfmathsetmacro{\MapDescriptionSeparation}{1/3*(2*\CardHalfHeight-2*\CircleRadius-\DescriptionHeight)}
 \pgfmathsetmacro{\MapCentreyCoordinate}{\CardHalfHeight-\CircleRadius-\MapDescriptionSeparation}
 \pgfmathsetmacro{\DescriptionBaseyCoordinate}{-\CardHalfHeight+\MapDescriptionSeparation}
-\pgfmathsetmacro{\NorthArrowCentrexCoordinate}{-0.5*(\CardHalfWidth+\CircleRadius)}
+\pgfmathsetmacro{\DescriptionLeft}{-\CircleRadius-\DescriptionWidth-0.5}
+\pgfmathsetmacro{\NorthArrowCentrexCoordinate}{\DescriptionLeft+0.5*\DescriptionWidth}
 
 % Map excerpt
 \begin{scope}[shift={(0,\MapCentreyCoordinate)}]
@@ -113,7 +114,7 @@
 \end{scope}
 
 % Control descriptions
-\begin{scope}[shift={(-0.5*\DescriptionWidth,\DescriptionBaseyCoordinate)}]
+\begin{scope}[shift={(\DescriptionLeft,1-\CircleRadius)}]
 \clip (0,0) rectangle (\DescriptionWidth,\DescriptionHeight);
 \node[anchor=south west, inner sep=0] at (-\DescriptionxCoordinate*\DescriptionPDFScale,-\DescriptionyCoordinate*\DescriptionPDFScale) {\includegraphics[page=\DescriptionPage, scale=\DescriptionPDFScale]{\DescriptionFile}};
 % Problem number
@@ -131,7 +132,7 @@
 \end{scope}
 
 % Print TCTemplate stamp
-\node[anchor=south west] at (-\CardHalfWidth,\DescriptionBaseyCoordinate) {\fontsize{0.35cm}{0.35cm}\selectfont TCTemplate};
+%\node[anchor=south west] at (-\CardHalfWidth,\DescriptionBaseyCoordinate) {\fontsize{0.35cm}{0.35cm}\selectfont TCTemplate};
 
 % North arrow
 \begin{scope}[shift={(\NorthArrowCentrexCoordinate,\MapCentreyCoordinate)}, rotate=\Heading]
