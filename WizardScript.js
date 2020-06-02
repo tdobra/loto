@@ -67,6 +67,7 @@ tcTemplate = function() {
     freader = new FileReader();
     freader.onload = function () {
       var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
+      const ppenStatusBox = document.getElementById("ppenStatus");
       xmlParser = new DOMParser();
       xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
       //Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -79,370 +80,375 @@ tcTemplate = function() {
       }
 
       if (xmlobj.getElementsByTagNameNS(parsererrorNS, "parsererror").length > 0) {
-        window.alert("Could not read Purple Pen file: its XML is invalid.");
+        ppenStatusBox.innerHTML = "Could not read Purple Pen file: invalid XML.";
         return;
       }
 
-      //Reset course table - keep the first row
-      existingRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
-      for (existingRowID = existingRows.length - 1; existingRowID > 0; existingRowID--) {
-        document.getElementById("courseTableBody").removeChild(existingRows[existingRowID]);
-      }
+      try {
+        //Reset course table - keep the first row
+        existingRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
+        for (existingRowID = existingRows.length - 1; existingRowID > 0; existingRowID--) {
+          document.getElementById("courseTableBody").removeChild(existingRows[existingRowID]);
+        }
 
-      //Reset layout table - keep the first two rows
-      existingRows = document.getElementById("layoutTableBody").getElementsByTagName("tr");
-      for (existingRowID = existingRows.length - 1; existingRowID > 1; existingRowID--) {
-        document.getElementById("layoutTableBody").removeChild(existingRows[existingRowID]);
-      }
+        //Reset layout table - keep the first two rows
+        existingRows = document.getElementById("layoutTableBody").getElementsByTagName("tr");
+        for (existingRowID = existingRows.length - 1; existingRowID > 1; existingRowID--) {
+          document.getElementById("layoutTableBody").removeChild(existingRows[existingRowID]);
+        }
 
-      //Save map file scale
-      otherNode = xmlobj.getElementsByTagName("map")[0];
-      if (!otherNode) {
-        window.alert("Could not read map scale.");
-        return;
-      }
-      mapFileScale = Number(otherNode.getAttribute("scale"));
-      if (!(mapFileScale > 0)) {
-        window.alert("Could not read map scale.");
-        return;
-      }
+        //Save map file scale
+        otherNode = xmlobj.getElementsByTagName("map")[0];
+        if (!otherNode) {
+          ppenStatusBox.innerHTML = "Could not read map scale.";
+          return;
+        }
+        mapFileScale = Number(otherNode.getAttribute("scale"));
+        if (!(mapFileScale > 0)) {
+          ppenStatusBox.innerHTML = "Could not read map scale.";
+          return;
+        }
 
-      //Global print scale
-      otherNode = xmlobj.getElementsByTagName("all-controls")[0];
-      if (otherNode) {
-        globalScale = Number(otherNode.getAttribute("print-scale"));
-        if (!globalScale) {
-          globalScale = Number(xmlobj.getElementsByTagName("map")[0].getAttribute("scale"));
+        //Global print scale
+        otherNode = xmlobj.getElementsByTagName("all-controls")[0];
+        if (otherNode) {
+          globalScale = Number(otherNode.getAttribute("print-scale"));
           if (!globalScale) {
-            globalScale = "";	//Scale could not be found
+            globalScale = Number(xmlobj.getElementsByTagName("map")[0].getAttribute("scale"));
+            if (!globalScale) {
+              globalScale = "";	//Scale could not be found
+            }
           }
         }
-      }
 
-      courseNodes = xmlobj.getElementsByTagName("course");
-      courseNodesNum = courseNodes.length;
+        courseNodes = xmlobj.getElementsByTagName("course");
+        courseNodesNum = courseNodes.length;
 
-      //Special objects use <course> elements with no child element <name>. Remove these.
-      //Iterate backwards as we are removing elements on the fly
-      for (courseNodesId = courseNodesNum - 1; courseNodesId >= 0; courseNodesId--) {
-        if (courseNodes[courseNodesId].getElementsByTagName("name").length == 0) {
-          courseNodes[courseNodesId].parentNode.removeChild(courseNodes[courseNodesId]);
+        //Special objects use <course> elements with no child element <name>. Remove these.
+        //Iterate backwards as we are removing elements on the fly
+        for (courseNodesId = courseNodesNum - 1; courseNodesId >= 0; courseNodesId--) {
+          if (courseNodes[courseNodesId].getElementsByTagName("name").length == 0) {
+            courseNodes[courseNodesId].parentNode.removeChild(courseNodes[courseNodesId]);
+          }
         }
-      }
-      courseNodes = xmlobj.getElementsByTagName("course");
-      courseNodesNum = courseNodes.length;
+        courseNodes = xmlobj.getElementsByTagName("course");
+        courseNodesNum = courseNodes.length;
 
-      //Make list of all course order attributes used - to determine print page, so must be completed before rest of file reading
-      for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
-        courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
-      }
-      courseOrderUsed.sort(function(a, b){return a - b});
+        //Make list of all course order attributes used - to determine print page, so must be completed before rest of file reading
+        for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
+          courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
+        }
+        courseOrderUsed.sort(function(a, b){return a - b});
 
-      //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
-      for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
-        if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1")) {
-          //Check course type = score
-          if (courseNodes[courseNodesId].getAttribute("kind") != "score") {
-            window.alert("Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + " type must be set to score.");
-            return;
-          }
-
-          //Check zero page margin
-          //Portrait vs. landscape is irrelevant, as coordinates are determined by left and bottom attributes
-          otherNode = courseNodes[courseNodesId].getElementsByTagName("print-area")[0];
-          if (otherNode) {
-            if (otherNode.getAttribute("page-margins") > 0) {
-              window.alert("The page margin must be set to 0 on Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.");
+        //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
+        for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
+          if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1")) {
+            //Check course type = score
+            if (courseNodes[courseNodesId].getAttribute("kind") != "score") {
+              ppenStatusBox.innerHTML = "Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + " type must be set to score.";
               return;
             }
-          } else {
-            window.alert("The page margin must be set to 0 on Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.");
-            return;
-          }
-          if (otherNode.getAttribute("automatic") == "true") {
-            window.alert("The print area selection must be set to manual on Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.");
-            return;
-          }
 
-          //Create new table row
-          tableRowNode = document.createElement("tr");
-
-          //Create first column - station name + hidden values
-          tableColNode = document.createElement("td");
-          stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0,-2);
-          tableContentNode = document.createElement("span");
-          tableContentNode.className = "stationName";
-          tableContentNode.innerHTML = stationNameRoot;
-          tableColNode.appendChild(tableContentNode);
-          tableRowNode.appendChild(tableColNode);
-          //Hidden: Course order
-          tableContentNode = document.createElement("span");
-          tableContentNode.className = "courseOrder"
-          tableContentNode.hidden = true;
-          tableContentNode.innerHTML = courseNodes[courseNodesId].getAttribute("order");
-          tableColNode.appendChild(tableContentNode);
-
-          //Second column - show station?
-          tableColNode = document.createElement("td");
-          tableRowNode.appendChild(tableColNode);
-          tableContentNode = document.createElement("input");
-          tableContentNode.type = "checkbox";
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableContentNode.className = "showStation";
-          tableContentNode.checked = true;
-          tableColNode.appendChild(tableContentNode);
-
-          //Third column - number of kites
-          tableColNode = document.createElement("td");
-          tableContentNode = document.createElement("input");
-          tableContentNode.type = "number";
-          tableContentNode.min = 1;
-          tableContentNode.max = 6;
-          tableContentNode.step = 1;
-          tableContentNode.required = true;
-          tableContentNode.className = "kites";
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableColNode.appendChild(tableContentNode);
-          tableRowNode.appendChild(tableColNode);
-
-          //Fourth column - zeroes allowed?
-          tableColNode = document.createElement("td");
-          tableRowNode.appendChild(tableColNode);
-          tableContentNode = document.createElement("input");
-          tableContentNode.type = "checkbox";
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableContentNode.className = "zeroes";
-          tableColNode.appendChild(tableContentNode);
-
-          //Fifth column - station heading
-          tableColNode = document.createElement("td");
-          tableContentNode = document.createElement("input");
-          tableContentNode.type = "number";
-          tableContentNode.step = "any";
-          tableContentNode.required = true;
-          tableContentNode.className = "heading";
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableColNode.appendChild(tableContentNode);
-          tableContentNode = document.createTextNode(" " + String.fromCharCode(176));
-          tableColNode.appendChild(tableContentNode);
-          tableRowNode.appendChild(tableColNode);
-
-          //Sixth column - map shape
-          tableColNode = document.createElement("td");
-          tableContentNode = document.createElement("select");
-          tableContentNode.required = true;
-          tableContentNode.className = "mapShape";
-          selectOptionNode = document.createElement("option");
-          selectOptionNode.text = "Circle";
-          tableContentNode.add(selectOptionNode);
-          selectOptionNode = document.createElement("option");
-          selectOptionNode.text = "Square";
-          tableContentNode.add(selectOptionNode);
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableColNode.appendChild(tableContentNode);
-          tableRowNode.appendChild(tableColNode);
-
-          //Seventh column - map size
-          tableColNode = document.createElement("td");
-          tableContentNode = document.createElement("input");
-          tableContentNode.type = "number";
-          tableContentNode.step = "any";
-          tableContentNode.min = 0;
-          tableContentNode.max = 12;
-          tableContentNode.required = true;
-          tableContentNode.className = "mapSize layoutLength";
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableColNode.appendChild(tableContentNode);
-          tableContentNode = document.createTextNode(" cm");
-          tableColNode.appendChild(tableContentNode);
-          tableRowNode.appendChild(tableColNode);
-
-          //Eighth column - map scale
-          tableColNode = document.createElement("td");
-          tableContentNode = document.createTextNode("1:");
-          tableColNode.appendChild(tableContentNode);
-          tableContentNode = document.createElement("input");
-          tableContentNode.type = "number";
-          tableContentNode.step = "any";
-          tableContentNode.min = 0;
-          tableContentNode.required = true;
-          tableContentNode.className = "mapScale";
-          //Populate map scale
-          courseScale = Number(courseNodes[courseNodesId].getElementsByTagName("options")[0].getAttribute("print-scale"));
-          if (!courseScale) {
-            courseScale = globalScale;
-          }
-          tableContentNode.value = courseScale;
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableColNode.appendChild(tableContentNode);
-          tableRowNode.appendChild(tableColNode);
-
-          //Nineth column - contour interval + hidden values
-          tableColNode = document.createElement("td");
-          tableContentNode = document.createElement("input");
-          tableContentNode.type = "number";
-          tableContentNode.step = "any";
-          tableContentNode.min = 0;
-          tableContentNode.required = true;
-          tableContentNode.className = "contourInterval";
-          tableContentNode.addEventListener("change", () => { paramsSaved = false; });
-          tableColNode.appendChild(tableContentNode);
-          tableContentNode = document.createTextNode(" m");
-          tableColNode.appendChild(tableContentNode);
-          tableRowNode.appendChild(tableColNode);
-
-          //Hidden: x and y coordinates of centre of circle on map, relative to bottom-left corner
-          existingRowID = courseNodesId;
-          numProblems = 1;
-          //Create hidden spans to save data
-          tableContentNode = document.createElement("span");
-          tableContentNode.className = "circlex";
-          tableContentNode.hidden = true;
-          tableContentNode.innerHTML = "{";
-          tableColNode.appendChild(tableContentNode);
-          tableContentNode = document.createElement("span");
-          tableContentNode.className = "circley";
-          tableContentNode.hidden = true;
-          tableContentNode.innerHTML = "{";
-          tableColNode.appendChild(tableContentNode);
-          tableContentNode = document.createElement("span");
-          tableContentNode.className = "printPage";
-          tableContentNode.hidden = true;
-          tableContentNode.innerHTML = "{";
-          tableColNode.appendChild(tableContentNode);
-          tableContentNode = document.createElement("span");
-          tableContentNode.className = "controlsSkipped";
-          tableContentNode.hidden = true; //Don't add brackets to innerHTML
-          tableColNode.appendChild(tableContentNode);
-          //Loop while another control can be added to the station
-          while (existingRowID < courseNodesNum) {
-            bottomcoord = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
-            if (!bottomcoord) {
-              window.alert("Page setup not complete for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
-              return;
-            }
-            leftcoord = Number(bottomcoord.getAttribute("left"));
-            bottomcoord = Number(bottomcoord.getAttribute("bottom"));
-            courseControlNode = getNodeByID(xmlobj, "course-control", courseNodes[existingRowID].getElementsByTagName("first")[0].getAttribute("course-control"));
-            controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
-            controlsSkipped = 0;    //Keep tabs on position of desired control in control descriptions
-            while (controlNode.getAttribute("kind") != "normal") {
-              controlsSkipped++;
-              courseControlNode = courseControlNode.getElementsByTagName("next")[0];
-              if (!courseControlNode) {
-                window.alert("No control added to Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0] + ".");
+            //Check zero page margin
+            //Portrait vs. landscape is irrelevant, as coordinates are determined by left and bottom attributes
+            otherNode = courseNodes[courseNodesId].getElementsByTagName("print-area")[0];
+            if (otherNode) {
+              if (otherNode.getAttribute("page-margins") > 0) {
+                ppenStatusBox.innerHTML = "The page margin must be set to 0 on Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.";
                 return;
               }
-              courseControlNode = getNodeByID(xmlobj, "course-control", courseControlNode.getAttribute("course-control"));
-              controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
+            } else {
+              ppenStatusBox.innerHTML = "The page margin must be set to 0 on Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.";
+              return;
+            }
+            if (otherNode.getAttribute("automatic") == "true") {
+              ppenStatusBox.innerHTML = "The print area selection must be set to manual on Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.";
+              return;
             }
 
-            //Append comma to lists - always have a trailing comma
-            //Circle position in cm with origin in bottom left corner
-            tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord) * mapFileScale / courseScale).toString() + ",";
-            tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord) * mapFileScale / courseScale).toString() + ",";
+            //Create new table row
+            tableRowNode = document.createElement("tr");
 
-            //Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
-            tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
-            tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped + ",";
+            //Create first column - station name + hidden values
+            tableColNode = document.createElement("td");
+            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0,-2);
+            tableContentNode = document.createElement("span");
+            tableContentNode.className = "stationName";
+            tableContentNode.innerHTML = stationNameRoot;
+            tableColNode.appendChild(tableContentNode);
+            tableRowNode.appendChild(tableColNode);
+            //Hidden: Course order
+            tableContentNode = document.createElement("span");
+            tableContentNode.className = "courseOrder"
+            tableContentNode.hidden = true;
+            tableContentNode.innerHTML = courseNodes[courseNodesId].getAttribute("order");
+            tableColNode.appendChild(tableContentNode);
 
-            //Find next control at station
-            otherNode = stationNameRoot + "." + (numProblems + 1);
-            for (existingRowID = 0; existingRowID < courseNodesNum; existingRowID++) {
-              if (courseNodes[existingRowID].getElementsByTagName("name")[0].textContent == otherNode) {
-                //Found another control
-                numProblems++;
-                //Check new course type, margin and manual print selection
-                if (courseNodes[existingRowID].getAttribute("kind") != "score") {
-                  window.alert("Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + " type must be set to score.");
-                  return;
-                }
-                //Check zero page margin
-                otherNode = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
-                if (otherNode) {
-                  if (otherNode.getAttribute("page-margins") > 0) {
-                    window.alert("The page margin must be set to 0 on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.");
-                    return;
-                  }
-                } else {
-                  window.alert("The page margin must be set to 0 on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.");
-                  return;
-                }
-                if (otherNode.getAttribute("automatic") == "true") {
-                  window.alert("The print area selection must be set to manual on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.");
-                  return;
-                }
-                //Check same scale
-                otherNode = courseNodes[existingRowID].getElementsByTagName("options")[0];
-                if (otherNode) {
-                  if (Number(otherNode.getAttribute("print-scale")) != courseScale) {
-                    window.alert("The print scale is different on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ".");
-                    return;
-                  }
-                } else if (courseScale != globalScale) {
-                  window.alert("The print scale is different on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ".");
-                  return;
-                }
-                break;
-              }
-            }
-          }
-          //Close array brackets
-          tableColNode.getElementsByClassName("circlex")[0].innerHTML += "}";
-          tableColNode.getElementsByClassName("circley")[0].innerHTML += "}";
-          tableColNode.getElementsByClassName("printPage")[0].innerHTML += "}";
-          //Save numProblems
-          tableContentNode = document.createElement("span");
-          tableContentNode.className = "numProblems";
-          tableContentNode.hidden = true;
-          tableContentNode.innerHTML = numProblems;
-          tableColNode.appendChild(tableContentNode);
+            //Second column - show station?
+            tableColNode = document.createElement("td");
+            tableRowNode.appendChild(tableColNode);
+            tableContentNode = document.createElement("input");
+            tableContentNode.type = "checkbox";
+            tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+            tableContentNode.className = "showStation";
+            tableContentNode.checked = true;
+            tableColNode.appendChild(tableContentNode);
 
-          //Populate rows in layout table
-          //Create new table row
-          layoutRowNode = document.createElement("tr");
-
-          //Create first column - station name + hidden values
-          tableColNode = document.createElement("td");
-          tableColNode.innerHTML = stationNameRoot;
-          layoutRowNode.appendChild(tableColNode);
-
-          //Other columns
-          for (otherNode in defaultLayout) {
+            //Third column - number of kites
             tableColNode = document.createElement("td");
             tableContentNode = document.createElement("input");
             tableContentNode.type = "number";
-            tableContentNode.min = 0;
-            tableContentNode.max = 29.7;
-            tableContentNode.step = "any";
+            tableContentNode.min = 1;
+            tableContentNode.max = 6;
+            tableContentNode.step = 1;
             tableContentNode.required = true;
-            tableContentNode.value = defaultLayout[otherNode];  //Default value
-            tableContentNode.className = otherNode + " layoutLength";
+            tableContentNode.className = "kites";
             tableContentNode.addEventListener("change", () => { paramsSaved = false; });
             tableColNode.appendChild(tableContentNode);
-            layoutRowNode.appendChild(tableColNode);
-          }
+            tableRowNode.appendChild(tableColNode);
 
-          //Insert row in correct position in tables for course order
-          existingRows = document.getElementById("courseTableBody").getElementsByClassName("courseOrder");
-          existingRowID = 0;
-          for (;;) {
-            existingRowID++;
-            existingRow = existingRows[existingRowID];
-            if (!existingRow) {
-              document.getElementById("courseTableBody").appendChild(tableRowNode);
-              document.getElementById("layoutTableBody").appendChild(layoutRowNode);
-              break;	//No more rows to consider
+            //Fourth column - zeroes allowed?
+            tableColNode = document.createElement("td");
+            tableRowNode.appendChild(tableColNode);
+            tableContentNode = document.createElement("input");
+            tableContentNode.type = "checkbox";
+            tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+            tableContentNode.className = "zeroes";
+            tableColNode.appendChild(tableContentNode);
+
+            //Fifth column - station heading
+            tableColNode = document.createElement("td");
+            tableContentNode = document.createElement("input");
+            tableContentNode.type = "number";
+            tableContentNode.step = "any";
+            tableContentNode.required = true;
+            tableContentNode.className = "heading";
+            tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+            tableColNode.appendChild(tableContentNode);
+            tableContentNode = document.createTextNode(" " + String.fromCharCode(176));
+            tableColNode.appendChild(tableContentNode);
+            tableRowNode.appendChild(tableColNode);
+
+            //Sixth column - map shape
+            tableColNode = document.createElement("td");
+            tableContentNode = document.createElement("select");
+            tableContentNode.required = true;
+            tableContentNode.className = "mapShape";
+            selectOptionNode = document.createElement("option");
+            selectOptionNode.text = "Circle";
+            tableContentNode.add(selectOptionNode);
+            selectOptionNode = document.createElement("option");
+            selectOptionNode.text = "Square";
+            tableContentNode.add(selectOptionNode);
+            tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+            tableColNode.appendChild(tableContentNode);
+            tableRowNode.appendChild(tableColNode);
+
+            //Seventh column - map size
+            tableColNode = document.createElement("td");
+            tableContentNode = document.createElement("input");
+            tableContentNode.type = "number";
+            tableContentNode.step = "any";
+            tableContentNode.min = 0;
+            tableContentNode.max = 12;
+            tableContentNode.required = true;
+            tableContentNode.className = "mapSize layoutLength";
+            tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+            tableColNode.appendChild(tableContentNode);
+            tableContentNode = document.createTextNode(" cm");
+            tableColNode.appendChild(tableContentNode);
+            tableRowNode.appendChild(tableColNode);
+
+            //Eighth column - map scale
+            tableColNode = document.createElement("td");
+            tableContentNode = document.createTextNode("1:");
+            tableColNode.appendChild(tableContentNode);
+            tableContentNode = document.createElement("input");
+            tableContentNode.type = "number";
+            tableContentNode.step = "any";
+            tableContentNode.min = 0;
+            tableContentNode.required = true;
+            tableContentNode.className = "mapScale";
+            //Populate map scale
+            courseScale = Number(courseNodes[courseNodesId].getElementsByTagName("options")[0].getAttribute("print-scale"));
+            if (!courseScale) {
+              courseScale = globalScale;
             }
-            if (Number(existingRow.innerHTML) > Number(courseNodes[courseNodesId].getAttribute("order"))) {
-              document.getElementById("courseTableBody").insertBefore(tableRowNode, existingRow.parentElement);
-              //Need to update existingRow to match layout table. There is one extra header row in the tbody.
-              existingRow = document.getElementById("layoutTableBody").getElementsByTagName("tr")[existingRowID + 1];
-              document.getElementById("layoutTableBody").insertBefore(layoutRowNode, existingRow.parentElement);
-              break;	//Current row needs to be inserted before existingRow
+            tableContentNode.value = courseScale;
+            tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+            tableColNode.appendChild(tableContentNode);
+            tableRowNode.appendChild(tableColNode);
+
+            //Nineth column - contour interval + hidden values
+            tableColNode = document.createElement("td");
+            tableContentNode = document.createElement("input");
+            tableContentNode.type = "number";
+            tableContentNode.step = "any";
+            tableContentNode.min = 0;
+            tableContentNode.required = true;
+            tableContentNode.className = "contourInterval";
+            tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+            tableColNode.appendChild(tableContentNode);
+            tableContentNode = document.createTextNode(" m");
+            tableColNode.appendChild(tableContentNode);
+            tableRowNode.appendChild(tableColNode);
+
+            //Hidden: x and y coordinates of centre of circle on map, relative to bottom-left corner
+            existingRowID = courseNodesId;
+            numProblems = 1;
+            //Create hidden spans to save data
+            tableContentNode = document.createElement("span");
+            tableContentNode.className = "circlex";
+            tableContentNode.hidden = true;
+            tableContentNode.innerHTML = "{";
+            tableColNode.appendChild(tableContentNode);
+            tableContentNode = document.createElement("span");
+            tableContentNode.className = "circley";
+            tableContentNode.hidden = true;
+            tableContentNode.innerHTML = "{";
+            tableColNode.appendChild(tableContentNode);
+            tableContentNode = document.createElement("span");
+            tableContentNode.className = "printPage";
+            tableContentNode.hidden = true;
+            tableContentNode.innerHTML = "{";
+            tableColNode.appendChild(tableContentNode);
+            tableContentNode = document.createElement("span");
+            tableContentNode.className = "controlsSkipped";
+            tableContentNode.hidden = true; //Don't add brackets to innerHTML
+            tableColNode.appendChild(tableContentNode);
+            //Loop while another control can be added to the station
+            while (existingRowID < courseNodesNum) {
+              bottomcoord = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
+              if (!bottomcoord) {
+                window.alert("Page setup not complete for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
+                return;
+              }
+              leftcoord = Number(bottomcoord.getAttribute("left"));
+              bottomcoord = Number(bottomcoord.getAttribute("bottom"));
+              courseControlNode = getNodeByID(xmlobj, "course-control", courseNodes[existingRowID].getElementsByTagName("first")[0].getAttribute("course-control"));
+              controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
+              controlsSkipped = 0;    //Keep tabs on position of desired control in control descriptions
+              while (controlNode.getAttribute("kind") != "normal") {
+                controlsSkipped++;
+                courseControlNode = courseControlNode.getElementsByTagName("next")[0];
+                if (!courseControlNode) {
+                  window.alert("No control added to Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0] + ".");
+                  return;
+                }
+                courseControlNode = getNodeByID(xmlobj, "course-control", courseControlNode.getAttribute("course-control"));
+                controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
+              }
+
+              //Append comma to lists - always have a trailing comma
+              //Circle position in cm with origin in bottom left corner
+              tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord) * mapFileScale / courseScale).toString() + ",";
+              tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord) * mapFileScale / courseScale).toString() + ",";
+
+              //Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
+              tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
+              tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped + ",";
+
+              //Find next control at station
+              otherNode = stationNameRoot + "." + (numProblems + 1);
+              for (existingRowID = 0; existingRowID < courseNodesNum; existingRowID++) {
+                if (courseNodes[existingRowID].getElementsByTagName("name")[0].textContent == otherNode) {
+                  //Found another control
+                  numProblems++;
+                  //Check new course type, margin and manual print selection
+                  if (courseNodes[existingRowID].getAttribute("kind") != "score") {
+                    ppenStatusBox.innerHTML = "Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + " type must be set to score.";
+                    return;
+                  }
+                  //Check zero page margin
+                  otherNode = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
+                  if (otherNode) {
+                    if (otherNode.getAttribute("page-margins") > 0) {
+                      ppenStatusBox.innerHTML = "The page margin must be set to 0 on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.";
+                      return;
+                    }
+                  } else {
+                    ppenStatusBox.innerHTML = "The page margin must be set to 0 on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.";
+                    return;
+                  }
+                  if (otherNode.getAttribute("automatic") == "true") {
+                    ppenStatusBox.innerHTML = "The print area selection must be set to manual on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ". Then, recreate the course PDF.";
+                    return;
+                  }
+                  //Check same scale
+                  otherNode = courseNodes[existingRowID].getElementsByTagName("options")[0];
+                  if (otherNode) {
+                    if (Number(otherNode.getAttribute("print-scale")) != courseScale) {
+                      ppenStatusBox.innerHTML = "The print scale is different on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ".";
+                      return;
+                    }
+                  } else if (courseScale != globalScale) {
+                    ppenStatusBox.innerHTML = "The print scale is different on Purple Pen course " + courseNodes[existingRowID].getElementsByTagName("name")[0].textContent + ".";
+                    return;
+                  }
+                  break;
+                }
+              }
+            }
+            //Close array brackets
+            tableColNode.getElementsByClassName("circlex")[0].innerHTML += "}";
+            tableColNode.getElementsByClassName("circley")[0].innerHTML += "}";
+            tableColNode.getElementsByClassName("printPage")[0].innerHTML += "}";
+            //Save numProblems
+            tableContentNode = document.createElement("span");
+            tableContentNode.className = "numProblems";
+            tableContentNode.hidden = true;
+            tableContentNode.innerHTML = numProblems;
+            tableColNode.appendChild(tableContentNode);
+
+            //Populate rows in layout table
+            //Create new table row
+            layoutRowNode = document.createElement("tr");
+
+            //Create first column - station name + hidden values
+            tableColNode = document.createElement("td");
+            tableColNode.innerHTML = stationNameRoot;
+            layoutRowNode.appendChild(tableColNode);
+
+            //Other columns
+            for (otherNode in defaultLayout) {
+              tableColNode = document.createElement("td");
+              tableContentNode = document.createElement("input");
+              tableContentNode.type = "number";
+              tableContentNode.min = 0;
+              tableContentNode.max = 29.7;
+              tableContentNode.step = "any";
+              tableContentNode.required = true;
+              tableContentNode.value = defaultLayout[otherNode];  //Default value
+              tableContentNode.className = otherNode + " layoutLength";
+              tableContentNode.addEventListener("change", () => { paramsSaved = false; });
+              tableColNode.appendChild(tableContentNode);
+              layoutRowNode.appendChild(tableColNode);
+            }
+
+            //Insert row in correct position in tables for course order
+            existingRows = document.getElementById("courseTableBody").getElementsByClassName("courseOrder");
+            existingRowID = 0;
+            for (;;) {
+              existingRowID++;
+              existingRow = existingRows[existingRowID];
+              if (!existingRow) {
+                document.getElementById("courseTableBody").appendChild(tableRowNode);
+                document.getElementById("layoutTableBody").appendChild(layoutRowNode);
+                break;	//No more rows to consider
+              }
+              if (Number(existingRow.innerHTML) > Number(courseNodes[courseNodesId].getAttribute("order"))) {
+                document.getElementById("courseTableBody").insertBefore(tableRowNode, existingRow.parentElement);
+                //Need to update existingRow to match layout table. There is one extra header row in the tbody.
+                existingRow = document.getElementById("layoutTableBody").getElementsByTagName("tr")[existingRowID + 1];
+                document.getElementById("layoutTableBody").insertBefore(layoutRowNode, existingRow.parentElement);
+                break;	//Current row needs to be inserted before existingRow
+              }
             }
           }
         }
+      } catch (err) {
+        ppenStatusBox.innerHTML = "Error reading Purple Pen file: " + err;
+        return;
       }
 
       //Reset update all stations fields
@@ -467,8 +473,11 @@ tcTemplate = function() {
       tableContentNode = document.getElementById("stationProperties");
       tableContentNode.hidden = false;
       tableContentNode.scrollIntoView();
+      ppenStatusBox.innerHTML = "Purple Pen file loaded successfully."
     };
-    freader.onerror = function () { window.alert("Could not read Purple Pen file. Try reselecting it, then click Reload."); };
+    freader.onerror = function () {
+      ppenStatusBox.innerHTML = "Could not read Purple Pen file. Try reselecting it, then click Reload.";
+    };
     freader.readAsText(fileobj);   //Reads as UTF-8
   }
 
@@ -550,6 +559,7 @@ tcTemplate = function() {
   function loadTeX(fileInput) {
     //Loads existing LaTeX file into memory
     var fileobj, freader, fname;
+    const statusBox = document.getElementById("texReadStatus");
     fileobj = fileInput.files[0];
     if (fileobj) {
       fname = fileobj.name;
@@ -558,197 +568,203 @@ tcTemplate = function() {
         //Populates station tables from previous LaTeX parameters file
         var fileString, startPos, endPos, subString, varArray, fields, rowId, numRows, classRoot;
 
-        fileString = freader.result;
+        try {
+          fileString = freader.result;
 
-        //Indicate that parameters data is currently saved - unedited opened file
-        paramsSaved = true;
+          //Indicate that parameters data is currently saved - unedited opened file
+          paramsSaved = true;
 
-        //Show station
-        startPos = fileString.indexOf("\\def\\ShowStationList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("showStation");
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (parseInt(varArray[rowId], 10) == 1) {
-              fields[rowId + 1].checked = true;
-            } else {
-              fields[rowId + 1].checked = false;
-            }
-          }
-        }
-
-        //Number of kites
-        startPos = fileString.indexOf("\\def\\NumKitesList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("kites");
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (varArray[rowId] !== "") {
-              fields[rowId + 1].value = parseInt(varArray[rowId], 10);
-            }
-          }
-        }
-
-        //Zeroes
-        startPos = fileString.indexOf("\\def\\ZeroOptionList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("zeroes");
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (parseInt(varArray[rowId], 10) == 1) {
-              fields[rowId + 1].checked = true;
-            } else {
-              fields[rowId + 1].checked = false;
-            }
-          }
-        }
-
-        //Heading
-        startPos = fileString.indexOf("\\def\\MapHeadingList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("heading");
-          //No master field for heading
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (varArray[rowId] !== "") {
-              fields[rowId].value = Number(varArray[rowId]);
-            }
-          }
-        }
-
-        //Map shape
-        startPos = fileString.indexOf("\\def\\SquareMapList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("mapShape");
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (varArray[rowId] !== "") {
-              fields[rowId + 1].selectedIndex = parseInt(varArray[rowId], 10);
-            }
-          }
-        }
-
-        //Map size
-        startPos = fileString.indexOf("\\def\\CircleRadiusList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("mapSize");
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (varArray[rowId] !== "") {
-              fields[rowId + 1].value = Number(varArray[rowId]) * 2;
-            }
-          }
-        }
-
-        //Map scale
-        startPos = fileString.indexOf("\\def\\MapScaleList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("mapScale");
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (varArray[rowId] !== "") {
-              fields[rowId + 1].value = Number(varArray[rowId]);
-            }
-          }
-        }
-
-        //Contour interval
-        startPos = fileString.indexOf("\\def\\ContourIntervalList{{");
-        if (startPos >= 0) {
-          endPos = fileString.indexOf(",}}", startPos);
-          startPos = fileString.indexOf("{{", startPos);
-          subString = fileString.slice(startPos + 2, endPos);
-          varArray = subString.split(",");
-          fields = document.getElementsByClassName("contourInterval");
-          numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
-          for (rowId = 0; rowId < numRows; rowId++) {
-            if (varArray[rowId] !== "") {
-              fields[rowId + 1].value = Number(varArray[rowId]);
-            }
-          }
-        }
-
-        //Layout customisations
-        //Root of name in TeX file
-        const layoutTeXNames = {
-          IDFontSize: "StationIDFontSize",
-          checkWidth: "SheetCheckBoxWidth",
-          checkHeight: "SheetCheckBoxHeight",
-          checkFontSize: "CheckNumberHeight",
-          removeFontSize: "RemoveTextFontSize",
-          pointHeight: "PointingBoxHeight",
-          letterFontSize: "PointingLetterFontSize",
-          phoneticFontSize: "PointingPhoneticFontSize"
-        }
-        for (classRoot in layoutTeXNames) {
-          startPos = fileString.indexOf("\\def\\" + layoutTeXNames[classRoot] + "List{{");
+          //Show station
+          startPos = fileString.indexOf("\\def\\ShowStationList{{");
           if (startPos >= 0) {
             endPos = fileString.indexOf(",}}", startPos);
             startPos = fileString.indexOf("{{", startPos);
             subString = fileString.slice(startPos + 2, endPos);
             varArray = subString.split(",");
-            fields = document.getElementsByClassName(classRoot);
-            //First two rows are not fields
-            numRows = Math.min(fields.length, document.getElementById("layoutTableBody").getElementsByTagName("tr").length - 2);
+            fields = document.getElementsByClassName("showStation");
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
+            for (rowId = 0; rowId < numRows; rowId++) {
+              if (parseInt(varArray[rowId], 10) == 1) {
+                fields[rowId + 1].checked = true;
+              } else {
+                fields[rowId + 1].checked = false;
+              }
+            }
+          }
+
+          //Number of kites
+          startPos = fileString.indexOf("\\def\\NumKitesList{{");
+          if (startPos >= 0) {
+            endPos = fileString.indexOf(",}}", startPos);
+            startPos = fileString.indexOf("{{", startPos);
+            subString = fileString.slice(startPos + 2, endPos);
+            varArray = subString.split(",");
+            fields = document.getElementsByClassName("kites");
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
             for (rowId = 0; rowId < numRows; rowId++) {
               if (varArray[rowId] !== "") {
-                if (varArray[rowId].includes("cm")) {
-                  //cm unit and quotes added, needs removing
-                  fields[rowId + 2].value = Number(varArray[rowId].slice(1,-3));
-                } else {
-                  fields[rowId + 2].value = Number(varArray[rowId]);
+                fields[rowId + 1].value = parseInt(varArray[rowId], 10);
+              }
+            }
+          }
+
+          //Zeroes
+          startPos = fileString.indexOf("\\def\\ZeroOptionList{{");
+          if (startPos >= 0) {
+            endPos = fileString.indexOf(",}}", startPos);
+            startPos = fileString.indexOf("{{", startPos);
+            subString = fileString.slice(startPos + 2, endPos);
+            varArray = subString.split(",");
+            fields = document.getElementsByClassName("zeroes");
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
+            for (rowId = 0; rowId < numRows; rowId++) {
+              if (parseInt(varArray[rowId], 10) == 1) {
+                fields[rowId + 1].checked = true;
+              } else {
+                fields[rowId + 1].checked = false;
+              }
+            }
+          }
+
+          //Heading
+          startPos = fileString.indexOf("\\def\\MapHeadingList{{");
+          if (startPos >= 0) {
+            endPos = fileString.indexOf(",}}", startPos);
+            startPos = fileString.indexOf("{{", startPos);
+            subString = fileString.slice(startPos + 2, endPos);
+            varArray = subString.split(",");
+            fields = document.getElementsByClassName("heading");
+            //No master field for heading
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length);
+            for (rowId = 0; rowId < numRows; rowId++) {
+              if (varArray[rowId] !== "") {
+                fields[rowId].value = Number(varArray[rowId]);
+              }
+            }
+          }
+
+          //Map shape
+          startPos = fileString.indexOf("\\def\\SquareMapList{{");
+          if (startPos >= 0) {
+            endPos = fileString.indexOf(",}}", startPos);
+            startPos = fileString.indexOf("{{", startPos);
+            subString = fileString.slice(startPos + 2, endPos);
+            varArray = subString.split(",");
+            fields = document.getElementsByClassName("mapShape");
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
+            for (rowId = 0; rowId < numRows; rowId++) {
+              if (varArray[rowId] !== "") {
+                fields[rowId + 1].selectedIndex = parseInt(varArray[rowId], 10);
+              }
+            }
+          }
+
+          //Map size
+          startPos = fileString.indexOf("\\def\\CircleRadiusList{{");
+          if (startPos >= 0) {
+            endPos = fileString.indexOf(",}}", startPos);
+            startPos = fileString.indexOf("{{", startPos);
+            subString = fileString.slice(startPos + 2, endPos);
+            varArray = subString.split(",");
+            fields = document.getElementsByClassName("mapSize");
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
+            for (rowId = 0; rowId < numRows; rowId++) {
+              if (varArray[rowId] !== "") {
+                fields[rowId + 1].value = Number(varArray[rowId]) * 2;
+              }
+            }
+          }
+
+          //Map scale
+          startPos = fileString.indexOf("\\def\\MapScaleList{{");
+          if (startPos >= 0) {
+            endPos = fileString.indexOf(",}}", startPos);
+            startPos = fileString.indexOf("{{", startPos);
+            subString = fileString.slice(startPos + 2, endPos);
+            varArray = subString.split(",");
+            fields = document.getElementsByClassName("mapScale");
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
+            for (rowId = 0; rowId < numRows; rowId++) {
+              if (varArray[rowId] !== "") {
+                fields[rowId + 1].value = Number(varArray[rowId]);
+              }
+            }
+          }
+
+          //Contour interval
+          startPos = fileString.indexOf("\\def\\ContourIntervalList{{");
+          if (startPos >= 0) {
+            endPos = fileString.indexOf(",}}", startPos);
+            startPos = fileString.indexOf("{{", startPos);
+            subString = fileString.slice(startPos + 2, endPos);
+            varArray = subString.split(",");
+            fields = document.getElementsByClassName("contourInterval");
+            numRows = Math.min(fields.length, document.getElementById("courseTableBody").getElementsByTagName("tr").length - 1);
+            for (rowId = 0; rowId < numRows; rowId++) {
+              if (varArray[rowId] !== "") {
+                fields[rowId + 1].value = Number(varArray[rowId]);
+              }
+            }
+          }
+
+          //Layout customisations
+          //Root of name in TeX file
+          const layoutTeXNames = {
+            IDFontSize: "StationIDFontSize",
+            checkWidth: "SheetCheckBoxWidth",
+            checkHeight: "SheetCheckBoxHeight",
+            checkFontSize: "CheckNumberHeight",
+            removeFontSize: "RemoveTextFontSize",
+            pointHeight: "PointingBoxHeight",
+            letterFontSize: "PointingLetterFontSize",
+            phoneticFontSize: "PointingPhoneticFontSize"
+          }
+          for (classRoot in layoutTeXNames) {
+            startPos = fileString.indexOf("\\def\\" + layoutTeXNames[classRoot] + "List{{");
+            if (startPos >= 0) {
+              endPos = fileString.indexOf(",}}", startPos);
+              startPos = fileString.indexOf("{{", startPos);
+              subString = fileString.slice(startPos + 2, endPos);
+              varArray = subString.split(",");
+              fields = document.getElementsByClassName(classRoot);
+              //First two rows are not fields
+              numRows = Math.min(fields.length, document.getElementById("layoutTableBody").getElementsByTagName("tr").length - 2);
+              for (rowId = 0; rowId < numRows; rowId++) {
+                if (varArray[rowId] !== "") {
+                  if (varArray[rowId].includes("cm")) {
+                    //cm unit and quotes added, needs removing
+                    fields[rowId + 2].value = Number(varArray[rowId].slice(1,-3));
+                  } else {
+                    fields[rowId + 2].value = Number(varArray[rowId]);
+                  }
                 }
               }
             }
           }
-        }
 
-        //Debug circles enabled?
-        startPos = fileString.indexOf("\\def\\AdjustMode{");
-        if (startPos >= 0) {
-          subString = fileString.substr(startPos + 16, 1);
-          if (subString == "1") {
-            document.getElementById("debugCircle").checked = true;
+          //Debug circles enabled?
+          startPos = fileString.indexOf("\\def\\AdjustMode{");
+          if (startPos >= 0) {
+            subString = fileString.substr(startPos + 16, 1);
+            if (subString == "1") {
+              document.getElementById("debugCircle").checked = true;
+            } else {
+              document.getElementById("debugCircle").checked = false;
+            }
           } else {
             document.getElementById("debugCircle").checked = false;
           }
-        } else {
-          document.getElementById("debugCircle").checked = false;
+
+          statusBox.innerHTML = "Data loaded successfully.";
+        } catch (err) {
+          statusBox.innerHTML = "Error reading data: " + err;
         }
       };
       freader.onerror = function (err) {
         if (err.name == undefined) {
-          window.alert("Could not read file due to an unknown error. This occurs on Safari for files containing the % symbol - try deleting all of them.");
+          statusBox.innerHTML = "Could not read file due to an unknown error. This occurs on Safari for files containing the % symbol - try deleting all of them.";
         } else {
-          window.alert("Could not read file: " + err.toString());
+          statusBox.innerHTML = "Could not read file: " + err;
         }
       };
       freader.readAsText(fileobj);   //Reads as UTF-8
@@ -1300,9 +1316,9 @@ tcTemplate = function() {
         throw new Error("Unrecognised template selected");
       }
       if (pdfApply === downloadPNGs) {
-         loadScript("pdfjs", "pdfjs/build/pdf.js", "pdfjs/build/pdf.worker.js");
-         loadScript("jszip", "jszip/dist/jszip.min.js");
-        }
+        loadScript("pdfjs", "pdfjs/build/pdf.js", "pdfjs/build/pdf.worker.js");
+        loadScript("jszip", "jszip/dist/jszip.min.js");
+      }
       return fetch(src);
     }).then(response => {
       if (response.ok === true) {

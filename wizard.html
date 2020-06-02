@@ -38,7 +38,7 @@
         <li>Set the print area for all courses (under the File menu) to have 0 margin, limit the printable area to the page size and untick <em>Set Print Area Automatically</em>. Select a paper size (custom size if necessary) that is large enough to include all parts of the map that are to be printed. Move the print area to cover all desired parts of the map and click done. (Each course/map does not need to have the same print area, although the author considers it easier to do so.)</li>
         <li>Create a single PDF of all the courses using File->Create PDFs->Courses and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Select <em>CMYK</em> as the colour model. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
         <li>Create a single PDF of all the control descriptions using File->Create PDFs->Descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Leave the box size at the default of 6 mm, and leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
-        <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
+        <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /> <span id="ppenStatus"></span></li>
       </ol>
     </section>
 
@@ -64,7 +64,7 @@
       </details>
 
       <ul>
-        <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
+        <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /> <span id="texReadStatus"></span></li>
         <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" />&emsp;<input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
       </ul>
 
@@ -178,7 +178,7 @@
     </section>
   </main>
   <footer>
-    <p class="right">Last updated (UTC): 1<sup>st</sup> June 2020 21:25</p>
+    <p class="right">Last updated (UTC): 2<sup>nd</sup> June 2020 21:47</p>
     <p class="right">Copyright (c) 2017-20 TCTemplate contributors, maintained by Tom Dobra: <a href="help/license.html" target="help">view license</a></p>
   </footer>
 </body>
