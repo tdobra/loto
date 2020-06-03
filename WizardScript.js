@@ -19,7 +19,6 @@ if ('open' in document.createElement('details')) {
 }
 
 document.getElementById("stationProperties").hidden = true;
-document.getElementById("compileLaTeXBtn").disabled = true;
 document.getElementById("savePDF").hidden = true;
 document.getElementById("viewLog").hidden = true;
 
@@ -1538,7 +1537,7 @@ tcTemplate = function() {
   }
 
   //Load TeXLive
-  Compiler.texliveLoaded = loadScript(texlive, "texlive.js/pdftexlight.js");
+  Compiler.texliveLoaded = loadScript("texlive", "texlive.js/pdftexlight.js");
 
   const mapsCompiler = new Compiler({
     texsrc: "TCTemplate.tex",
