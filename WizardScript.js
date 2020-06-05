@@ -7,6 +7,10 @@
 var tcTemplate;	//Namespace
 
 //Check browser supports required APIs
+//Items to check:
+//HTMLCanvasElement.toBlob() (Edge >= 79, Firefox >= 19, Safari >= 11)
+//details (Edge >= 79, Firefox >= 49, Safari >= 6)
+//async (Edge >= 15, Firefox >= 52, Safari >= 10.1)
 if (window.FileReader && window.DOMParser && window.Blob && window.URL && window.fetch) {
   document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
 } else {
@@ -42,6 +46,10 @@ tcTemplate = function() {
     letterFontSize: 1.8,
     phoneticFontSize: 0.6
   };
+
+  // class TCError extends Error {
+  //
+  // }
 
   function loadppen(fileInput) {
     //Reads a Purple Pen file
@@ -478,6 +486,9 @@ tcTemplate = function() {
       tableContentNode.hidden = false;
       tableContentNode.scrollIntoView();
       ppenStatusBox.innerHTML = "Purple Pen file loaded successfully."
+
+      //Activate compilers
+      mapsCompiler.startTeXLive();
     };
     freader.onerror = function () {
       ppenStatusBox.innerHTML = "Could not read Purple Pen file. Try reselecting it, then click Reload.";
@@ -762,6 +773,7 @@ tcTemplate = function() {
           statusBox.innerHTML = "Data loaded successfully.";
         } catch (err) {
           statusBox.innerHTML = "Error reading data: " + err;
+          console.log(err);
         }
       };
       freader.onerror = function (err) {
@@ -770,6 +782,7 @@ tcTemplate = function() {
         } else {
           statusBox.innerHTML = "Could not read file: " + err;
         }
+        console.log(err);
       };
       freader.readAsText(fileobj);   //Reads as UTF-8
     }
@@ -779,9 +792,7 @@ tcTemplate = function() {
     //Generates LaTeX parameters file
     //Returns string with error message or "ok" if no errors
 
-    var rtnstr, tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, showStationList, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsScaleList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, CDsPDFScale, parametersBlob;
-
-    rtnstr = "ok";
+    var tableRows, layoutRows, numTableRows, tableRowID, contentField, numStations, maxProblems, numProblems, showStationList, numProblemsList, stationName, stationNameList, numKites, kitesList, zeroesList, headingList, shapeList, mapSize, sizeList, briefingWidthList, scaleList, contourList, mapFileList, mapPageList, mapxList, mapyList, CDsFileList, CDsPageList, CDsxList, CDsyList, controlsSkipped, CDsxCoord, CDsyCoord, CDsHeightList, CDsWidthList, CDsScaleList, CDsaFontList, CDsbFontList, fileName, showPointingBoxesList, pointingBoxWidthList, pointingBoxHeightList, pointingLetterFontList, pointingPhoneticFontList, stationIDFontList, checkBoxWidthList, checkBoxHeightList, checkNumberFontList, checkRemoveFontList, fileString, iterNum, CDsxCoordBase, CDsyCoordBase, CDsWidthBase, CDsHeightBase, CDsPDFScale, parametersBlob;
 
     tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
     layoutRows = document.getElementById("layoutTableBody").getElementsByTagName("tr");
@@ -855,8 +866,8 @@ tcTemplate = function() {
       //Number of kites
       contentField = tableRows[tableRowID].getElementsByClassName("kites")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The number of kites for station " + stationName + " must be an integer between 1 and 6.";
         contentField.focus();
+        throw new Error("The number of kites for station " + stationName + " must be an integer between 1 and 6.");
       } else {
         numKites = Number(contentField.value);
         kitesList += numKites;	//Don't add quotes
@@ -873,8 +884,8 @@ tcTemplate = function() {
       //Heading
       contentField = tableRows[tableRowID].getElementsByClassName("heading")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The heading of station " + stationName + " must be a number.";
         contentField.focus();
+        throw new Error("The heading of station " + stationName + " must be a number.");
       } else {
         headingList += contentField.value;	//Don't add quotes
       }
@@ -882,8 +893,8 @@ tcTemplate = function() {
       //Map shape
       contentField = tableRows[tableRowID].getElementsByClassName("mapShape")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The map shape for station " + stationName + " must be specified.";
         contentField.focus();
+        throw new Error("The map shape for station " + stationName + " must be specified.");
       } else {
         shapeList += contentField.selectedIndex;	//Don't add quotes
       }
@@ -891,11 +902,11 @@ tcTemplate = function() {
       //Map size
       contentField = tableRows[tableRowID].getElementsByClassName("mapSize")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The map size for station " + stationName + " must be > 0 and <= 12.";
         contentField.focus();
+        throw new Error("The map size for station " + stationName + " must be > 0 and <= 12.");
       }	else if (contentField.value == 0) {
-        rtnstr = "The map size for station " + stationName + " must be strictly greater than 0.";
         contentField.focus();
+        throw new Error("The map size for station " + stationName + " must be strictly greater than 0.");
       } else {
         mapSize = Number(contentField.value);
         sizeList += 0.5 * mapSize;	//Don't add quotes
@@ -905,8 +916,8 @@ tcTemplate = function() {
       //Map scale
       contentField = tableRows[tableRowID].getElementsByClassName("mapScale")[0];
       if (contentField.checkValidity() == false || contentField.value == 0) {
-        rtnstr = "The map scale for station " + stationName + " must be strictly greater than 0.";
         contentField.focus();
+        throw new Error("The map scale for station " + stationName + " must be strictly greater than 0.");
       } else {
         scaleList += contentField.value;	//Don't add quotes
       }
@@ -914,8 +925,8 @@ tcTemplate = function() {
       //Map contour interval
       contentField = tableRows[tableRowID].getElementsByClassName("contourInterval")[0];
       if (contentField.checkValidity() == false || contentField.value == 0) {
-        rtnstr = "The contour interval for station " + stationName + " must be strictly greater than 0.";
         contentField.focus();
+        throw new Error("The contour interval for station " + stationName + " must be strictly greater than 0.");
       } else {
         contourList += contentField.value;	//Don't add quotes
       }
@@ -963,8 +974,8 @@ tcTemplate = function() {
       //Station name font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("IDFontSize")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The name font size for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The name font size for station " + stationName + " must be between 0 and 29.7.");
       } else {
         stationIDFontList += "\"" + contentField.value + "cm\"";
       }
@@ -972,8 +983,8 @@ tcTemplate = function() {
       //Check box width
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("checkWidth")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The page order box width for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The page order box width for station " + stationName + " must be between 0 and 29.7.");
       } else {
         checkBoxWidthList += contentField.value;
       }
@@ -981,8 +992,8 @@ tcTemplate = function() {
       //Check box height
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("checkHeight")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The page order box height for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The page order box height for station " + stationName + " must be between 0 and 29.7.");
       } else {
         checkBoxHeightList += contentField.value;
       }
@@ -990,8 +1001,8 @@ tcTemplate = function() {
       //Check box number font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("checkFontSize")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The page number font size for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The page number font size for station " + stationName + " must be between 0 and 29.7.");
       } else {
         checkNumberFontList += "\"" + contentField.value + "cm\"";
       }
@@ -999,8 +1010,8 @@ tcTemplate = function() {
       //Check box remove text font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("removeFontSize")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The <em>Remove</em> font size for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The <em>Remove</em> font size for station " + stationName + " must be between 0 and 29.7.");
       } else {
         checkRemoveFontList += "\"" + contentField.value + "cm\"";
       }
@@ -1008,8 +1019,8 @@ tcTemplate = function() {
       //Pointing box height
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("pointHeight")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The pointing box height for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The pointing box height for station " + stationName + " must be between 0 and 29.7.");
       } else {
         pointingBoxHeightList += contentField.value;
 
@@ -1024,8 +1035,8 @@ tcTemplate = function() {
       //Pointing box letter font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("letterFontSize")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The pointing box letter font size for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The pointing box letter font size for station " + stationName + " must be between 0 and 29.7.");
       } else {
         pointingLetterFontList += "\"" + contentField.value + "cm\"";
       }
@@ -1033,8 +1044,8 @@ tcTemplate = function() {
       //Check box remove text font size
       contentField = layoutRows[tableRowID + 1].getElementsByClassName("phoneticFontSize")[0];
       if (contentField.checkValidity() == false) {
-        rtnstr = "The pointing box phonetic font size for station " + stationName + " must be between 0 and 29.7.";
         contentField.focus();
+        throw new Error("The pointing box phonetic font size for station " + stationName + " must be between 0 and 29.7.");
       } else {
         pointingPhoneticFontList += "\"" + contentField.value + "cm\"";
       }
@@ -1123,9 +1134,7 @@ tcTemplate = function() {
     fileString += checkRemoveFontList + "}}\n";
 
     //Create file
-    parametersBlob = new Blob([fileString], { type: "text/plain" });
-
-    return {str: rtnstr, file:parametersBlob};
+    return new Blob([fileString], { type: "text/plain" });
   }
 
   function downloadFile(fileBlob, fileName) {
@@ -1177,7 +1186,55 @@ tcTemplate = function() {
     document.getElementById("layoutSetAllRow").getElementsByClassName(btnClass)[0].value = defaultLayout[btnClass];
   }
 
-  function generatePDF(btn) {
+  async function generateOutput() {
+    //Prevent second button press while compiling
+    this.disabled = true;
+    try {
+      //Check PDF resources are present
+      const coursePDFFiles = document.getElementById("coursePDFSelector").files;
+      if (coursePDFFiles.length === 0) {
+        throw new Error("Course maps PDF is missing. Try selecting it again.");
+      }
+      const cdPDFFiles = document.getElementById("CDPDFSelector").files;
+      if (cdPDFFiles.length === 0) {
+        throw new Error("Control descriptions PDF is missing. Try selecting it again.");
+      }
+
+      //Make LaTeX parameters file
+      const paramFile = generateLaTeX();
+
+      //Read maps and CDs PDFs
+      const resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
+      const resourceFileArray = [paramFile, coursePDFFiles[0], cdPDFFiles[0]];
+      // Blob.arrayBuffer isn't implemented in Safari - switch to new code when available
+      // const resourceBuffers = await Promise.all(resourceFileArray.map((file) => file.arrayBuffer()));
+      const resourceBuffers = await Promise.all(resourceFileArray.map((file) => new Promise((resolve, reject) => {
+        const freader = new FileReader();
+        freader.onload = (ev) => { resolve(ev.target.result); };
+        freader.onerror = () => { reject(freader.error); };
+        freader.readAsArrayBuffer(file);
+      })));
+
+      //Start compilers - await promises later
+      await mapsCompiler.compile(resourceBuffers, resourceNames);
+      const compilerPromises = [mapsCompiler.compile(resourceBuffers, resourceNames)];
+
+      //Download a copy of parameters file to save for later
+      if (document.getElementById("autoSave").checked && !paramsSaved) {
+        downloadFile(paramFile, "TemplateParameters.tex");
+        //Indicate that parameters data is currently saved
+        paramsSaved = true;
+      }
+
+      await Promise.allSettled(compilerPromises);
+    } catch (err) {
+      document.getElementById("compileStatus").innerHTML = err;
+      console.error(err);
+    }
+    this.disabled = false;
+  }
+
+  async function generatePDF(btn) {
     var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray, texlive, pdfApply, scriptPromise, downloadFileName;
 
     async function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
@@ -1278,75 +1335,96 @@ tcTemplate = function() {
     resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
     resourceFileArray = [paramRtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
     //Load each resource file and get a URL for each
-    //Read them using promises native in Javascript
-    promiseArray = resourceFileArray.map(fileobj => {
-      return new Promise(function(resolve, reject) {
-        var filename = fileobj.name;
-        var freader = new FileReader();
-        freader.onload = function() {
-          resolve(this.result);
-        };
-        freader.onerror = reject;
-        freader.readAsDataURL(fileobj);
-      });
-    });
-    Promise.all(promiseArray).catch(err => {
-      statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
-      return Promise.reject("handled");
-    }).then(result => {
-      //Download a copy of parameters file to save for later
-      if (document.getElementById("autoSave").checked === true && paramsSaved === false) {
-        downloadFile(paramRtn.file, "TemplateParameters.tex");
+    try {
+      if (document.getElementById("coursePDFSelector").files.length === 0) {
+        throw new Error("Course maps PDF is missing. Try selecting it again.");
+      }
+      if (document.getElementById("CDPDFSelector").files.length === 0) {
+        throw new Error("Control descriptions PDF is missing. Try selecting it again.");
+      }
+      const resourceBuffers = await Promise.all(resourceFileArray.map((file) => file.arrayBuffer()));
+    // } catch (err) {
+    //   statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
+    //   btn.disabled = false
+    //   return;
+    // }
+    // promiseArray = resourceFileArray.map(fileobj => {
+    //   return new Promise(function(resolve, reject) {
+    //     var filename = fileobj.name;
+    //     var freader = new FileReader();
+    //     freader.onload = function() {
+    //       resolve(this.result);
+    //     };
+    //     freader.onerror = reject;
+    //     freader.readAsArrayBuffer(fileobj);
+    //   });
+    // });
+    // Promise.all(promiseArray).catch(err => {
+    //   statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
+    //   return Promise.reject("handled");
+    // }).then(result => {
 
-        //Indicate that parameters data is currently saved
-        paramsSaved = true;
-      }
+    //Download a copy of parameters file to save for later
+    if (document.getElementById("autoSave").checked === true && paramsSaved === false) {
+      downloadFile(paramRtn.file, "TemplateParameters.tex");
 
-      resourceURLs = result.slice(0);
-      //Load LaTeX code
-      let src;
-      switch (document.getElementById("selectTemplate").value) {
-      case "printA5onA4":
-        src = "TCTemplate.tex";
-        pdfApply = downloadPDF;
-        downloadFileName = "TCMapCards.pdf";
-        break;
-      case "YQTempO":
-        src = "temposim.tex";
-        pdfApply = downloadPNGs;
-        downloadFileName = "TCMapCards.zip";
-        break;
-      default:
-        throw new Error("Unrecognised template selected");
-      }
-      if (pdfApply === downloadPNGs) {
-        loadScript("pdfjs", "pdfjs/build/pdf.js", "pdfjs/build/pdf.worker.js");
-        loadScript("jszip", "jszip/dist/jszip.min.js");
-      }
-      return fetch(src);
-    }).then(response => {
-      if (response.ok === true) {
-        return response.text();
-      } else {
-        throw response.status;
-      }
-    }).then(sourceCode => {
-      return compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
-    }, err => {
-      if (err !== "handled") {
-        statusBox.innerHTML = "Failed to load template: " + err;
-      }
-      //Enable generate PDF button
-      return Promise.reject("handled");
-    }).then((outURL) => pdfApply(outURL, downloadFileName, statusBox, scriptPromise)).catch((err) => {
-      if (err !== "handled") {
-        statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
-      }
-    }).finally(() => {
-      //Final clean
-      texlive.terminate();
-      btn.disabled = false;
-    });
+      //Indicate that parameters data is currently saved
+      paramsSaved = true;
+    }
+
+    // resourceURLs = result.slice(0);
+    //Load LaTeX code
+    // let src;
+    switch (document.getElementById("selectTemplate").value) {
+    case "printA5onA4":
+      // src = "TCTemplate.tex";
+      pdfApply = downloadPDF;
+      downloadFileName = "TCMapCards.pdf";
+      break;
+    case "YQTempO":
+      // src = "temposim.tex";
+      pdfApply = downloadPNGs;
+      downloadFileName = "TCMapCards.zip";
+      break;
+    default:
+      throw new Error("Unrecognised template selected");
+    }
+    if (pdfApply === downloadPNGs) {
+      loadScript("pdfjs", "pdfjs/build/pdf.js", "pdfjs/build/pdf.worker.js");
+      loadScript("jszip", "jszip/dist/jszip.min.js");
+    }
+    //   return fetch(src);
+    // }).then(response => {
+    //   if (response.ok === true) {
+    //     return response.text();
+    //   } else {
+    //     throw response.status;
+    //   }
+    // }).then(sourceCode => {
+
+    const pdfURL = await mapsCompiler.compile(resourceBuffers, resourceNames);
+    // return compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
+    // }, err => {
+    //   if (err !== "handled") {
+    //     statusBox.innerHTML = "Failed to load template: " + err;
+    //   }
+    //   //Enable generate PDF button
+    //   return Promise.reject("handled");
+    await pdfApply(pdfURL, downloadFileName, statusBox);
+    // }).then((outURL) => pdfApply(outURL, downloadFileName, statusBox, scriptPromise)).catch((err) => {
+    //   if (err !== "handled") {
+    //     statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
+    //   }
+  } catch (err) {
+    statusBox.innerHTML = err;
+  } finally {
+    btn.disabled = false;
+  }
+    // }).finally(() => {
+    //   //Final clean
+    //   texlive.terminate();
+    //   btn.disabled = false;
+    // });
   }
 
   function downloadPDF(newURL, fileName, statusBox) {
@@ -1377,8 +1455,8 @@ tcTemplate = function() {
             pdfjsLib.GlobalWorkerOptions.workerSrc = workerURL;
           })
         }
-        scriptEl.addEventListener("load", resolve, { once: true, passive: true });
-        scriptEl.addEventListener("error", reject, { once: true, passive: true });
+        scriptEl.addEventListener("load", resolve, { once: true });
+        scriptEl.addEventListener("error", reject, { once: true });
         scriptEl.src = url;
         document.head.appendChild(scriptEl);
       });
@@ -1386,8 +1464,114 @@ tcTemplate = function() {
     return scriptPromises[name];
   }
 
-  async function downloadPNGs(pdfURL, fileName, statusBox, scriptPromise) {
-    statusBox.innerHTML = "Splitting into images.";
+
+
+  function updateTemplate() {
+    const templateName = this.value;
+    mapsCompiler.setTemplate(templateName);
+
+    //Show/hide sets of instructions
+    const printInstructions = document.getElementById("printInstructions");
+    const onlineInstructions = document.getElementById("onlineInstructions");
+    if (templateName === "printA5onA4") {
+      printInstructions.hidden = false;
+      onlineInstructions.hidden = true;
+    } else {
+      printInstructions.hidden = true;
+      onlineInstructions.hidden = false;
+    }
+  }
+
+  class Compiler {
+    constructor(obj) {
+      this.statusBox = obj.statusBox;
+      this.downloadElement = obj.downloadElement;
+      this.resetLog();
+    }
+
+    async compile(resourceBuffers, resourceNames) {
+      await this.texlive.orError(Promise.all(resourceBuffers.map((arrayBuffer, index) => this.texlive.FS_createDataFile("/", resourceNames[index], arrayBuffer, true, false))));
+      await this.postCompile(await this.texlive.compile(this.texsrc));
+    }
+
+    downloadOutput(newURL) {
+      //Revoke old URL
+      const oldURL = this.downloadElement.href;
+      if (oldURL) {
+        URL.revokeObjectURL(oldURL);
+      }
+      this.downloadElement.href = newURL;
+      this.downloadElement.download = this.downloadFileName;
+      this.downloadElement.hidden = false;
+      this.downloadElement.click();
+      this.statusBox.innerHTML = "Map cards produced successfully.";
+    }
+
+    logEvent(msg) {
+      //Called everytime a status message is outputted by TeXLive. Worker thread will crash shortly after an error, so all handling to be done here.
+      console.log(msg);
+      // this.logContent.push(msg);
+      // this.logNumEvents++;
+      // if (btn.disabled === true) {
+      //   if (msg.includes("no output PDF file produced!")) {
+      //     //TeXLive encountered an error -> handle it
+      //     if (this.logContent[this.logNumEvents - 3] === "!pdfTeX error: /latex (file ./Maps.pdf): PDF inclusion: required page does not ") {
+      //       this.statusBox.innerHTML = "Failed to compile map cards. The PDF of maps does not contain enough pages. Please follow the instructions in step 8 carefully and try again.";
+      //     } else if (this.logContent[this.logNumEvents - 3] === "!pdfTeX error: /latex (file ./CDs.pdf): PDF inclusion: required page does not e") {
+      //       this.statusBox.innerHTML = "Failed to compile map cards. The PDF of control descriptions does not contain enough pages. Please follow the instructions in step 9 carefully and try again.";
+      //     } else {
+      //       this.statusBox.innerHTML = "Failed to compile map cards due to an unknown error. Please seek assistance.";
+      //       //Display log
+      //       let logStr = "";
+      //       for (let rowId = 0; rowId < numEvents; rowId++) {
+      //         logStr += logContent[rowId] + '\n';
+      //       }
+      //       const logBlob = new Blob([logStr], { type: "text/plain" });
+      //       //Revoke old URL
+      //       const downloadElement = document.getElementById("viewLog");
+      //       let logURL = downloadElement.href;
+      //       if (logURL) {
+      //         URL.revokeObjectURL(logURL);
+      //       }
+      //       logURL = URL.createObjectURL(logBlob);
+      //       downloadElement.href = logURL;
+      //       downloadElement.hidden = false;
+      //     }
+      //     // throw new Error("Compile error");
+      //   } else {
+      //     this.statusBox.innerHTML = "Preparing map cards (" + numEvents.toString() + ").";
+      //   }
+      // }
+    }
+
+    resetLog() {
+      this.logContent = [];
+      this.logNumEvents = 0;
+    }
+    async startTeXLive() {
+      try {
+        await loadScript("texlive", "texlive.js/pdftexlight.js");
+        TeXLive.workerFolder = "texlive.js/";
+        this.texlive = new TeXLive({
+          onlog: this.logEvent
+        });
+        //Fetch template ready for use
+        TeXLive.getFile(this.texsrc);
+      } catch (err) {
+        this.statusBox.innerHTML = "Loading error: " + err;
+        console.log(err);
+      }
+    }
+  }
+
+  const mapsCompiler = new Compiler({
+    statusBox: document.getElementById("compileStatus"),
+    downloadElement: document.getElementById("savePDF")
+  });
+
+  //Do not use arrow functions when binding methods as properties
+  mapsCompiler.makePNGs = async function(pdfURL) {
+    this.statusBox.innerHTML = "Splitting into images.";
 
     //Create objects
     const canvasFull = document.createElement("canvas");
@@ -1487,7 +1671,7 @@ tcTemplate = function() {
           const blob = await new Promise((resolve) => { canvasCropped.toBlob(resolve); });
           imPromises.push(zip.file("map-" + stationName + "." + taskId + "z.png", blob));
 
-          statusBox.innerHTML = "Splitting into images (" + (pageNum / numPages * 100).toFixed() + "%).";
+          this.statusBox.innerHTML = "Splitting into images (" + (pageNum / numPages * 100).toFixed() + "%).";
           pageNum++;
         }
       } else {
@@ -1496,58 +1680,33 @@ tcTemplate = function() {
     }
     await Promise.all(imPromises);
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    downloadPDF(URL.createObjectURL(zipBlob), fileName, statusBox);
+    this.downloadOutput(URL.createObjectURL(zipBlob));
   }
 
-  function updateTemplate() {
-    switch (this.value) {
+  mapsCompiler.setTemplate = function(name) {
+    switch (name) {
     case "printA5onA4":
-      document.getElementById("printInstructions").hidden = false;
-      document.getElementById("yqTempOInstructions").hidden = true;
+      this.texsrc = "TCTemplate.tex";
+      this.postCompile = this.downloadOutput;
+      this.downloadFileName = "TCMapCards.pdf";
       break;
-    case "YQTempO":
-      document.getElementById("printInstructions").hidden = true;
-      document.getElementById("yqTempOInstructions").hidden = false;
+    case "onlineTempO":
+      this.texsrc = "onlinetempo.tex";
+      this.postCompile = makePNGs;
+      this.downloadFileName = "TCMapCards.zip";
       break;
+    default:
+      throw new ReferenceError("Template " + name + " not recognised");
     }
-  }
-
-  class Compiler {
-    constructor(obj) {
-      this.startBtn = obj.startBtn;
-      this.statusBox = obj.statusBox;
-      this.createTeXLive(obj);
+    if (this.texlive !== undefined) {
+      //Fetch template ready for use - async, so won't block code
+      TeXLive.getFile(this.texsrc);
     }
-
-    async createTeXLive(obj) {
-      try {
-        await Compiler.texliveLoaded;
-        this.texlive = new TeXLive({
-          texURL: obj.texsrc,
-          workerFolder: obj.folder
-        });
-        await this.texlive.ready;
-        this.startBtn.disabled = false;
-      } catch (err) {
-        alert(err.message);
-        alert(err.stack);
-        this.statusBox.innerHTML = "Loading error: " + err.message;
-      }
-    }
-  }
-
-  //Load TeXLive
-  Compiler.texliveLoaded = loadScript("texlive", "texlive.js/pdftexlight.js");
-
-  const mapsCompiler = new Compiler({
-    texsrc: "TCTemplate.tex",
-    folder: "texlive.js/",
-    startBtn: document.getElementById("compileLaTeXBtn"),
-    statusBox: document.getElementById("compileStatus")
-  });
+  };
 
   document.getElementById("selectTemplate").addEventListener("change", updateTemplate);
   updateTemplate.call(document.getElementById("selectTemplate"));
+  document.getElementById("compileLaTeXBtn").addEventListener("click", generateOutput, { passive: true });
 
   //Make required functions globally visible
   return {

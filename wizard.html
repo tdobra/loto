@@ -158,10 +158,15 @@
         <li>Select template
           <select id="selectTemplate">
             <option value="printA5onA4" selected="selected">Print 2 × A5 cards on A4 paper</option>
-            <option value="YQTempO">Online TempO</option>
+            <option value="onlineTempO">Online TempO</option>
           </select>
         </li>
-        <li><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" />&ensp;<span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards again</a> <a id="viewLog" target="log">View debug log</a></li>
+        <li>
+          <button id="compileLaTeXBtn" type="button">Generate map cards</button>
+          <span id="compileStatus"></span>
+          <a id="savePDF" download="TCMapCards.pdf">Save map cards again</a>
+          <a id="viewLog" target="log">View debug log</a>
+        </li>
       </ol>
       <ol id="printInstructions" start="14">
         <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page. See <a href="help/printingadjustments.html" target="help">instructions for professional printing</a>.</li>
@@ -169,7 +174,7 @@
         <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
         <li>Have a successful competition!</li>
       </ol>
-      <div id="yqTempOInstructions">
+      <div id="onlineInstructions">
         <ol start="14">
           <li>Unzip the files.</li>
           <li>Upload the files into <a href="http://www.yq.cz/trail-o/TempO/" target="prerequisites">TempO Simulator</a>.</li>
