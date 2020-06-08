@@ -754,7 +754,7 @@ tcTemplate = (() => {
           //Debug circles enabled?
           startPos = fileString.indexOf("\\def\\AdjustMode{");
           if (startPos >= 0) {
-            subString = fileString.substr(startPos + 16, 1);
+            subString = fileString.slice(startPos + 16, startPos + 17);
             if (subString == "1") {
               document.getElementById("debugCircle").checked = true;
             } else {
@@ -1509,7 +1509,9 @@ tcTemplate = (() => {
     async compile(resourceBuffers, resourceNames) {
       try {
         this.statusBox.innerHTML = "Compiling PDFs (0%).";
-        await this.postCompile(await this.texlive.compile(this.texsrc, resourceBuffers, resourceNames));
+        const resourceStrings = resourceBuffers.map((buffer) => TeXLive.arrayBufferToString(buffer));
+        const pdfURL = await this.texlive.compile(this.texsrc, resourceStrings, resourceNames);
+        await this.postCompile(pdfURL);
       } catch (err) {
         this.statusBox.innerHTML = err;
         console.error(err);
