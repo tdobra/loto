@@ -426,21 +426,24 @@ tcTemplate = function() {
             }
 
             //Insert row in correct position in tables for course order
+            //existingRows is a list of course order spans, which are 2nd generation descendants of table rows
             existingRows = document.getElementById("courseTableBody").getElementsByClassName("courseOrder");
-            existingRowID = 0;
-            for (;;) {
+            for (existingRowID = 0;; existingRowID++) {
               existingRowID++;
-              existingRow = existingRows[existingRowID];
+              //One header row in main table
+              existingRow = existingRows[existingRowID + 1];
               if (!existingRow) {
+                //Run out of rows, so create new row at end
                 document.getElementById("courseTableBody").appendChild(tableRowNode);
                 document.getElementById("layoutTableBody").appendChild(layoutRowNode);
                 break;	//No more rows to consider
               }
+              //Is the course order of this existing row greater than the new row? If yes, insert before. If no, iterate.
               if (Number(existingRow.innerHTML) > Number(courseNodes[courseNodesId].getAttribute("order"))) {
-                document.getElementById("courseTableBody").insertBefore(tableRowNode, existingRow.parentElement);
-                //Need to update existingRow to match layout table. There is one extra header row in the tbody.
-                existingRow = document.getElementById("layoutTableBody").getElementsByTagName("tr")[existingRowID + 1];
-                document.getElementById("layoutTableBody").insertBefore(layoutRowNode, existingRow.parentElement);
+                document.getElementById("courseTableBody").insertBefore(tableRowNode, existingRow.parentElement.parentElement);
+                //Need to update existingRow to match layout table. There are two header rows in the tbody.
+                existingRow = document.getElementById("layoutTableBody").getElementsByTagName("tr")[existingRowID + 2];
+                document.getElementById("layoutTableBody").insertBefore(layoutRowNode, existingRow);
                 break;	//Current row needs to be inserted before existingRow
               }
             }
@@ -448,6 +451,7 @@ tcTemplate = function() {
         }
       } catch (err) {
         ppenStatusBox.innerHTML = "Error reading Purple Pen file: " + err;
+        console.error(err);
         return;
       }
 
