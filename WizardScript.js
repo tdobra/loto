@@ -1351,9 +1351,9 @@ const tcTemplate = (() => {
       },
       pdfjs: {
         src: "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.min.js",
-        onready: () => {
+        onready: async () => {
           pdfjsLib = window["pdfjs-dist/build/pdf"];
-          pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.worker.min.js";
+          pdfjsLib.GlobalWorkerOptions.workerSrc = await TeXLive.getFile("https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.worker.min.js");
         }
       },
       jszip: {
@@ -1367,9 +1367,10 @@ const tcTemplate = (() => {
       if (source.promise === undefined) {
         source.promise = new Promise((resolve, reject) => {
           const scriptEl = document.createElement("script");
-          //Call onready function before declaring script loaded
-          if (source.onready !== undefined) { scriptEl.addEventListener("load", source.onready, { once:true }); }
-          scriptEl.addEventListener("load", resolve, { once: true });
+          scriptEl.addEventListener("load", async () => {
+            if (source.onready !== undefined) { await source.onready(); }
+            resolve();
+          }, { once: true });
           scriptEl.addEventListener("error", reject, { once: true });
           scriptEl.src = source.src;
           document.head.appendChild(scriptEl);
