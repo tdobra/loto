@@ -3,23 +3,21 @@
 //Prevent sloppy programming and throw more errors
 "use strict";
 
-//Define variables
-var tcTemplate;	//Namespace
-
 //Check browser supports required APIs
 //Items to check:
 //HTMLCanvasElement.toBlob() (Edge >= 79, Firefox >= 19, Safari >= 11)
 //details (Edge >= 79, Firefox >= 49, Safari >= 6)
-//async (Edge >= 15, Firefox >= 52, Safari >= 10.1)
-if (window.FileReader && window.DOMParser && window.Blob && window.URL && window.fetch) {
+//async (Edge >= 15, Firefox >= 52, Safari >= 10.1) - no easy way to check and very few browswers to trip up
+try {
+  if (
+    typeof document.createElement("canvas").toBlob !== "function" ||
+    typeof document.createElement("details").open !== "boolean"
+  ) {
+    throw undefined;
+  }
   document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
-} else {
+} catch (err) {
   document.getElementById("mainView").hidden = true;
-}
-
-//MS Edge doesn't always work - <details> tag not implemented
-if ('open' in document.createElement('details')) {
-  document.getElementById("MSEdgeWarning").hidden = true;
 }
 
 document.getElementById("stationProperties").hidden = true;
@@ -27,7 +25,7 @@ document.getElementById("savePDF").hidden = true;
 document.getElementById("viewLog").hidden = true;
 
 //Keep all functions private and put those with events in HTML tags in a namespace
-tcTemplate = (() => {
+const tcTemplate = (() => {
   var pdfjsLib;
 
   //Keep track of whether an input file has been changed in a table to disable autosave
@@ -1180,239 +1178,6 @@ tcTemplate = (() => {
     document.getElementById("layoutSetAllRow").getElementsByClassName(btnClass)[0].value = defaultLayout[btnClass];
   }
 
-  async function generatePDF(btn) {
-    var statusBox, paramRtn, resourceNames, resourceFileArray, resourceURLs, promiseArray, texlive, pdfApply, scriptPromise, downloadFileName;
-
-    async function compileLaTeX(source_code, resourceURLs, resourceNames, btn) {
-      var pdftex, texliveEvent;
-
-      texliveEvent = (function(msg) {
-        //Called everytime a status message is outputted by TeXLive. Worker thread will crash shortly after an error, so all handling to be done here.
-        var logContent, numEvents;
-        logContent = [];
-        numEvents = 0;
-        return msg => {
-          var logStr, rowId, logBlob, downloadElement, logURL;
-          console.log(msg);
-          logContent.push(msg);
-          numEvents++;
-          if (btn.disabled === true) {
-            if (msg.includes("no output PDF file produced!")) {
-              //TeXLive encountered an error -> handle it
-              if (logContent[numEvents-3] === "!pdfTeX error: /latex (file ./Maps.pdf): PDF inclusion: required page does not ") {
-                statusBox.innerHTML = "Failed to compile map cards. The PDF of maps does not contain enough pages. Please follow the instructions in step 8 carefully and try again.";
-              } else if (logContent[numEvents-3] === "!pdfTeX error: /latex (file ./CDs.pdf): PDF inclusion: required page does not e") {
-                statusBox.innerHTML = "Failed to compile map cards. The PDF of control descriptions does not contain enough pages. Please follow the instructions in step 9 carefully and try again.";
-              } else {
-                statusBox.innerHTML = "Failed to compile map cards due to an unknown error. Please seek assistance.";
-                //Display log
-                logStr = "";
-                for (rowId = 0; rowId < numEvents; rowId++) {
-                  logStr += logContent[rowId] + '\n';
-                }
-                logBlob = new Blob([logStr], { type: "text/plain" });
-                //Revoke old URL
-                downloadElement = document.getElementById("viewLog");
-                logURL = downloadElement.href;
-                if (logURL) {
-                  URL.revokeObjectURL(logURL);
-                }
-                logURL = URL.createObjectURL(logBlob);
-                downloadElement.href = logURL;
-                downloadElement.hidden = false;
-              }
-              throw new Error("Compile error");
-            } else {
-              statusBox.innerHTML = "Preparing map cards (" + numEvents.toString() + ").";
-            }
-          }
-          return logContent;
-        };
-      }());
-
-      //Update status
-      statusBox.innerHTML = "Preparing map cards. This may take a minute.";
-
-      texlive = new TeXLive("texlive.js/");
-      pdftex = texlive.pdftex;
-
-      //Use promises of promise.js
-      await pdftex.set_TOTAL_MEMORY(80*1024*1024);
-      const pdf_dataurl = await promise.join(resourceNames.map(function(name, index) {
-        return pdftex.FS_createLazyFile('/', name, resourceURLs[index], true, false);
-      })).then(function() {
-        pdftex.on_stdout = texliveEvent;
-        pdftex.on_stderr = texliveEvent;
-        return pdftex.compile(source_code);
-      });
-      if (pdf_dataurl === false) {
-        throw new Error("PDF compile failed");
-      }
-      const outfile = await pdftex.FS_readFile("./input.pdf");
-      //Create data URL, but first need file stream as array buffer
-      const outLen = outfile.length;
-      const outArray = new Uint8Array(outLen);
-      for (let index = 0; index < outLen; index++) {
-        //Populate array with unicode value of each character
-        outArray[index] = outfile.charCodeAt(index);
-      }
-      const outBlob = new Blob([outArray], { type: "application/pdf" });
-      return URL.createObjectURL(outBlob);
-    }
-
-    //Disable button to avoid double press
-    btn.disabled = true;
-
-    //Status line
-    statusBox = document.getElementById("compileStatus");
-    statusBox.innerHTML = "Loading files. If this message persists, there is a problem. Seek assistance.";
-    document.getElementById("savePDF").hidden = true;
-    document.getElementById("viewLog").hidden = true;
-
-    //Make LaTeX parameters file
-    paramRtn = generateLaTeX();
-    if (paramRtn.str !== "ok") {
-      statusBox.innerHTML = paramRtn.str;
-      btn.disabled = false;
-      return;
-    }
-
-    //Read maps and CDs PDFs
-    resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
-    resourceFileArray = [paramRtn.file, document.getElementById("coursePDFSelector").files[0], document.getElementById("CDPDFSelector").files[0]];
-    //Load each resource file and get a URL for each
-    try {
-      if (document.getElementById("coursePDFSelector").files.length === 0) {
-        throw new Error("Course maps PDF is missing. Try selecting it again.");
-      }
-      if (document.getElementById("CDPDFSelector").files.length === 0) {
-        throw new Error("Control descriptions PDF is missing. Try selecting it again.");
-      }
-      const resourceBuffers = await Promise.all(resourceFileArray.map((file) => file.arrayBuffer()));
-    // } catch (err) {
-    //   statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
-    //   btn.disabled = false
-    //   return;
-    // }
-    // promiseArray = resourceFileArray.map(fileobj => {
-    //   return new Promise(function(resolve, reject) {
-    //     var filename = fileobj.name;
-    //     var freader = new FileReader();
-    //     freader.onload = function() {
-    //       resolve(this.result);
-    //     };
-    //     freader.onerror = reject;
-    //     freader.readAsArrayBuffer(fileobj);
-    //   });
-    // });
-    // Promise.all(promiseArray).catch(err => {
-    //   statusBox.innerHTML = "Either the course maps PDF or control descriptions PDF file is missing. Try selecting them again.";
-    //   return Promise.reject("handled");
-    // }).then(result => {
-
-    //Download a copy of parameters file to save for later
-    if (document.getElementById("autoSave").checked === true && paramsSaved === false) {
-      downloadFile(paramRtn.file, "TemplateParameters.tex");
-
-      //Indicate that parameters data is currently saved
-      paramsSaved = true;
-    }
-
-    // resourceURLs = result.slice(0);
-    //Load LaTeX code
-    // let src;
-    switch (document.getElementById("selectTemplate").value) {
-    case "printA5onA4":
-      // src = "TCTemplate.tex";
-      pdfApply = downloadPDF;
-      downloadFileName = "TCMapCards.pdf";
-      break;
-    case "YQTempO":
-      // src = "temposim.tex";
-      pdfApply = downloadPNGs;
-      downloadFileName = "TCMapCards.zip";
-      break;
-    default:
-      throw new Error("Unrecognised template selected");
-    }
-    if (pdfApply === downloadPNGs) {
-      loadScript("pdfjs");
-      loadScript("jszip");
-    }
-    //   return fetch(src);
-    // }).then(response => {
-    //   if (response.ok === true) {
-    //     return response.text();
-    //   } else {
-    //     throw response.status;
-    //   }
-    // }).then(sourceCode => {
-
-    const pdfURL = await mapsCompiler.compile(resourceBuffers, resourceNames);
-    // return compileLaTeX(sourceCode, resourceURLs, resourceNames, btn);
-    // }, err => {
-    //   if (err !== "handled") {
-    //     statusBox.innerHTML = "Failed to load template: " + err;
-    //   }
-    //   //Enable generate PDF button
-    //   return Promise.reject("handled");
-    await pdfApply(pdfURL, downloadFileName, statusBox);
-    // }).then((outURL) => pdfApply(outURL, downloadFileName, statusBox, scriptPromise)).catch((err) => {
-    //   if (err !== "handled") {
-    //     statusBox.innerHTML = "Failed to compile map cards. Please seek assistance.";
-    //   }
-  } catch (err) {
-    statusBox.innerHTML = err;
-    console.error(err);
-  } finally {
-    btn.disabled = false;
-  }
-    // }).finally(() => {
-    //   //Final clean
-    //   texlive.terminate();
-    //   btn.disabled = false;
-    // });
-  }
-
-  // function downloadPDF(newURL, fileName, statusBox) {
-  //   const downloadElement = document.getElementById("savePDF");
-  //   //Revoke old URL
-  //   const oldURL = downloadElement.href;
-  //   if (oldURL) {
-  //     URL.revokeObjectURL(oldURL);
-  //   }
-  //   downloadElement.href = newURL;
-  //   downloadElement.download = fileName;
-  //   downloadElement.hidden = false;
-  //   downloadElement.click();
-  //
-  //   statusBox.innerHTML = "Map cards produced successfully and are now in your downloads folder.";
-  // }
-
-  // function loadScript(name, url, workerURL) {
-  //   //Load script for later
-  //   if (scriptPromises[name] === undefined) {
-  //     scriptPromises[name] = new Promise((resolve, reject) => {
-  //       const scriptEl = document.createElement("script");
-  //       if (name === "pdfjs") {
-  //         scriptEl.addEventListener("load", () => {
-  //           //Create shortcut to access PDF.js exports
-  //           pdfjsLib = window["pdfjs-dist/build/pdf"];
-  //           //The workerSrc property shall be specified
-  //           pdfjsLib.GlobalWorkerOptions.workerSrc = workerURL;
-  //         })
-  //       }
-  //       scriptEl.addEventListener("load", resolve, { once: true });
-  //       scriptEl.addEventListener("error", reject, { once: true });
-  //       scriptEl.src = url;
-  //       document.head.appendChild(scriptEl);
-  //     });
-  //   }
-  //   return scriptPromises[name];
-  // }
-
-
-
   function updateTemplate() {
     const templateName = this.value;
     mapsCompiler.setTemplate(templateName);
@@ -1591,7 +1356,7 @@ tcTemplate = (() => {
           pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.worker.min.js";
         }
       },
-      zipjs: {
+      jszip: {
         src: "https://cdn.jsdelivr.net/npm/jszip@3.4.0/dist/jszip.min.js"
       }
     }
@@ -1603,7 +1368,7 @@ tcTemplate = (() => {
         source.promise = new Promise((resolve, reject) => {
           const scriptEl = document.createElement("script");
           //Call onready function before declaring script loaded
-          if (source.onready !== undefined) { scriptEl.addEventListener("load", onready, { once:true }); }
+          if (source.onready !== undefined) { scriptEl.addEventListener("load", source.onready, { once:true }); }
           scriptEl.addEventListener("load", resolve, { once: true });
           scriptEl.addEventListener("error", reject, { once: true });
           scriptEl.src = source.src;
@@ -1743,7 +1508,7 @@ tcTemplate = (() => {
       break;
     case "onlineTempO":
       this.texsrc = "onlinetempo.tex";
-      this.postCompile = makePNGs;
+      this.postCompile = this.makePNGs;
       this.downloadFileName = "TCMapCards.zip";
       break;
     default:
@@ -1767,7 +1532,6 @@ tcTemplate = (() => {
     setAllCourses: setAllCourses,
     resetAllLayout: resetAllLayout,
     setAllLayout: setAllLayout,
-    resetField: resetField,
-    generatePDF: generatePDF
+    resetField: resetField
   };
 })();
