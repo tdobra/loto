@@ -1207,7 +1207,6 @@ const tcTemplate = (() => {
       btn.disabled = true;
       try {
         mapsCompiler.resetStatus();
-        mapsCompiler.statusBox.innerHTML = "Preparing to generate maps.";
 
         //Check PDF resources are present
         const coursePDFFiles = document.getElementById("coursePDFSelector").files;
@@ -1220,6 +1219,7 @@ const tcTemplate = (() => {
         }
 
         //Make LaTeX parameters file
+        mapsCompiler.statusBox.innerHTML = "Validating station data.";
         const paramFile = generateLaTeX();
 
         //Read maps and CDs PDFs
@@ -1244,14 +1244,6 @@ const tcTemplate = (() => {
           paramsSaved = true;
         }
 
-        //Load prequisities for post-processing
-        if (mapsCompiler.postCompile === mapsCompiler.downloadPNGs) {
-          loadScript("pdfjs");
-          loadScript("jszip");
-        }
-        //Scripts are only loaded if required
-        var pdfjsLib;
-
         await Promise.allSettled(compilerPromises);
       } catch (err) {
         mapsCompiler.statusBox.innerHTML = err;
@@ -1273,9 +1265,11 @@ const tcTemplate = (() => {
 
     async compile(resourceBuffers, resourceNames) {
       try {
-        this.statusBox.innerHTML = "Compiling PDFs (0%).";
+        this.statusBox.innerHTML = "Reading PDFs.";
         const resourceStrings = resourceBuffers.map((buffer) => TeXLive.arrayBufferToString(buffer));
+        this.statusBox.innerHTML = "Compiling PDFs (0%).";
         const pdfURL = await this.texlive.compile(this.texsrc, resourceStrings, resourceNames);
+        this.statusBox.innerHTML = "Compiling PDFs (100%).";
         await this.postCompile(pdfURL);
       } catch (err) {
         this.statusBox.innerHTML = err;
@@ -1347,34 +1341,70 @@ const tcTemplate = (() => {
     //Download and store each required script
     const sources = {
       texlive: {
-        src: "texlive.js/pdftexlight.js"
+        label: "TeXLive",
+        src: "texlive.js/pdftexlight.js",
+        remotePath: ""
       },
       pdfjs: {
-        src: "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.min.js",
-        onready: async () => {
+        label: "PDF.js",
+        src: "pdf.min.js",
+        remotePath: "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/",
+        onready: async (remotePath) => {
           pdfjsLib = window["pdfjs-dist/build/pdf"];
-          pdfjsLib.GlobalWorkerOptions.workerSrc = await TeXLive.getFile("https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.worker.min.js");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = await TeXLive.getFile(remotePath + "pdf.worker.min.js");
         }
       },
       jszip: {
-        src: "https://cdn.jsdelivr.net/npm/jszip@3.4.0/dist/jszip.min.js"
+        label: "JSZip",
+        src: "jszip.min.js",
+        remotePath: "https://cdn.jsdelivr.net/npm/jszip@3.4.0/dist/"
       }
     }
 
-    return (name) => {
-      const source = sources[name];
-      if (typeof source === "undefined") { throw new ReferenceError("Requested load of unrecognised script: " + name); }
+    function addToDOM(source, useRemote) {
+      let remotePath;
+      if (useRemote) {
+        remotePath = source.remotePath;
+      } else {
+        remotePath = "";
+      }
+      return new Promise((resolve, reject) => {
+        const scriptEl = document.createElement("script");
+        scriptEl.addEventListener("load", async () => {
+          if (typeof onready === "function") { await source.onready(); }
+          resolve();
+        }, { once: true });
+        scriptEl.addEventListener("error", reject, { once: true });
+        scriptEl.src = remotePath + source.src;
+        document.head.appendChild(scriptEl);
+      });
+    }
+
+    return async (scriptName) => {
+      const source = sources[scriptName];
+      if (typeof source === "undefined") { throw new ReferenceError("Requested load of unrecognised script: " + scriptName); }
       if (source.promise === undefined) {
-        source.promise = new Promise((resolve, reject) => {
-          const scriptEl = document.createElement("script");
-          scriptEl.addEventListener("load", async () => {
-            if (source.onready !== undefined) { await source.onready(); }
-            resolve();
-          }, { once: true });
-          scriptEl.addEventListener("error", reject, { once: true });
-          scriptEl.src = source.src;
-          document.head.appendChild(scriptEl);
-        });
+        try {
+          //Get script from CDN
+          source.promise = addToDOM(source, true);
+          await source.promise;
+        } catch (err) {
+          try {
+            //Get local copy
+            source.promise = addToDOM(source, false);
+            await source.promise;
+          } catch (err) {
+            //If running locally, ask user to download missing file
+            let msg;
+            if (location.hostname.includes("tdobra.github.io")) {
+              msg = "Failed to download script: " + source.label;
+            } else {
+              //Include link to help file
+              msg = "Need to <a href=\"help/security.html#cdnscripts\" target=\"help\" rel=\"help\">download scripts</a> for " + source.label + " to root folder";
+            }
+            source.promise = Promise.reject(new Error(msg));
+          }
+        }
       }
       return source.promise;
     };
@@ -1388,7 +1418,7 @@ const tcTemplate = (() => {
 
   //Do not use arrow functions when binding methods as properties
   mapsCompiler.makePNGs = async function(pdfURL) {
-    this.statusBox.innerHTML = "Splitting into images.";
+    this.statusBox.innerHTML = "Preparing to split into images.";
 
     //Create objects
     const canvasFull = document.createElement("canvas");
@@ -1408,6 +1438,7 @@ const tcTemplate = (() => {
     await loadScript("jszip");
     const zip = new JSZip();
 
+    this.statusBox.innerHTML = "Splitting into images (0%).";
     for (let stationId = 1; stationId <= numStations; stationId++) {
       const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].innerHTML);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
@@ -1511,6 +1542,9 @@ const tcTemplate = (() => {
       this.texsrc = "onlinetempo.tex";
       this.postCompile = this.makePNGs;
       this.downloadFileName = "TCMapCards.zip";
+      //Load prequisities for post-processing
+      loadScript("pdfjs");
+      loadScript("jszip");
       break;
     default:
       throw new ReferenceError("Template " + name + " not recognised");

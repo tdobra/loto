@@ -41,3 +41,7 @@ details {
 summary, .setAll {
   background-color: #F56600;
 }
+
+ol ol {
+  list-style-type: lower-roman;
+}
