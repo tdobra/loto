@@ -23,13 +23,13 @@
     <h3>Security Statement</h3>
     <p>TCTemplate is secure, so it is very difficult for a hacker to steal your competition maps. Purple Pen (used for map and control description preparation) is third-party software that is not known to transfer your data across the internet. The TCTemplate web wizard is delivered over the internet using a secure connection and only the author is able to change the version of the software presented, so tampering of the code is very unlikely. Although you select your competition map files from your computer and the web page reads them, all of this is performed locally on your computer and no data is uploaded to the internet. The final step of compiling the LaTeX file is performed using third-party software, either on a secure website (recommended) or locally on your computer (advanced users), so should be secure.</p>
     <h3>Extra Security/Running Offline</h3>
-    <p>For extra security, it is possible to download all the software to your computer and prepare the map cards locally with your computer disconnected from the internet. Running offline is also useful when assisting with software development. Instructions:</p>
+    <p>For extra security, it is possible to download the software to your computer and prepare printed map cards locally with your computer disconnected from the internet. However, the online TempO template cannot be run offline, because it depends on pdf.js and jszip, which are downloaded at runtime from other servers. Running offline is also useful when assisting with software development. Instructions:</p>
     <ol>
       <li>
         Download the source code:
         <ul>
           <li>Software developers (and those who know about Git): Install <a href="https://githowto.com" target="installGit">Git</a>, then open the terminal, use the <code>cd</code> command to navigate to the target folder and run <code>git clone --recursive https://github.com/tdobra/tctemplate.git</code>.</li>
-          <li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">main ZIP</a>, then download and extract <a href="https://github.com/tdobra/texlive.js/archive/master.zip" download="texlive.js.zip">TeX Live</a> into the <code>texlive.js</code> folder, and then download and extract <a href="https://github.com/stackp/promisejs/archive/2ac90b7c04cf3095d58659649b98d66a3e5ad2f2.zip" download="promisejs.zip">promisejs</a> into the <code>promisejs</code> folder. Take care to avoid double subfolders. It is necessary to repeat these steps when installing updates.</li>
+          <li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">main ZIP</a>, then download and extract <a href="https://github.com/tdobra/texlive.js/archive/master.zip" download="texlive.js.zip">TeX Live</a> into the <code>texlive.js</code> folder. Take care to avoid double subfolders. It is necessary to repeat these steps when installing updates.</li>
         </ul>
       </li>
       <li>
@@ -72,8 +72,8 @@
     </ol>
   </main>
   <footer>
-    <p class="right">Last updated (UTC): 2nd November 2019 23:20</p>
-    <p class="right">Copyright (c) 2017-19 TCTemplate contributors, maintained by Tom Dobra: <a href="license.html">view license</a></p>
+    <p class="right">Last updated (UTC): 9<sup>th</sup> June 2020 17:35</p>
+    <p class="right">Copyright (c) 2017-20 TCTemplate contributors, maintained by Tom Dobra: <a href="license.html">view license</a></p>
   </footer>
 </body>
 </html>
