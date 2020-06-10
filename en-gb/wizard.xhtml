@@ -2,6 +2,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
 <head>
   <script src="headerfooter.js"></script>
+  <script src="messages.js" defer="defer"></script>
+  <script src="../wizard.js" defer="defer"></script>
   <!--Reserved for editing in Javascript to show/hide all elements within a class-->
   <style id="showSetAllCSS"></style>
   <style id="showAutoCSS"></style>
@@ -11,8 +13,7 @@
 <body>
   <header>
     <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
-    <p id="missingAPIs">Web browser does not support required APIs, or Javascript is disabled. Try updating your browser and/or enabling Javascript.</p>
-    <p id="MSEdgeWarning">Your browser is not supported and errors may occur. Try updating your browser to the latest version or use a different one.</p>
+    <p id="missingAPIs">Error: Web browser does not support required APIs, or Javascript is disabled. Need to update to newer browser to use TCTemplate.</p>
   </header>
   <nav class="right"><a href="help/index.xhtml" target="help" rel="help">Help</a> <a href="index.xhtml">Home</a></nav>
   <main id="mainView">
@@ -26,8 +27,8 @@
         <li>Move the purple number labelling the control out of the field of view. (At the time of writing, Purple Pen does not permit this label to be removed, which would be preferable here.)</li>
         <li>Set the print area for all courses (under the File menu) to have 0 margin, limit the printable area to the page size and untick <em>Set Print Area Automatically</em>. Select a paper size (custom size if necessary) that is large enough to include all parts of the map that are to be printed. Move the print area to cover all desired parts of the map and click done. (Each course/map does not need to have the same print area, although the author considers it easier to do so.)</li>
         <li>Create a single PDF of all the courses using File->Create PDFs->Courses and choosing to have one copy of each course all in a single PDF. Select all courses, including those not intended to be printed, but not the all controls map. Select <em>CMYK</em> as the colour model. Upload the maps PDF: <input type="file" id="coursePDFSelector" accept=".pdf" /></li>
-        <li>Create a single PDF of all the control descriptions using File->Create PDFs->Descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Leave the box size at the default of 7 mm, and leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
-        <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /></li>
+        <li>Create a single PDF of all the control descriptions using File->Create PDFs->Descriptions. Choose fill one page with multiple copies of each course. Select all courses, including those not intended to be printed, but not the all controls. Choose a PDF printer with A4 page size. Leave the box size at the default of 6 mm, and leave the page margins at the default of 12.7 mm on all sides (appears as 13 mm in the main dialog). Upload the descriptions PDF: <input type="file" id="CDPDFSelector" accept=".pdf" /></li>
+        <li>Save the Purple Pen file, then upload it to this wizard: <input type="file" id="ppenSelector" accept=".ppen" onchange="tcTemplate.loadppen(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadppen(document.getElementById('ppenSelector'))" /> <span id="ppenStatus"></span></li>
       </ol>
     </section>
 
@@ -319,7 +320,7 @@
       </details>
 
       <ul>
-        <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /></li>
+        <li>Open station data: <input type="file" id="texSelector" accept=".tex" onchange="tcTemplate.loadTeX(this)" /><input type="button" value="Reload" onclick="tcTemplate.loadTeX(document.getElementById('texSelector'))" /> <span id="texReadStatus"></span></li>
         <li><input type="button" value="Save station data" onclick="tcTemplate.saveParameters()" /> <input id="autoSave" type="checkbox" checked="checked" />Automatically save a copy when generating map cards</li>
       </ul>
 
@@ -410,18 +411,32 @@
       </details>
 
       <ol start="12">
-        <li style="margin-bottom:0.8em;"><input id="compileLaTeXBtn" type="button" value="Generate map cards" onclick="tcTemplate.generatePDF(this)" /> <span id="compileStatus"></span> <a id="savePDF" download="TCMapCards.pdf">Save map cards PDF again</a> <a id="viewLog" target="log">View debug log</a></li>
+        <li>Select template
+          <select id="selectTemplate">
+            <option value="printA5onA4" selected="selected">Print 2 × A5 cards on A4 paper</option>
+            <option value="onlineTempO">Online TempO</option>
+          </select>
+        </li>
+        <li>
+          <button id="compileLaTeXBtn" type="button">Generate map cards</button>
+          <span id="compileStatus"></span>
+          <a id="savePDF">Save map cards again</a>
+          <a id="viewLog">Save debug log</a>
+        </li>
+      </ol>
+      <ol id="printInstructions" start="14">
         <li>Print the produced PDF file on A4 paper in colour and single-sided. Make sure the scale is set to 100%; do not fit to page. See <a href="help/printingadjustments.xhtml" target="help">instructions for professional printing</a>.</li>
         <li>Cut along all of the red lines.</li>
         <li>Laminate the cards. Keep the plastic rectangular, except for rounded corners; do not cut out the notches on the right hand side. Make sure the plastic is sealed; there must be a few mm between the edge of the paper and the plastic card.</li>
         <li>Have a successful competition!</li>
       </ol>
+      <div id="onlineInstructions">
+        <ol start="14">
+          <li>Unzip the files.</li>
+          <li>Upload the files into <a href="http://www.yq.cz/trail-o/TempO/" target="prerequisites" rel="external">TempO Simulator</a>.</li>
+        </ol>
+      </div>
     </section>
   </main>
-
-  <script src="../texlive.js/promisejs/promise.js"></script>
-  <script src="../texlive.js/pdftex.js"></script>
-  <script src="messages.js"></script>
-  <script src="../wizard.js"></script>
 </body>
 </html>
