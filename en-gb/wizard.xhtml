@@ -2,8 +2,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
 <head>
   <script src="headerfooter.js"></script>
-  <script src="messages.js" defer="defer"></script>
-  <script src="../wizard.js" defer="defer"></script>
   <!--Reserved for editing in Javascript to show/hide all elements within a class-->
   <style id="showSetAllCSS"></style>
   <style id="showAutoCSS"></style>
@@ -438,5 +436,8 @@
       </div>
     </section>
   </main>
+  <!--Bug in Chrome: defer is ignored-->
+  <script src="messages.js"></script>
+  <script src="../wizard.js"></script>
 </body>
 </html>
