@@ -1208,6 +1208,9 @@ const tcTemplate = (() => {
       try {
         mapsCompiler.resetStatus();
 
+        mapsCompiler.compileUnitsItems = Compiler.totalNumTasks();
+        if (mapsCompiler.compileUnitsItems === 0) { throw new Error("No stations selected"); }
+
         //Check PDF resources are present
         const coursePDFFiles = document.getElementById("coursePDFSelector").files;
         if (coursePDFFiles.length === 0) {
@@ -1219,7 +1222,7 @@ const tcTemplate = (() => {
         }
 
         //Make LaTeX parameters file
-        mapsCompiler.statusBox.innerHTML = "Validating station data.";
+        mapsCompiler.statusBox.textContent = "Validating station data.";
         const paramFile = generateLaTeX();
 
         //Read maps and CDs PDFs
@@ -1246,7 +1249,7 @@ const tcTemplate = (() => {
 
         await Promise.allSettled(compilerPromises);
       } catch (err) {
-        mapsCompiler.statusBox.innerHTML = err;
+        mapsCompiler.statusBox.textContent = err;
         console.error(err);
       }
       btn.disabled = false;
@@ -1263,21 +1266,41 @@ const tcTemplate = (() => {
       element.hidden = false;
     }
 
+    static totalNumTasks() {
+      //Get total number of tasks to be outputted
+      const tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
+      let numTasks = 0;
+      for (const row of tableRows) {
+        const numProblemsSet = row.getElementsByClassName("numProblems");
+        //First row is defaults so ignore
+        if (numProblemsSet.length > 0 && row.getElementsByClassName("showStation")[0].checked) {
+          numTasks += Number(numProblemsSet[0].textContent);
+        }
+      }
+      return numTasks;
+    }
+
     async compile(resourceBuffers, resourceNames) {
       try {
-        this.statusBox.innerHTML = "Reading PDFs.";
+        //Might be sensible to preconvert in future
+        this.statusBox.textContent = "Reading PDFs.";
         const resourceStrings = resourceBuffers.map((buffer) => TeXLive.arrayBufferToString(buffer));
-        this.statusBox.innerHTML = "Compiling PDFs (0%).";
+
+        //One compile unit = time to insert one map + CD
+        this.compileTotalUnits = this.compileUnitsPre + this.compileUnitsItems + this.compileUnitsPost;
+
+        this.statusBox.textContent = "Compiling PDF (0%).";
         const pdfURL = await this.texlive.compile(this.texsrc, resourceStrings, resourceNames);
-        this.statusBox.innerHTML = "Compiling PDFs (100%).";
+        this.statusBox.textContent = "Compiling PDF (100%).";
         await this.postCompile(pdfURL);
       } catch (err) {
-        this.statusBox.innerHTML = err;
+        this.statusBox.textContent = err;
         console.error(err);
-        if (this.logNumEvents > 0){
+        const logLength = this.logContent.length;
+        if (logLength > 0){
           //Display log
           let logStr = "";
-          for (let rowId = 0; rowId < this.logNumEvents; rowId++) {
+          for (let rowId = 0; rowId < logLength; rowId++) {
             logStr += this.logContent[rowId] + "\n";
           }
           Compiler.setDownload(URL.createObjectURL(new Blob([logStr], { type: "text/plain" })), "TCTemplate.log", this.logDownload);
@@ -1289,26 +1312,26 @@ const tcTemplate = (() => {
     downloadOutput(newURL) {
       Compiler.setDownload(newURL, this.downloadFileName, this.outDownload);
       this.outDownload.click();
-      this.statusBox.innerHTML = "Map cards produced successfully.";
+      this.statusBox.textContent = "Map cards produced successfully.";
     }
 
     logEvent(msg) {
-      //Called everytime a status message is outputted by TeXLive. Worker thread will crash shortly after an error, so all handling to be done here.
+      //Called when a status message is output by TeXLive
+      //Provides additionally monitoring and error handling beyond texlivelight
       console.log(msg);
       this.logContent.push(msg);
-      this.logNumEvents++;
       if (msg.includes("no output PDF file produced!")) {
         //TeXLive encountered an error -> handle it
-        if (this.logContent[this.logNumEvents - 3] === "!pdfTeX error: /latex (file ./Maps.pdf): PDF inclusion: required page does not ") {
-          this.statusBox.innerHTML = "Failed to compile map cards. The PDF of maps does not contain enough pages. Please follow the instructions in step 8 carefully and try again.";
-        } else if (this.logContent[this.logNumEvents - 3] === "!pdfTeX error: /latex (file ./CDs.pdf): PDF inclusion: required page does not e") {
-          this.statusBox.innerHTML = "Failed to compile map cards. The PDF of control descriptions does not contain enough pages. Please follow the instructions in step 9 carefully and try again.";
-        } else {
-          this.statusBox.innerHTML = "Failed to compile map cards due to an unknown error. Please seek assistance.";
+        let msg;
+        if (this.logContent[this.logContent.length - 3] === "!pdfTeX error: /latex (file ./Maps.pdf): PDF inclusion: required page does not ") {
+          msg = "PDF of maps does not contain enough pages. Please follow the instructions in step 8 carefully and try again.";
+        } else if (this.logContent[this.logContent.length - 3] === "!pdfTeX error: /latex (file ./CDs.pdf): PDF inclusion: required page does not e") {
+          msg = "PDF of control descriptions does not contain enough pages. Please follow the instructions in step 9 carefully and try again.";
         }
-        // throw new Error("Compile error");
-      } else {
-        this.statusBox.innerHTML = "Preparing map cards (" + this.logNumEvents + ").";
+        throw new Error(msg);
+      } else if (msg.includes("<Maps.pdf,")) {
+        this.statusBox.textContent = "Compiling PDF (" + (this.compileUnitsDone / this.compileTotalUnits * 100).toFixed() + "%).";
+        this.compileUnitsDone++;
       }
     }
 
@@ -1317,7 +1340,8 @@ const tcTemplate = (() => {
       this.logDownload.hidden = true;
       //Reset log
       this.logContent = [];
-      this.logNumEvents = 0;
+      //One compile unit = time to insert one map + CD; populate with start-up time
+      this.compileUnitsDone = this.compileUnitsPre;
     }
 
     async startTeXLive() {
@@ -1331,7 +1355,7 @@ const tcTemplate = (() => {
         TeXLive.getFile(this.texsrc);
       } catch (err) {
         document.getElementById("compileLaTeXBtn").disabled = true;
-        this.statusBox.innerHTML = "Loading error: " + err;
+        this.statusBox.textContent = "Loading error: " + err;
         console.error(err);
       }
     }
@@ -1361,7 +1385,7 @@ const tcTemplate = (() => {
       }
     }
 
-    function addToDOM(source, useRemote) {
+    function add2DOM(source, useRemote) {
       let remotePath;
       if (useRemote) {
         remotePath = source.remotePath;
@@ -1386,16 +1410,15 @@ const tcTemplate = (() => {
       if (source.promise === undefined) {
         //Writing in terms of promises is cleaner here than try await catch
         //Try to load using CDN
-        source.promise = addToDOM(source, true).catch((err) => {
+        source.promise = add2DOM(source, true).catch((err) => {
           if (source.remotePath !== "") {
             //Look for local copy
-            return addToDOM(source, false).catch((err) => {
+            return add2DOM(source, false).catch((err) => {
               let msg;
               if (location.hostname.includes("tdobra.github.io")) {
                 throw undefined;
               } else {
-                //Include link to help file
-                throw new Error("Need to <a href=\"help/security.html#cdnscripts\" target=\"help\" rel=\"help\">download scripts</a> for " + source.label + " to root folder");
+                throw new Error("Need to download scripts for " + source.label + " to root folder");
               }
             });
           } else {
@@ -1421,7 +1444,7 @@ const tcTemplate = (() => {
 
   //Do not use arrow functions when binding methods as properties
   mapsCompiler.makePNGs = async function(pdfURL) {
-    this.statusBox.innerHTML = "Preparing to split into images.";
+    this.statusBox.textContent = "Preparing to split into images.";
 
     //Create objects
     const canvasFull = document.createElement("canvas");
@@ -1429,6 +1452,7 @@ const tcTemplate = (() => {
     const ctxFull = canvasFull.getContext("2d");
     const ctxCropped = canvasCropped.getContext("2d");
     let pageNum = 1;
+    let taskCount = 0;
     const tableRows = document.getElementById("courseTableBody").getElementsByTagName("tr");
     //Row 0 of table is set all stations
     const numStations = tableRows.length - 1;
@@ -1441,11 +1465,11 @@ const tcTemplate = (() => {
     await loadScript("jszip");
     const zip = new JSZip();
 
-    this.statusBox.innerHTML = "Splitting into images (0%).";
+    this.statusBox.textContent = "Splitting into images (0%).";
     for (let stationId = 1; stationId <= numStations; stationId++) {
-      const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].innerHTML);
+      const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].textContent);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
-        const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].innerHTML;
+        const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].textContent;
 
         //Calculate scale required to render PDF at correct resolution
         const circleDiameter = Number(tableRows[stationId].getElementsByClassName("mapSize")[0].value);
@@ -1522,8 +1546,9 @@ const tcTemplate = (() => {
           const blob = await new Promise((resolve) => { canvasCropped.toBlob(resolve); });
           imPromises.push(zip.file("map-" + stationName + "." + taskId + "z.png", blob));
 
-          this.statusBox.innerHTML = "Splitting into images (" + (pageNum / numPages * 100).toFixed() + "%).";
           pageNum++;
+          taskCount++;
+          this.statusBox.textContent = "Splitting into images (" + (taskCount / this.compileUnitsItems * 100).toFixed() + "%).";
         }
       } else {
         pageNum += numTasks;
@@ -1535,16 +1560,21 @@ const tcTemplate = (() => {
   }
 
   mapsCompiler.setTemplate = function(name) {
+    //Compile time units are determined empirically for each template to give an approximate progress of compiler
     switch (name) {
     case "printA5onA4":
       this.texsrc = "TCTemplate.tex";
       this.postCompile = this.downloadOutput;
       this.downloadFileName = "TCMapCards.pdf";
+      this.compileUnitsPre = 7.5;
+      this.compileUnitsPost = 3;
       break;
     case "onlineTempO":
       this.texsrc = "onlinetempo.tex";
       this.postCompile = this.makePNGs;
       this.downloadFileName = "TCMapCards.zip";
+      this.compileUnitsPre = 10;
+      this.compileUnitsPost = 0.2;
       //Load prequisities for post-processing
       loadScript("pdfjs");
       loadScript("jszip");
