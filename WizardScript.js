@@ -1371,7 +1371,7 @@ const tcTemplate = (() => {
       return new Promise((resolve, reject) => {
         const scriptEl = document.createElement("script");
         scriptEl.addEventListener("load", async () => {
-          if (typeof onready === "function") { await source.onready(); }
+          if (typeof source.onready === "function") { await source.onready(remotePath); }
           resolve();
         }, { once: true });
         scriptEl.addEventListener("error", reject, { once: true });
@@ -1384,27 +1384,30 @@ const tcTemplate = (() => {
       const source = sources[scriptName];
       if (typeof source === "undefined") { throw new ReferenceError("Requested load of unrecognised script: " + scriptName); }
       if (source.promise === undefined) {
-        try {
-          //Get script from CDN
-          source.promise = addToDOM(source, true);
-          await source.promise;
-        } catch (err) {
-          try {
-            //Get local copy
-            source.promise = addToDOM(source, false);
-            await source.promise;
-          } catch (err) {
-            //If running locally, ask user to download missing file
-            let msg;
-            if (location.hostname.includes("tdobra.github.io")) {
-              msg = "Failed to download script: " + source.label;
-            } else {
-              //Include link to help file
-              msg = "Need to <a href=\"help/security.html#cdnscripts\" target=\"help\" rel=\"help\">download scripts</a> for " + source.label + " to root folder";
-            }
-            source.promise = Promise.reject(new Error(msg));
+        //Writing in terms of promises is cleaner here than try await catch
+        //Try to load using CDN
+        source.promise = addToDOM(source, true).catch((err) => {
+          if (source.remotePath !== "") {
+            //Look for local copy
+            return addToDOM(source, false).catch((err) => {
+              let msg;
+              if (location.hostname.includes("tdobra.github.io")) {
+                throw undefined;
+              } else {
+                //Include link to help file
+                throw new Error("Need to <a href=\"help/security.html#cdnscripts\" target=\"help\" rel=\"help\">download scripts</a> for " + source.label + " to root folder");
+              }
+            });
+          } else {
+            throw undefined;
           }
-        }
+        }).catch((err) => {
+          if (err === undefined) {
+            throw new Error("Failed to download script: " + source.label);
+          } else {
+            throw err;
+          }
+        });
       }
       return source.promise;
     };
