@@ -2,6 +2,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
 <head>
   <script src="headerfooter.js"></script>
+  <!--FIXME: Bug in Chrome: defer is ignored-->
+  <script>let domLoad = new Promise(() => {}); document.addEventListener("DOMContentLoaded", domLoad = Promise.resolve(), { once: true });</script>
+  <script async="async" src="messages.js"></script>
+  <script async="async" src="../wizard.js"></script>
   <!--Reserved for editing in Javascript to show/hide all elements within a class-->
   <style id="showSetAllCSS"></style>
   <style id="showAutoCSS"></style>
@@ -436,8 +440,5 @@
       </div>
     </section>
   </main>
-  <!--Bug in Chrome: defer is ignored-->
-  <script src="messages.js"></script>
-  <script src="../wizard.js"></script>
 </body>
 </html>

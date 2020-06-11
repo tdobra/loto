@@ -1,31 +1,41 @@
-//Put script in body of HTML
-
-//Prevent sloppy programming and throw more errors
 "use strict";
 
-//Check browser supports required APIs
-//Items to check:
-//HTMLCanvasElement.toBlob() (Edge >= 79, Firefox >= 19, Safari >= 11)
-//details (Edge >= 79, Firefox >= 49, Safari >= 6)
-//async (Edge >= 15, Firefox >= 52, Safari >= 10.1) - no easy way to check and very few browswers to trip up
-try {
-  if (
-    typeof document.createElement("canvas").toBlob !== "function" ||
-    typeof document.createElement("details").open !== "boolean"
-  ) {
-    throw undefined;
+//FIXME: Chrome has bug that defer script loading doesn't work with XHTML
+//This function is currently called by DOMContentLoaded event
+//Once fixed, load messages.js then this script both with defer, delete domLoad and change tcTemplate() to anonymous IIFE
+domLoad.then(async () => {
+  //Wait until tcTemplateMsg is defined, then run tcTemplate to make page dynamic
+  while (typeof tcTemplateMsg === "undefined") {
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
-} catch (err) {
-  document.getElementById("mainView").hidden = true;
-}
+  tcTemplate();
+});
 
 //Keep all functions private and put those with events in HTML tags in a namespace
-const tcTemplate = (() => {
+function tcTemplate() {
+  // (() => then add opening brace
   var pdfjsLib;
 
   //Keep track of whether an input file has been changed in a table to disable autosave
   var paramsSaved = true;
+
+  //Check browser supports required APIs
+  //Items to check:
+  //HTMLCanvasElement.toBlob() (Edge >= 79, Firefox >= 19, Safari >= 11)
+  //details (Edge >= 79, Firefox >= 49, Safari >= 6)
+  //async (Edge >= 15, Firefox >= 52, Safari >= 10.1) - no easy way to check and very few browswers to exclusively trip up
+  try {
+    if (
+      typeof document.createElement("canvas").toBlob !== "function" ||
+      typeof document.createElement("details").open !== "boolean"
+    ) {
+      throw undefined;
+    }
+    document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
+  } catch (err) {
+    document.getElementById("mainView").hidden = true;
+    return;
+  }
 
   //Object structure: Reorderable list->Station list-array of>Station->(Field->Specialised field->)Named field
 
@@ -1519,8 +1529,7 @@ const tcTemplate = (() => {
     }
   }
 
-  //Create root level objects
-  const stationList = new StationList();
+
 
 
 
@@ -2707,7 +2716,7 @@ const tcTemplate = (() => {
         //Read maps and CDs PDFs
         const resourceNames = ["TemplateParameters.tex", "Maps.pdf", "CDs.pdf"];
         const resourceFileArray = [paramFile, coursePDFFiles[0], cdPDFFiles[0]];
-        // Blob.arrayBuffer isn't implemented in Safari - switch to new code when available
+        //FIXME: Blob.arrayBuffer isn't implemented in Safari - switch to new code when available
         // const resourceBuffers = await Promise.all(resourceFileArray.map((file) => file.arrayBuffer()));
         const resourceBuffers = await Promise.all(resourceFileArray.map((file) => new Promise((resolve, reject) => {
           const freader = new FileReader();
@@ -2915,6 +2924,11 @@ const tcTemplate = (() => {
     };
   })();
 
+  //Initialisation
+
+  //Create root level objects
+  const stationList = new StationList();
+
   const mapsCompiler = new Compiler({
     statusBox: document.getElementById("compileStatus"),
     outDownload: document.getElementById("savePDF"),
@@ -3067,7 +3081,6 @@ const tcTemplate = (() => {
     }
   };
 
-  //Initialisation
   //TODO: From legacy UI
   // document.getElementById("stationProperties").hidden = true;
   document.getElementById("savePDF").hidden = true;
@@ -3127,4 +3140,5 @@ const tcTemplate = (() => {
     setAllLayout: setAllLayout,
     resetField: resetField
   };
-})();
+  // })();
+}
