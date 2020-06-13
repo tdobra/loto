@@ -25,7 +25,11 @@ th {
 }
 
 summary, .warning {
-  background-color: #f5d2b8;
+  background-color: #ffba36;
+}
+
+details details {
+  margin-left: 1ch;
 }
 
 ol ol {
@@ -51,6 +55,10 @@ select {
 
 fieldset {
   margin-bottom: 2ex;
+}
+
+summary + fieldset {
+  margin-top: 2ex;
 }
 
 fieldset > ul {
@@ -113,13 +121,9 @@ fieldset > ul:last-child {
   min-width: 6ch;
 }
 
-.inputBlock > *, .autoOrder > *, .cm::after {
+.inputBlock > *, .autoOrder > * {
   display: inline-block;
   margin-right: 1ch;
-}
-
-.cm::after {
-  content: "cm";
 }
 
 .autoBtnList li {
@@ -148,12 +152,10 @@ fieldset > ul:last-child {
   }
 }
 
-#selectForPrint {
+.tickRow {
   display: flex;
-  flex-wrap: wrap;
-  margin-top: 2ex;
 }
 
-#selectForPrint fieldset {
-  flex: 1 1 auto;
+.tickRow > input {
+  margin-right: 1ch;
 }

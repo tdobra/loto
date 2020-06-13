@@ -24,15 +24,13 @@ function tcTemplate() {
   //HTMLCanvasElement.toBlob() (Edge >= 79, Firefox >= 19, Safari >= 11)
   //details (Edge >= 79, Firefox >= 49, Safari >= 6)
   //async (Edge >= 15, Firefox >= 52, Safari >= 10.1) - no easy way to check and very few browswers to exclusively trip up
-  try {
-    if (
-      typeof document.createElement("canvas").toBlob !== "function" ||
-      typeof document.createElement("details").open !== "boolean"
-    ) {
-      throw undefined;
-    }
+  if (
+    typeof document.createElement("canvas").toBlob === "function" &&
+    typeof document.createElement("details").open === "boolean"
+    //If crashes, API error message is still displayed
+  ) {
     document.getElementById("missingAPIs").hidden = true;   //Hide error message that shows by default
-  } catch (err) {
+  } else {
     document.getElementById("mainView").hidden = true;
     return;
   }
