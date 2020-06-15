@@ -1,7 +1,12 @@
+* {
+  max-width: 100%;
+}
+
 body {
   font-family: sans-serif;
 }
 
+/* Tables will be removed */
 table {
   border-collapse: collapse;
 }
@@ -24,22 +29,24 @@ th {
   text-align: right;
 }
 
-summary, .warning {
-  background-color: #ffba36;
-}
-
-details details {
-  margin-left: 1ch;
-}
-
 ol ol {
   list-style-type: lower-roman;
+}
+
+summary, .warning {
+  background-color: #ffba36;
 }
 
 .error {
   background-color: #f56600;
 }
 
+/* Progressively indent nested levels in menu */
+details details {
+  margin-left: 1ch;
+}
+
+/* Unformatted list */
 #fields ul {
   list-style-type:none;
   padding: 0;
@@ -53,7 +60,9 @@ select {
   vertical-align: middle;
 }
 
+/* Allow fieldset to shrink beyond minimum content size */
 fieldset {
+  min-width: 0;
   margin-bottom: 2ex;
 }
 
@@ -69,61 +78,99 @@ fieldset > ul:last-child {
   margin-bottom: 0ex;
 }
 
+/* Keep group of buttons on same line as far as possible */
 .btnGroup {
-  display: inline-block;
+  display: inline-flex;
+  flex-wrap: wrap;
 }
 
-.fieldList li, .autoOrder {
+.btnGroup > * {
+  flex: auto;
+  margin-right: 0.25em;
+}
+
+.autoOrder {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 35ch) {
+  .autoOrder {
+    flex-wrap: nowrap;
+  }
+}
+
+.fieldList li {
+  margin-bottom: 2ex;
+}
+
+@media (min-width: 76ch) {
+  .fieldList li {
+    margin-bottom: initial;
+  }
+}
+
+/* Use long compact lines on large screens, otherwise space out with many line breaks */
+.fieldList li {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 2ex;
 }
 
-@media (min-width: 60ch) {
+@media (min-width: 76ch) {
   .fieldList li {
     flex-wrap: nowrap;
     margin-bottom: initial;
   }
 }
 
-@media (min-width: 32ch) {
-  .autoOrder {
-    flex-wrap: nowrap;
-  }
-}
-
+/* Labels are fixed width to align contents nicely - still won't exceed page width */
 .fieldList li > label {
-  width: 13ch;
-  flex: 0 0 auto;
-  display: inline-block;
+  width: 14ch;
+  flex: none;
 }
 
+/* Buttons and input fields after label arranged into nice block where input expands to fill space */
 .inputBlock {
-  width: 24ch;
-  flex: 0 1 auto;
+  width: 28ch;
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
 }
 
-@media (min-width: 31ch) {
+@media (min-width: 36ch) {
   .inputBlock {
     flex-wrap: nowrap;
   }
 }
 
-.inputBlock input, .inputBlock select, .errorMsg {
-  flex: 1 1 auto;
+/* Sub-flex box to keep unit on same line as input */
+.inputBlock .withUnit {
+  min-width: 0;
+  flex: auto;
+  display: inline-flex;
+}
+
+.inputBlock input, .inputBlock select {
+  flex: auto;
+}
+
+.inputBlock .noStretch {
+  flex: initial;
 }
 
 .inputBlock input:not([type="checkbox"]) {
   min-width: 6ch;
 }
 
-.inputBlock > *, .autoOrder > * {
-  display: inline-block;
-  margin-right: 1ch;
+.inputBlock > *, .autoOrder > *, .withUnit > * {
+  margin-right: 0.25em; /* Standard space */
+}
+
+.withUnit > *:last-child {
+  margin-right: 0;
 }
 
 .autoBtnList li {
@@ -137,7 +184,7 @@ fieldset > ul:last-child {
 
 .autoBtnList span {
   width: 10ch;
-  flex: 0 0 auto;
+  flex: none;
 }
 
 @media (min-width: 41ch) {
@@ -147,15 +194,19 @@ fieldset > ul:last-child {
   }
 
   .autoBtnList li > * {
-    display: inline-block;
     margin-right: 1ch;
   }
 }
 
+/* Keep tick box label as a multiline to right of tick box */
 .tickRow {
-  display: flex;
+  display: inline-flex;
 }
 
 .tickRow > input {
   margin-right: 1ch;
+}
+
+#ppenStatus {
+  margin-bottom: 2ex;
 }
