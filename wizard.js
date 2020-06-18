@@ -159,6 +159,43 @@ function tcTemplate() {
     }
   }
 
+  class CourseList extends IterableList {
+    constructor() {
+      const obj = {
+        selectorSpan: document.getElementById("courseSelect"),
+        addBtn: document.getElementById("addCourse"),
+        deleteBtn: document.getElementById("deleteCourse"),
+        upBtn: document.getElementById("moveUpCourse"),
+        downBtn: document.getElementById("moveDownCourse"),
+        defaultInFocus: false,
+        itemInFocus: 0,
+        counterField: undefined
+      };
+      super(obj);
+      //Show selector of size 5
+      this.selector.size = 5;
+      this.selector.style.display = "";
+      //Radio button options
+      this.defaultRadio = document.getElementById("defaultRadio");
+      this.stationRadio = document.getElementById("courseRadio");
+      //Set up current/dynamic defaults
+      this.default = new Course({
+        parentObj: this,
+        optionElement: undefined,
+        copyStation: undefined
+      });
+      this.default.checkValidity(true);
+    }
+
+    newItem(newNode) {
+      return new Course({
+        parentObj: this,
+        optionElement: newNode,
+        copy: this.default
+      });
+    }
+  }
+
   class StationList extends IterableList {
     constructor() {
       const obj = {
@@ -792,9 +829,9 @@ function tcTemplate() {
       } else {
         contentFieldClass.add("error");
         if (this.syntaxError) {
-          this.errorElement.innerHTML = tcTemplateMsg.nameSyntax;
+          this.errorElement.textContent = tcTemplateMsg.nameSyntax;
         } else {
-          this.errorElement.innerHTML = tcTemplateMsg.notUnique;
+          this.errorElement.textContent = tcTemplateMsg.notUnique;
         }
       }
     }
@@ -805,7 +842,7 @@ function tcTemplate() {
       const inputObj = {
         parentObj: parentObj,
         value: value,
-        inputElement: document.getElementById("showStation"),
+        inputElement: document.getElementById("showStationTasks"),
         resetBtn: document.getElementById("resetShowStation"),
         setAllBtn: document.getElementById("setAllShowStation"),
         errorElement: undefined
@@ -844,7 +881,7 @@ function tcTemplate() {
         inputElement: document.getElementById("numKites"),
         resetBtn: document.getElementById("resetNumKites"),
         setAllBtn: document.getElementById("setAllNumKites"),
-        errorElement: document.getElementById("kitesError")
+        errorElement: document.getElementById("numKitesError")
       };
       super(inputObj);
       this.valid = true; //Always valid - NumberField has empty checkValidity()
@@ -863,10 +900,10 @@ function tcTemplate() {
       if (this.value === 6 || this.station.isNonDefaultHidden()) {
         //Field valid, or non-defaults station not displayed
         contentFieldClass.remove("warning");
-        this.errorElement.innerHTML = "";
+        this.errorElement.textContent = "";
       } else {
         contentFieldClass.add("warning");
-        this.errorElement.innerHTML = tcTemplateMsg.numKitesRule;
+        this.errorElement.textContent = tcTemplateMsg.numKitesRule;
       }
     }
   }
@@ -3094,23 +3131,23 @@ function tcTemplate() {
 
   //Event listeners - always call with arrow functions to ensure this doesn't point to calling DOM element
   stationList.addBtnListeners();
-  stationList.defaultRadio.addEventListener("change", () => { stationList.refresh(true); });
-  stationList.stationRadio.addEventListener("change", () => { stationList.refresh(true); });
-  document.getElementById("setAllCore").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.coreFields); });
-  document.getElementById("setAllCustomLayout").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.customLayoutFields); });
-  document.getElementById("resetAllCustomLayout").addEventListener("click", () => { stationList.applyAll("resetValue", stationList.default.customLayoutFields); });
+  // stationList.defaultRadio.addEventListener("change", () => { stationList.refresh(true); });
+  // stationList.stationRadio.addEventListener("change", () => { stationList.refresh(true); });
+  // document.getElementById("setAllCore").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.coreFields); });
+  // document.getElementById("setAllCustomLayout").addEventListener("click", () => { stationList.applyAll("setAll", stationList.default.customLayoutFields); });
+  // document.getElementById("resetAllCustomLayout").addEventListener("click", () => { stationList.applyAll("resetValue", stationList.default.customLayoutFields); });
   for (const field of stationList.default.fieldNames) {
     let inputEvent = "input";
     if (stationList.default[field].inputElement.tagName === "SELECT") {
       inputEvent = "change";
     }
     stationList.default[field].inputElement.addEventListener(inputEvent, () => { stationList.activeItem[field].saveInput(); });
-    if (stationList.default[field].resetBtn !== undefined) {
-      stationList.default[field].resetBtn.addEventListener("click", () => { stationList.activeItem[field].resetValue(); });
-    }
-    if (stationList.default[field].setAllBtn !== undefined) {
-      stationList.default[field].setAllBtn.addEventListener("click", () => { stationList.activeItem[field].setAll(); });
-    }
+    // if (stationList.default[field].resetBtn !== undefined) {
+    //   stationList.default[field].resetBtn.addEventListener("click", () => { stationList.activeItem[field].resetValue(); });
+    // }
+    // if (stationList.default[field].setAllBtn !== undefined) {
+    //   stationList.default[field].setAllBtn.addEventListener("click", () => { stationList.activeItem[field].setAll(); });
+    // }
   }
   for (const field of stationList.items[0].taskList.items[0].fieldNames) {
     let inputEvent = "input";
