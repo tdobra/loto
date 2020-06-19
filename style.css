@@ -86,7 +86,7 @@ fieldset > ul:last-child {
 
 .btnGroup > * {
   flex: auto;
-  margin-right: 0.25em;
+  margin-right: 0.4em; /* One space */
 }
 
 .autoOrder {
@@ -128,7 +128,7 @@ fieldset > ul:last-child {
 
 /* Labels are fixed width to align contents nicely - still won't exceed page width */
 .fieldList li > label {
-  width: 14ch;
+  width: 15ch;
   flex: none;
 }
 
@@ -166,7 +166,7 @@ fieldset > ul:last-child {
 }
 
 .inputBlock > *, .autoOrder > *, .withUnit > * {
-  margin-right: 0.25em; /* Standard space */
+  margin-right: 0.4em; /* One space */
 }
 
 .withUnit > *:last-child {

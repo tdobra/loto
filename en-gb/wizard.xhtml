@@ -98,7 +98,8 @@
           <ul>
             <li><label for="defaultRadio"><input id="defaultRadio" type="radio" name="editType" value="default" /> Set defaults for all courses</label></li>
             <li>
-              <label for="courseRadio"><input id="courseRadio" type="radio" name="editType" value="course" /> Customise course</label> <span id="courseSelect"></span>
+              <label for="courseRadio"><input id="courseRadio" type="radio" name="editType" value="course" /> Customise course</label>
+              <select id="courseSelect" size="6"></select>
               <span class="btnGroup">
                 <button id="addCourse" type="button">+ Add</button>
                 <button id="deleteCourse" type="button">− Delete</button>
@@ -120,13 +121,9 @@
           <summary>Tasks file and template</summary>
           <ul>
             <li>
-              <button id="setAllTasksFile" class="setAllCourses" type="button">Set all courses</button>
-              <button id="resetTasksFile" class="hideIfDefault" type="button">Reset</button>
-            </li>
-            <li>
               <label for="newTasksFile"><input id="newTasksFile" type="radio" name="tasksFile" value="new" /> New file with</label>
-              <label for="selectTemplate">template
-                <select id="selectTemplate">
+              <label for="tasksTemplate">template
+                <select id="tasksTemplate">
                   <option value="printA5onA4">TempO: Print 2 × A5 cards on A4</option>
                   <option value="onlineTempO">Online TempO</option>
                 </select>
@@ -135,6 +132,13 @@
             <li>
               <label for="appendTasksFile"><input id="appendTasksFile" type="radio" name="tasksFile" value="append" /> Include with</label>
               <label for="appendTasksCourse">course <select id="appendTasksCourse"></select></label>
+            </li>
+            <li>
+              <label for="hideTasksFile"><input id="hideTasksFile" type="radio" name="tasksFile" value="hide" /> Hide</label>
+            </li>
+            <li>
+              <button id="setAllTasksFile" class="setAllCourses" type="button">Set all courses</button>
+              <button id="resetTasksFile" class="hideIfDefault" type="button">Reset</button>
             </li>
           </ul>
         </details>
@@ -158,7 +162,6 @@
                 <button id="setAllZeroes" class="setAllCourses" type="button">Set all courses</button>
                 <button id="resetZeroes" class="hideIfDefault" type="button">Reset</button>
               </span>
-              <span id="zeroesWarning"></span>
             </li>
             <li>
               <label for="mapScale">Map scale</label>
@@ -340,7 +343,7 @@
         <summary>Stations</summary>
         <ul class="hideIfDefault">
           <li>
-            <label for="stationSelect">Station <span id="stationSelect"></span></label>
+            <label for="stationSelect">Station <select id="stationSelect" size="6"></select></label>
             <span class="btnGroup">
               <button id="addStation" type="button">+ Add</button>
               <button id="deleteStation" type="button">− Delete</button>
@@ -383,7 +386,7 @@
         <summary>Kites<span class="zeroes"> and zeroes</span></summary>
         <ul>
           <li>
-            <label class="hideIfDefault">Kite<span class="zeroes">/zero</span> <span id="kiteSelect"></span></label>
+            <label class="hideIfDefault">Kite<span class="zeroes">/zero</span> <select id="kiteSelect" size="6"></select></label>
             <span class="btnGroup hideIfDefault">
               <button id="addKite" type="button" class="zeroes">+ Add</button>
               <button id="deleteKite" type="button" class="zeroes">− Delete</button>
@@ -504,7 +507,7 @@
         <summary>Tasks</summary>
         <ul>
           <li>
-            <label class="hideIfDefault">Task <span id="taskSelect"></span></label>
+            <label class="hideIfDefault">Task <select id="taskSelect" size="6"></select></label>
             <span class="btnGroup hideIfDefault">
               <button id="addTask" type="button" class="zeroes">+ Add</button>
               <button id="deleteTask" type="button" class="zeroes">− Delete</button>
