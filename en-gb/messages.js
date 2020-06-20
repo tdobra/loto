@@ -3,9 +3,11 @@
 "use strict";
 
 const tcTemplateMsg = {
+  courseNameAlert: "Please insert a valid and unique course name",
   stationNameAlert: "Please insert a valid and unique station name",
   taskNameAlert: "Please insert a valid and unique task name",
   confirmDelete: "Are you sure you want to delete? This cannot be undone.",
+  awaitingData: "Awaiting other data",
   numberFieldError: "Must be a number",
   nonNegativeFieldError: "Must be ≥ 0",
   strictPositiveFieldError: "Must be > 0",
@@ -14,13 +16,13 @@ const tcTemplateMsg = {
   notUnique: "Must be unique",
   numKitesRule: "IOF rule: number of kites = 6",
   notSameForAllStations: "Not the same for all stations",
-  circle: "Circle",
+  notSameForAllCourses: "Not the same for all courses",
   diameter: "diameter",
   sideLength: "side length",
   notSameForAllStationsRule: "IOF rule: must be the same for all stations",
-  mapSizeRule: "IOF rules: 5 ≤ size ≤ 12; must be the same for all stations",
+  mapSizeRule: "IOF rule: 5 ≤ size ≤ 12",
   mapSizeError: "0 &lt; size ≤ 12",
-  mapScaleRule: "IOF rules: normally 1:4000 or 1:5000; must be the same for all stations",
+  mapScaleRule: "IOF rule: normally 1:4000 or 1:5000",
   confirmRemoveTasks: (stationName) => "Some tasks will be removed from station " + stationName + ". Are you sure you want to delete these?",
   taskNameNotUnique: "Must be unique and neither <em>Kites</em> nor <em>VP</em>"
 };
