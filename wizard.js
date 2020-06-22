@@ -89,25 +89,14 @@ function tcTemplate() {
 
     static addListeners() {
       const listObj = (this === CourseList) ? courseList : stationList;
-      this.itemClass.fieldClasses.forEach((field) => {
-        const inputEvent = (
-          field.inputElement.tagName === "SELECT" ||
-          field.inputElement.type === "checkbox" ||
-          field.inputElement.type === "radio"
-        ) ? "change" : "input";
-        field.inputElement.addEventListener(inputEvent, () => { listObj.activeItem[field].saveInput(); });
+      this.itemClass.fieldClasses.forEach((field, index) => {
+        const inputEvent = (field.inputElement.tagName === "SELECT" || field.inputElement.type === "checkbox") ? "change" : "input";
+        field.inputElement.addEventListener(inputEvent, () => { listObj.activeItem[this.itemClass.fieldNames[index]].saveInput(); });
         if (field.autoElement !== undefined) {
-          field.autoElement.addEventListener("change", () => { listObj.activeItem[field].auto.saveInput(); });
+          field.autoElement.addEventListener("change", () => { listObj.activeItem[this.itemClass.fieldNames[index]].auto.saveInput(); });
         }
-      })
+      });
     }
-
-    //FIXME: Are these still needed?
-    // removeBtnListeners() {
-    //   for (const btn of this.btnList) {
-    //     this[btn].removeEventListener("click", this.eventListeners[btn]);
-    //   }
-    // }
 
     add() {
       //New item initially takes default values
@@ -293,7 +282,7 @@ function tcTemplate() {
     }
 
     refreshAllInput() {
-      this.constructor.fieldNames.forEach((field) => { this[field].refreshInput(); });
+      this.constructor.fieldNames.forEach((field) => { this[field].refreshInput(true); });
     }
   }
 
@@ -350,20 +339,19 @@ function tcTemplate() {
       //Return true if the tested index is ignored
       if (ignoreHidden && this.parentItem.isHidden()) { return true; }
 
+      //FIXME: The NaN condition seems dodgy. What if field is not meant to be a number?
+      const isMatch = (item) => item[this.constructor.fieldName].value === this.value || Number.isNaN(item[this.constructor.fieldName].value);
+
       if (ignoreHidden) {
         return this.parentList.items.every((item) => isMatch(item) || item.isHidden());
       } else {
         return this.parentList.items.every(isMatch);
       }
-
-      function isMatch(item) {
-        //FIXME: The NaN condition seems dodgy. What if field is not meant to be a number?
-        return item[this.constructor.fieldName].value === this.value || Number.isNaN(item[this.constructor.fieldName].value);
-      }
     }
 
-    refreshInput() {
+    refreshInput(alsoAuto = false) {
       //Updates input element value - no user input
+      if (alsoAuto && this.auto !== undefined) { this.auto.refreshInput(false); }
       this.inputValue = this.value;
       this.updateMsgs();
     }
@@ -371,12 +359,12 @@ function tcTemplate() {
     resetValue() {
       if (this.station.isDefault()) {
         //Resets to original value
-        this.save(this.constructor.getOriginalValue());
+        this.save(this.constructor.originalValue);
       } else {
         //Resets to current default value
         this.save(this.stationList.default[this.fieldName].value);
       }
-      this.refreshInput();
+      this.refreshInput(true); //TODO: Check value of alsoAuto
       this.station.checkValidity(false);
     }
 
@@ -384,7 +372,7 @@ function tcTemplate() {
       //Call when the value of the input element is updated by the user
       this.save(this.inputValue);
       this.updateMsgs();
-      this.station.checkValidity(false);
+      this.parentItem.checkValidity(false);
     }
 
     save(val) {
@@ -445,6 +433,7 @@ function tcTemplate() {
     constructor(obj) {
       super(obj);
       this.parentField = obj.parentField;
+      this.calculated = this.parentField.constructor.originalValue;
     }
 
     updateMsgs() {
@@ -452,9 +441,12 @@ function tcTemplate() {
         this.parentField.inputElement.readOnly = true;
         //Insert calculated value
         this.parentField.save(this.calculated);
+        this.parentField.refreshInput(false);
       } else {
         this.parentField.inputElement.readOnly = false;
       }
+      this.parentField.checkValidity();
+      this.parentField.updateMsgs();
     }
   }
   AutoField.originalValue = true;
@@ -672,7 +664,7 @@ function tcTemplate() {
         contentFieldClass.remove("error");
         //Check whether all values are the same
         //No warning if non-default hidden station or defaults or all stations same
-        if (this.station.isDefault() || this.matchesAll(true)) {
+        if (this.parentItem.isDefault() || this.matchesAll(true)) {
           contentFieldClass.remove("warning");
           this.constructor.errorElement.textContent = "";
         } else {
@@ -780,7 +772,7 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = this.parentItem.enforceRules.value && this.value !== 6;
+      this.valid = !this.parentItem.enforceRules.value || this.parentItem.isHidden() || this.value === 6;
     }
   }
   Object.assign(NumKites, {
@@ -936,6 +928,7 @@ function tcTemplate() {
     MapScale,
     ContourInterval,
     MapShape,
+    MapSize,
     NumKites,
     EnforceRules
   ].concat(Course.customLayoutClasses);
