@@ -71,7 +71,7 @@
               <li>
                 <label for="autoSaveFrequency">Frequency</label>
                 <span class="inputBlock">
-                  <input id="autoSaveFrquency" type="number" min="1" step="any" /><span>s</span>
+                  <input id="autoSaveFrequency" type="number" min="1" step="any" /><span>s</span>
                 </span>
                 <span id="autoSaveFrequencyError"></span>
               </li>
@@ -96,9 +96,9 @@
         <details>
           <summary>Name and order</summary>
           <ul>
-            <li><label for="defaultRadio"><input id="defaultRadio" type="radio" name="editType" value="default" /> Set defaults for all courses</label></li>
+            <li><label for="defaultRadio"><input id="defaultRadio" type="radio" name="editType" /> Set defaults for all courses</label></li>
             <li>
-              <label for="courseRadio"><input id="courseRadio" type="radio" name="editType" value="course" /> Customise course</label>
+              <label for="courseRadio"><input id="courseRadio" type="radio" name="editType" /> Customise course</label>
               <select id="courseSelect" size="6"></select>
               <span class="btnGroup">
                 <button id="addCourse" type="button">+ Add</button>
@@ -121,7 +121,7 @@
           <summary>Tasks file and template</summary>
           <ul>
             <li>
-              <label for="newTasksFile"><input id="newTasksFile" type="radio" name="tasksFile" value="new" /> New file with</label>
+              <label for="newTasksFile"><input id="newTasksFile" type="radio" name="tasksFile" /> New file with</label>
               <label for="tasksTemplate">template
                 <select id="tasksTemplate">
                   <option value="printA5onA4">TempO: Print 2 × A5 cards on A4</option>
@@ -130,11 +130,11 @@
               </label>
             </li>
             <li>
-              <label for="appendTasksFile"><input id="appendTasksFile" type="radio" name="tasksFile" value="append" /> Include with</label>
+              <label for="appendTasksFile"><input id="appendTasksFile" type="radio" name="tasksFile" /> Include with</label>
               <label for="appendTasksCourse">course <select id="appendTasksCourse"></select></label>
             </li>
             <li>
-              <label for="hideTasksFile"><input id="hideTasksFile" type="radio" name="tasksFile" value="hide" /> Hide</label>
+              <label for="hideTasksFile"><input id="hideTasksFile" type="radio" name="tasksFile" /> Hide</label>
             </li>
             <li>
               <button id="setAllTasksFile" class="setAllCourses" type="button">Set all courses</button>

@@ -72,11 +72,7 @@ function tcTemplate() {
     }
 
     checkValidity(recheckFields = true) {
-      if (recheckFields) {
-        for (const item of this.items) {
-          item.checkValidity(true);
-        }
-      }
+      if (recheckFields) { this.items.forEach((item) => { item.checkValidity(true); }); }
       this.valid = this.items.every((item) => item.valid);
     }
 
@@ -90,8 +86,15 @@ function tcTemplate() {
     static addListeners() {
       const listObj = (this === CourseList) ? courseList : stationList;
       this.itemClass.fieldClasses.forEach((field, index) => {
-        const inputEvent = (field.inputElement.tagName === "SELECT" || field.inputElement.type === "checkbox") ? "change" : "input";
-        field.inputElement.addEventListener(inputEvent, () => { listObj.activeItem[this.itemClass.fieldNames[index]].saveInput(); });
+        if (field.inputElement.tagName === undefined) {
+          //Radio buttons
+          Object.values(field.inputElement).forEach((element) => {
+            element.addEventListener("change", () => { listObj.activeItem[this.itemClass.fieldNames[index]].saveInput(); });
+          });
+        } else {
+          const inputEvent = (field.inputElement.tagName === "SELECT" || field.inputElement.type === "checkbox") ? "change" : "input";
+          field.inputElement.addEventListener(inputEvent, () => { listObj.activeItem[this.itemClass.fieldNames[index]].saveInput(); });
+        }
         if (field.autoElement !== undefined) {
           field.autoElement.addEventListener("change", () => { listObj.activeItem[this.itemClass.fieldNames[index]].auto.saveInput(); });
         }
@@ -132,9 +135,9 @@ function tcTemplate() {
       const block = active && !this.activeItem.itemName.valid;
       if (block) {
         //Abort
-        alert(this.nameErrorAlert);
+        alert(this.constructor.nameErrorAlert);
         //Change selectors back to original value
-        this.selector.selectedIndex = this.itemInFocus;
+        this.constructor.selector.selectedIndex = this.itemInFocus;
       }
       return block;
     }
@@ -210,10 +213,10 @@ function tcTemplate() {
       return this.parentList.default === this;
     }
 
-    isHidden() {
-      //TODO: Move to more specialised classes
-      return false;
-    }
+    // isHidden() {
+    //   //TODO: Move to more specialised classes
+    //   return false;
+    // }
 
     createFields(copy) {
       if (typeof copy === "undefined") {
@@ -350,6 +353,7 @@ function tcTemplate() {
     }
 
     refreshInput(alsoAuto = false) {
+      //Parameters are to avoid circular arguments, hence infinite stacks
       //Updates input element value - no user input
       if (alsoAuto && this.auto !== undefined) { this.auto.refreshInput(false); }
       this.inputValue = this.value;
@@ -357,15 +361,15 @@ function tcTemplate() {
     }
 
     resetValue() {
-      if (this.station.isDefault()) {
+      if (this.parentItem.isDefault()) {
         //Resets to original value
         this.save(this.constructor.originalValue);
       } else {
         //Resets to current default value
-        this.save(this.stationList.default[this.fieldName].value);
+        this.save(this.parentList.default[this.fieldName].value);
       }
       this.refreshInput(true); //TODO: Check value of alsoAuto
-      this.station.checkValidity(false);
+      this.parentItem.checkValidity(false);
     }
 
     saveInput() {
@@ -388,11 +392,11 @@ function tcTemplate() {
     }
 
     setAll() {
-      //Sets this field to this value in all stations
-      for (const station of this.stationList.items) {
-        station[this.fieldName].save(this.value);
-        station.checkValidity(false);
-      }
+      //Sets this field to this value in all items
+      this.parentList.items.forEach((item) => {
+        item[this.constructor.fieldName].save(this.value);
+        item.checkValidity(false);
+      });
     }
 
     updateMsgs() {
@@ -440,7 +444,7 @@ function tcTemplate() {
       if (this.value) {
         this.parentField.inputElement.readOnly = true;
         //Insert calculated value
-        this.parentField.save(this.calculated);
+        this.parentField.save(this.calculated); //Only checks validity if value changed, so always recheck
         this.parentField.refreshInput(false);
       } else {
         this.parentField.inputElement.readOnly = false;
@@ -527,19 +531,42 @@ function tcTemplate() {
     }
   }
 
-  class NameField extends Field {
-    checkValidity() {
-      //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
-      const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
-      this.syntaxError = !(this.parentItem.isDefault() || stringFormat.test(this.value));
-      this.duplicateError = !(this.parentItem.isDefault()) && this.isDuplicate(false);
-      this.valid = !(this.syntaxError || this.duplicateError);
-      if (!this.valid) { this.errorMsg = (this.syntaxError) ? tcTemplateMsg.nameSyntax : tcTemplateMsg.notUnique; }
-
-      //Update station list
-      if (!this.parentItem.isDefault()) {
-        this.parentItem.optionElement.textContent = this.value;
+  class RadioField extends Field {
+    constructor(obj) {
+      super(obj);
+      this.valid = true;
+    }
+    get inputValue() {
+      for (const val in this.inputElement) {
+        if (this.inputElement[val].checked) { return val; }
       }
+      return undefined;
+    }
+
+    set inputValue(val) {
+      this.inputElement[val].checked = true;
+    }
+
+    updateMsgs() {}
+  }
+
+  class NameField extends Field {
+    constructor(obj) {
+      super(obj);
+      this.valid = true;
+    }
+
+    checkValidity() {
+      if (!this.parentItem.isDefault()) {
+        //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
+        const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
+        this.syntaxError = !(this.parentItem.isDefault() || stringFormat.test(this.value));
+        this.duplicateError = !(this.parentItem.isDefault()) && this.isDuplicate(false);
+        this.valid = !(this.syntaxError || this.duplicateError) || this.isDefault();
+        if (!this.valid) { this.errorMsg = (this.syntaxError) ? tcTemplateMsg.nameSyntax : tcTemplateMsg.notUnique; }
+        //Update station list
+        this.parentItem.optionElement.textContent = this.value;
+      } //Else remains valid
     }
 
     updateMsgs() {
@@ -562,24 +589,41 @@ function tcTemplate() {
     errorElement: document.getElementById("courseNameError")
   });
 
-  class TasksFile extends Field {}
+  class TasksFile extends RadioField {
+    updateMsgs() {
+      this.parentItem.refreshAllInput(true);
+    }
+  }
   Object.assign(TasksFile, {
     fieldName: "tasksFile",
-    orginalValue: "new",
-    inputElement: document.getElementById("tasksFile"),
+    originalValue: "newFile",
+    inputElement: {
+      newFile: document.getElementById("newTasksFile"),
+      append: document.getElementById("appendTasksFile"),
+      hide: document.getElementById("hideTasksFile")
+    },
     resetBtn: document.getElementById("resetTasksFile"),
     setAllBtn: document.getElementById("setAllTasksFile")
   });
 
-  class TasksTemplate extends Field {}
+  class TasksTemplate extends Field {
+    constructor(obj) {
+      super(obj);
+      this.valid = true;
+    }
+  }
   Object.assign(TasksTemplate, {
     fieldName: "tasksTemplate",
     originalValue: "printA5onA4",
     inputElement: document.getElementById("tasksTemplate")
-
   });
 
-  class AppendTasksCourse extends Field {}
+  class AppendTasksCourse extends Field {
+    constructor(obj) {
+      super(obj);
+      this.valid = true;
+    }
+  }
   Object.assign(AppendTasksCourse, {
     fieldName: "appendTasksCourse",
     inputElement: document.getElementById("appendTasksCourse")
@@ -603,6 +647,7 @@ function tcTemplate() {
               continue;
             }
           }
+          //FIXME: Complete this function
           station.numTasks.save(this.value);
           station.taskList.setNumItems();
           station.checkValidity(false);
@@ -885,10 +930,13 @@ function tcTemplate() {
       // this.customLayoutFields = customLayoutClasses.map((className) => className.getFieldName());
     }
 
+    isHidden() {
+      return this.tasksFile.value === "hide";
+    }
+
     isNonDefaultHidden() {
       //Returns true if is hidden and default is not in focus
-      //FIXME: Need to sort out tasksFile
-      // return !(this.tasksFile.value === "hide" || this.isDefault());
+      return this.isHidden() && !this.isDefault();
     }
 
     checkValidity(recheckFields = true) {
@@ -920,9 +968,9 @@ function tcTemplate() {
   ];
   Course.fieldClasses = [
     CourseName,
-    // TasksFile,
-    // TasksTemplate,
-    // AppendTasksCourse,
+    TasksFile,
+    TasksTemplate,
+    AppendTasksCourse,
     NumTasks,
     Zeroes,
     MapScale,
@@ -944,7 +992,14 @@ function tcTemplate() {
       super(obj);
       //Set up current/dynamic defaults
       this.default = this.newItem();
-      this.default.checkValidity(true);
+      this.constructor.courseRadio.checked = true;
+    }
+
+    static addListeners() {
+      super.addListeners();
+      [this.defaultRadio, this.courseRadio].forEach((radio) => {
+        radio.addEventListener("click", () => { courseList.refresh(true); });
+      });
     }
 
     refresh(blockOnNameError = true) {
@@ -980,7 +1035,7 @@ function tcTemplate() {
 
         //Some fields need disabling
         this.constructor.selector.disabled = true;
-        this.constructor.btnList.forEach((btn) => { this[btn].disabled = true; });
+        this.constructor.btnList.forEach((btn) => { this.constructor[btn].disabled = true; });
         CourseName.inputElement.disabled = true;
       } else {
         this.defaultInFocus = false;
@@ -1014,7 +1069,7 @@ function tcTemplate() {
     nameErrorAlert: tcTemplateMsg.courseNameAlert,
     //Radio button options
     defaultRadio: document.getElementById("defaultRadio"),
-    stationRadio: document.getElementById("courseRadio")
+    courseRadio: document.getElementById("courseRadio")
   });
 
   class StationList extends IterableList {
