@@ -51,16 +51,6 @@ function tcTemplate() {
       this.itemInFocus = obj.itemInFocus;
       this.items = [];
       this.counterField = obj.counterField;
-
-      //Event listener functions
-      //Always use arrow functions to ensure this points to the IterableList rather than the calling DOM element
-      //Save named listener functions so that the event can be removed later
-      this.eventListeners = {
-        addBtn: () => { this.add(); this.updateCount() },
-        deleteBtn: () => { this.activeItem.deleteThis(true); this.updateCount(); },
-        upBtn: () => { this.activeItem.move(-1); },
-        downBtn: () => { this.activeItem.move(1); }
-      };
     }
 
     get activeItem() {
@@ -76,29 +66,62 @@ function tcTemplate() {
       this.valid = this.items.every((item) => item.valid);
     }
 
-    addBtnListeners() {
-      //Do not call until activeItem is defined
-      for (const btn of this.btnList) {
-        this[btn].addEventListener("click", this.eventListeners[btn]);
-      }
-    }
-
     static addListeners() {
+      //Always use arrow functions to ensure this points to the IterableList rather than the calling DOM element
       const listObj = (this === CourseList) ? courseList : stationList;
+      //Course order buttons
+      this.selector.addEventListener("change", () => { listObj.refresh(true); });
+      this.addBtn.addEventListener("click", () => { listObj.add(); listObj.updateCount(); });
+      this.deleteBtn.addEventListener("click", () => { listObj.activeItem.deleteThis(true); listObj.updateCount(); });
+      this.upBtn.addEventListener("click", () => { listObj.activeItem.move(-1); });
+      this.downBtn.addEventListener("click", () => { listObj.activeItem.move(1); });
+      //Fields
       this.itemClass.fieldClasses.forEach((field, index) => {
+        const activeField = () => listObj.activeItem[this.itemClass.fieldNames[index]];
         if (field.inputElement.tagName === undefined) {
           //Radio buttons
           Object.values(field.inputElement).forEach((element) => {
-            element.addEventListener("change", () => { listObj.activeItem[this.itemClass.fieldNames[index]].saveInput(); });
+            element.addEventListener("change", () => { activeField().saveInput(); });
           });
         } else {
           const inputEvent = (field.inputElement.tagName === "SELECT" || field.inputElement.type === "checkbox") ? "change" : "input";
-          field.inputElement.addEventListener(inputEvent, () => { listObj.activeItem[this.itemClass.fieldNames[index]].saveInput(); });
+          field.inputElement.addEventListener(inputEvent, () => { activeField().saveInput(); });
         }
         if (field.autoElement !== undefined) {
-          field.autoElement.addEventListener("change", () => { listObj.activeItem[this.itemClass.fieldNames[index]].auto.saveInput(); });
+          field.autoElement.addEventListener("change", () => { activeField().auto.saveInput(); });
+        }
+        if (field.resetBtn !== undefined) {
+          field.resetBtn.addEventListener("click", () => { activeField().resetValue(); });
+        }
+        if (field.setAllBtn !== undefined) {
+          field.setAllBtn.addEventListener("click", () => { activeField().setAll(); });
         }
       });
+    }
+
+    static showHideMoveBtns() {
+      //Show the delete button only if more than one option
+      const numItems = this.selector.length;
+      if (numItems > 1) {
+        this.deleteBtn.disabled = false;
+      } else {
+        this.deleteBtn.disabled = true;
+      }
+
+      //Shows or hides the move up and move down buttons
+      const index = this.selector.selectedIndex;
+      if (index === 0) {
+        //First station, so can't move it up
+        this.upBtn.disabled = true;
+      } else {
+        this.upBtn.disabled = false;
+      }
+      if (index === numItems - 1) {
+        //First station, so can't move it up
+        this.downBtn.disabled = true;
+      } else {
+        this.downBtn.disabled = false;
+      }
     }
 
     add() {
@@ -108,8 +131,6 @@ function tcTemplate() {
       //Name the new item
       newItem.itemName.value = (this.items.length + 1).toString();
       newItem.optionElement.textContent = newItem.itemName.value;
-
-      //Check validity of data in new item including all fields
       newItem.checkValidity(true);
 
       //Add to the end
@@ -130,9 +151,9 @@ function tcTemplate() {
       });
     }
 
-    blockNameError(active = true) {
+    blockNameError(enable = true) {
       //Only permit change of course if the name is valid and unique
-      const block = active && !this.activeItem.itemName.valid;
+      const block = enable && !this.activeItem.itemName.valid;
       if (block) {
         //Abort
         alert(this.constructor.nameErrorAlert);
@@ -149,33 +170,10 @@ function tcTemplate() {
       });
     }
 
-    showHideMoveBtns() {
-      //Show the delete button only if more than one option
-      if (this.constructor.selector.length > 1) {
-        this.constructor.deleteBtn.disabled = false;
-      } else {
-        this.constructor.deleteBtn.disabled = true;
-      }
-
-      //Shows or hides the move up and move down buttons
-      if (this.constructor.selector.selectedIndex === 0) {
-        //First station, so can't move it up
-        this.constructor.upBtn.disabled = true;
-      } else {
-        this.constructor.upBtn.disabled = false;
-      }
-      if (this.constructor.selector.selectedIndex === this.constructor.selector.length - 1) {
-        //First station, so can't move it up
-        this.constructor.downBtn.disabled = true;
-      } else {
-        this.constructor.downBtn.disabled = false;
-      }
-    }
-
     updateCount() {
       if (this.counterField !== undefined) {
         this.counterField.save(this.items.length);
-        this.counterField.refreshInput();
+        this.counterField.refreshInput(); //FIXME: parameters to function
       }
     }
   }
@@ -242,7 +240,7 @@ function tcTemplate() {
       }
       this.optionElement.remove();
       this.parentList.iteminFocus = 0;
-      this.parentList.selector.selectedIndex = 0;
+      this.parentList.constructor.selector.selectedIndex = 0;
       //Remove this station from array
       this.parentList.items.splice(this.index, 1);
       //Don't save deleted values then refresh input fields
@@ -255,7 +253,7 @@ function tcTemplate() {
 
       //Check target is in bounds
       const newPos = this.index + offset;
-      const arrayLength = this.parentList.items.length
+      const arrayLength = this.parentList.items.length;
       if (newPos < 0 || newPos >= arrayLength) {
         throw new Error("Moving station to position beyond bounds of array");
       }
@@ -263,29 +261,28 @@ function tcTemplate() {
         throw new Error("Station position offset is not an integer");
       }
 
-      //Rearrange selector
-      this.optionElement.remove();
-      let insertBeforeElement = null;
-      if (newPos < arrayLength - 1) {
-        insertBeforeElement = this.parentList.items[newPos].optionElement;
-      } //Else move to end of list
-      //Make sure to get a new element list, as it will have changed
-      this.parentList.selector.insertBefore(this.optionElement, insertBeforeElement);
-
       //Remove this from array
       this.parentList.items.splice(this.index, 1);
       //Insert into new position
       this.parentList.items.splice(newPos, 0, this);
 
+      //Rearrange selector
+      let insertBeforeElement = null;
+      if (newPos < arrayLength - 1) {
+        insertBeforeElement = this.parentList.items[newPos + 1].optionElement;
+      } //Else move to end of list
+      //Make sure to get a new element list, as it will have changed
+      this.parentList.constructor.selector.insertBefore(this.optionElement, insertBeforeElement);
+
       //Update active station number
       this.parentList.itemInFocus = newPos;
 
       //Enable/disable move up/down buttons
-      this.parentList.showHideMoveBtns();
+      this.parentList.constructor.showHideMoveBtns();
     }
 
-    refreshAllInput() {
-      this.constructor.fieldNames.forEach((field) => { this[field].refreshInput(true); });
+    refreshAllInput(inputChanged = true) {
+      this.constructor.fieldNames.forEach((field) => { this[field].refreshInput(true, inputChanged); });
     }
   }
 
@@ -327,12 +324,14 @@ function tcTemplate() {
       //Determines whether this value is duplicated at another item in this list. Ignores hidden stations on request.
 
       //Return false if the tested index is ignored
-      if (ignoreHidden && this.station.showStation.value === false) { return false; }
+      if (ignoreHidden && this.parentItem.isHidden()) { return false; }
+
+      const isDup = (item) => item[this.constructor.fieldName].value === this.value && item !== this.parentItem;
 
       if (ignoreHidden) {
-        return this.parentList.items.some((item) => (item[this.fieldName].value === this.value && item !== this.parentItem && this.station.showStation.value === true));
+        return this.parentList.items.some((item) => isDup(item) || item.isHidden());
       } else {
-        return this.parentList.items.some((item) => (item[this.fieldName].value === this.value && item !== this.parentItem));
+        return this.parentList.items.some(isDup);
       }
     }
 
@@ -342,7 +341,6 @@ function tcTemplate() {
       //Return true if the tested index is ignored
       if (ignoreHidden && this.parentItem.isHidden()) { return true; }
 
-      //FIXME: The NaN condition seems dodgy. What if field is not meant to be a number?
       const isMatch = (item) => item[this.constructor.fieldName].value === this.value || Number.isNaN(item[this.constructor.fieldName].value);
 
       if (ignoreHidden) {
@@ -352,31 +350,41 @@ function tcTemplate() {
       }
     }
 
-    refreshInput(alsoAuto = false) {
-      //Parameters are to avoid circular arguments, hence infinite stacks
-      //Updates input element value - no user input
-      if (alsoAuto && this.auto !== undefined) { this.auto.refreshInput(false); }
-      this.inputValue = this.value;
+    refreshInput(alsoAuto = false, inputChanged = true) {
+      //alsoAuto false avoids infinite recursion
+      //inputChanged only accesses DOM if required
+      //Updates input element value - no user input so no change in validity
+      if (alsoAuto && this.auto !== undefined) { this.auto.refreshInput(false, inputChanged); }
+      if (inputChanged) { this.inputValue = this.value; }
       this.updateMsgs();
     }
 
     resetValue() {
-      if (this.parentItem.isDefault()) {
-        //Resets to original value
-        this.save(this.constructor.originalValue);
+      const resetField = (field) => {
+        if (this.parentItem.isDefault()) {
+          //Resets to original value
+          field.save(field.constructor.originalValue);
+        } else {
+          //Resets to current default value
+          let defaultField = this.parentList.default[this.constructor.fieldName];
+          if (field !== this) { defaultField = defaultField.auto; }
+          field.save(defaultField.value);
+        }
+      };
+
+      if (this.auto !== undefined) {
+        resetField(this.auto);
+        if (!this.auto.value) { resetField(this); }
       } else {
-        //Resets to current default value
-        this.save(this.parentList.default[this.fieldName].value);
+        resetField(this);
       }
-      this.refreshInput(true); //TODO: Check value of alsoAuto
-      this.parentItem.checkValidity(false);
+      this.refreshInput(true, true);
     }
 
     saveInput() {
       //Call when the value of the input element is updated by the user
       this.save(this.inputValue);
       this.updateMsgs();
-      this.parentItem.checkValidity(false);
     }
 
     save(val) {
@@ -388,20 +396,18 @@ function tcTemplate() {
         this.value = val;
         //Check whether this new value is valid
         this.checkValidity();
+        this.parentItem.checkValidity(false);
       }
     }
 
     setAll() {
       //Sets this field to this value in all items
-      this.parentList.items.forEach((item) => {
-        item[this.constructor.fieldName].save(this.value);
-        item.checkValidity(false);
-      });
+      this.parentList.items.forEach((item) => { item[this.constructor.fieldName].save(this.value); });
     }
 
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
-      if (this.valid) {
+      if (this.valid || (this.constructor.ignoreErrorNonDefaultHidden && this.parentItem.isNonDefaultHidden())) {
         contentFieldClass.remove("error");
         if (this.constructor.errorElement !== undefined) {
           this.constructor.errorElement.textContent = "";
@@ -415,7 +421,10 @@ function tcTemplate() {
     //Empty functions, which may be overwritten in inheriting classes if some action is required
     checkValidity() {} //Most likely: field always valid
   }
-  Field.originalValue = "";
+  Object.assign(Field, {
+    originalValue: "",
+    ignoreErrorNonDefaultHidden: true
+  });
 
   class BooleanField extends Field {
     constructor(obj) {
@@ -445,7 +454,7 @@ function tcTemplate() {
         this.parentField.inputElement.readOnly = true;
         //Insert calculated value
         this.parentField.save(this.calculated); //Only checks validity if value changed, so always recheck
-        this.parentField.refreshInput(false);
+        this.parentField.refreshInput(false, true);
       } else {
         this.parentField.inputElement.readOnly = false;
       }
@@ -480,7 +489,7 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = Number.isFinite(this.value) || this.parentItem.isNonDefaultHidden();
+      this.valid = Number.isFinite(this.value);
     }
 
     save(val) {
@@ -504,7 +513,7 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = (Number.isFinite(this.value) && this.value >= 0) || this.parentItem.isNonDefaultHidden();
+      this.valid = Number.isFinite(this.value) && this.value >= 0;
     }
   }
 
@@ -516,7 +525,7 @@ function tcTemplate() {
 
     checkValidity() {
       //LaTeX crashes if font size is set to zero
-      this.valid = (Number.isFinite(this.value) && this.value > 0) || this.parentItem.isNonDefaultHidden();
+      this.valid = Number.isFinite(this.value) && this.value > 0;
     }
   }
 
@@ -527,7 +536,7 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = (Number.isInteger(this.value) && this.value > 0) || this.parentItem.isNonDefaultHidden();
+      this.valid = Number.isInteger(this.value) && this.value > 0;
     }
   }
 
@@ -562,25 +571,17 @@ function tcTemplate() {
         const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
         this.syntaxError = !(this.parentItem.isDefault() || stringFormat.test(this.value));
         this.duplicateError = !(this.parentItem.isDefault()) && this.isDuplicate(false);
-        this.valid = !(this.syntaxError || this.duplicateError) || this.isDefault();
+        this.valid = !(this.syntaxError || this.duplicateError) || this.parentItem.isDefault();
         if (!this.valid) { this.errorMsg = (this.syntaxError) ? tcTemplateMsg.nameSyntax : tcTemplateMsg.notUnique; }
         //Update station list
         this.parentItem.optionElement.textContent = this.value;
       } //Else remains valid
     }
-
-    updateMsgs() {
-      const contentFieldClass = this.inputElement.classList;
-      if (this.valid) {
-        contentFieldClass.remove("error");
-        this.constructor.errorElement.textContent = "";
-      } else {
-        contentFieldClass.add("error");
-        this.constructor.errorElement.textContent = this.errorMsg;
-      }
-    }
   }
-  NameField.fieldName = "itemName";
+  Object.assign(NameField, {
+    fieldName: "itemName",
+    ignoreErrorNonDefaultHidden: false
+  });
 
   //Course - in reverse order of dependency
   class CourseName extends NameField {}
@@ -590,8 +591,9 @@ function tcTemplate() {
   });
 
   class TasksFile extends RadioField {
-    updateMsgs() {
-      this.parentItem.refreshAllInput(true);
+    saveInput() {
+      super.saveInput();
+      this.parentItem.refreshAllInput(false);
     }
   }
   Object.assign(TasksFile, {
@@ -667,7 +669,7 @@ function tcTemplate() {
   class MapScale extends StrictPositiveField {
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
-      if (this.valid) {
+      if (this.valid || this.parentItem.isNonDefaultHidden()) {
         contentFieldClass.remove("error");
         //Check whether all values are the same and (equal 4000 or 5000)
         //No warning if non-default hidden station or (4000/5000 and (default or all stations same))
@@ -705,7 +707,7 @@ function tcTemplate() {
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
       //Check validity - don't bother if station is non-default hidden
-      if (this.valid) {
+      if (this.valid || this.parentItem.isNonDefaultHidden()) {
         contentFieldClass.remove("error");
         //Check whether all values are the same
         //No warning if non-default hidden station or defaults or all stations same
@@ -738,17 +740,6 @@ function tcTemplate() {
     }
 
     updateMsgs() {
-      //Check all values the same - don't bother if station is hidden or is the defaults
-      //No warning if station hidden or Defaults or all stations same
-      const contentFieldClass = this.inputElement.classList;
-      if (this.matchesAll(true) || this.parentItem.isDefault()) {
-        contentFieldClass.remove("warning");
-        this.constructor.errorElement.textContent = "";
-      } else {
-        contentFieldClass.add("warning");
-        this.constructor.errorElement.textContent = tcTemplateMsg.notSameForAllCourses;
-      }
-
       //Update labels for map size description
       const sizeTypeElement = document.getElementById("mapSizeType");
       if (this.value === "circle") {
@@ -769,7 +760,7 @@ function tcTemplate() {
 
   class MapSize extends NumberField {
     checkValidity() {
-      this.valid = (Number.isFinite(this.value) && this.value > 0 && this.value <= 12) || this.parentItem.isNonDefaultHidden();
+      this.valid = Number.isFinite(this.value) && this.value > 0 && this.value <= 12;
       if (this.valid) {
         if (this.parentItem.enforceRules.value && this.value < 5) {
           this.valid = false;
@@ -779,25 +770,6 @@ function tcTemplate() {
         this.errorMsg = tcTemplateMsg.awaitingData;
       } else {
         this.errorMsg = tcTemplateMsg.mapSizeError;
-      }
-    }
-
-    updateMsgs() {
-      const contentFieldClass = this.inputElement.classList;
-      if (this.valid) {
-        contentFieldClass.remove("error");
-        //Check whether all values are the same
-        if (this.parentItem.isNonDefaultHidden() || this.parentItem.isDefault() || this.matchesAll(true)) {
-          contentFieldClass.remove("warning");
-          this.constructor.errorElement.textContent = "";
-        } else {
-          contentFieldClass.add("warning");
-          this.constructor.errorElement.textContent = tcTemplateMsg.notSameForAllCourses;
-        }
-      } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        this.constructor.errorElement.textContent = this.errorMsg;
       }
     }
   }
@@ -829,7 +801,13 @@ function tcTemplate() {
     errorElement: document.getElementById("numKitesError")
   });
 
-  class EnforceRules extends BooleanField {}
+  class EnforceRules extends BooleanField {
+    saveInput() {
+      super.saveInput();
+      this.parentItem.checkValidity(true);
+      this.parentItem.refreshAllInput(false);
+    }
+  }
   Object.assign(EnforceRules, {
     fieldName: "enforceRules",
     originalValue: true,
@@ -847,7 +825,6 @@ function tcTemplate() {
     setAllBtn: document.getElementById("setAllIDFontSize"),
     errorElement: document.getElementById("IDFontSizeError")
   });
-
 
   class CheckWidth extends NonNegativeField {}
   Object.assign(CheckWidth, {
@@ -872,7 +849,7 @@ function tcTemplate() {
   class CheckFontSize extends StrictPositiveField {}
   Object.assign(CheckFontSize, {
     fieldName: "checkFontSize",
-    originalValue: "0.8",
+    originalValue: 0.8,
     inputElement: document.getElementById("checkFontSize"),
     resetBtn: document.getElementById("resetCheckFontSize"),
     setAllBtn: document.getElementById("setAllCheckFontSize"),
@@ -943,7 +920,7 @@ function tcTemplate() {
       if (recheckFields) {
         this.constructor.fieldNames.forEach((field) => { this[field].checkValidity(); });
       }
-      this.valid = this.constructor.fieldNames.every((field) => this[field].valid);
+      this.valid = this.isHidden() || this.constructor.fieldNames.every((field) => this[field].valid);
       //Highlight errors in the station selector
       //Don't flag if uncalculated auto values
       if (!this.isDefault()) {
@@ -992,6 +969,7 @@ function tcTemplate() {
       super(obj);
       //Set up current/dynamic defaults
       this.default = this.newItem();
+      this.default.checkValidity(true);
       this.constructor.courseRadio.checked = true;
     }
 
@@ -1036,7 +1014,6 @@ function tcTemplate() {
         //Some fields need disabling
         this.constructor.selector.disabled = true;
         this.constructor.btnList.forEach((btn) => { this.constructor[btn].disabled = true; });
-        CourseName.inputElement.disabled = true;
       } else {
         this.defaultInFocus = false;
 
@@ -1047,16 +1024,16 @@ function tcTemplate() {
         //Some fields may need enabling
         this.constructor.selector.disabled = false;
         this.constructor.addBtn.disabled = false;
-        this.showHideMoveBtns();
-        CourseName.inputElement.disabled = false;
+        this.constructor.showHideMoveBtns();
 
         //TODO: Show new task etc. selectors
         // this.activeItem.taskList.selector.style.display = "";
         // this.activeItem.taskList.addBtnListeners();
       }
 
-      //Populate with values for new selected station and show error/warning messages
-      this.activeItem.refreshAllInput();
+      //Populate with values for new selected course and show error/warning messages
+      //FIXME: and station
+      this.activeItem.refreshAllInput(true);
     }
   }
   Object.assign(CourseList, {
@@ -3081,7 +3058,7 @@ function tcTemplate() {
       if (index === -1) {
         //Create new rule
         index = stylesheet.insertRule(selector + "{}", selectors.length);
-        selectors.pop(selector);
+        selectors.push(selector);
       }
       return stylesheet.cssRules[index].style;
     }
