@@ -96,9 +96,13 @@
         <details>
           <summary>Name and order</summary>
           <ul>
-            <li><label for="defaultRadio"><input id="defaultRadio" type="radio" name="editType" /> Set defaults for all courses</label></li>
             <li>
-              <label for="courseRadio"><input id="courseRadio" type="radio" name="editType" /> Customise course</label>
+              <input id="defaultRadio" type="radio" name="editType" />
+              <label for="defaultRadio">Set defaults for all courses</label>
+            </li>
+            <li>
+              <input id="courseRadio" type="radio" name="editType" />
+              <label for="courseRadio">Customise course</label>
               <select id="courseSelect" size="6"></select>
               <span class="btnGroup">
                 <button id="addCourse" type="button">+ Add</button>
@@ -240,16 +244,22 @@
           <summary>Customise layout</summary>
           <ul>
             <!-- <li class="tickRow"><input id="orientateSolutions" type="checkbox" /><label for="orientateSolutions">Orientate solutions to viewing points</label></li> -->
-            <li class="tickRow"><input id="debugCircle" type="checkbox" /><label for="debugCircle">Show construction marks to verify position of control circle and do not orientate maps</label></li>
           </ul>
           <p>TODO: MOVE THIS TO HELP? There are no sanity checks here, so check the output carefully.</p>
+          <ul>
+            <li>
+              <button id="setAllCustomLayout" type="button" class="setAllCourses">Set all courses to defaults</button>
+              <button id="resetAllCustomLayout" type="button">Reset all</button>
+            </li>
+          </ul>
+          <ul>
+            <li class="tickRow">
+              <input id="debugCircle" type="checkbox" /><label for="debugCircle">Show construction marks to verify position of control circle and do not orientate maps</label>
+              <button id="setAllDebugCircle" class="setAllCourses" type="button">Set all courses</button>
+              <button id="resetDebugCircle" type="button">Reset</button>
+            </li>
+          </ul>
           <div class="printTCOptions">
-            <ul>
-              <li>
-                <button id="setAllCustomLayout" type="button" class="setAllCourses">Set all courses to defaults</button>
-                <button id="resetAllCustomLayout" type="button">Reset all</button>
-              </li>
-            </ul>
             <fieldset>
               <legend>Station name</legend>
               <ul class="fieldList">
@@ -364,11 +374,12 @@
         <details>
           <summary>Options</summary>
           <ul class="fieldList">
-            <li class="hideIfDefault">
-              <label for="moveToCourseDestination">Move to course</label>
+            <li>
+              <label for="stationCourse">Course</label>
               <span class="inputBlock">
-                <select id="moveToCourseDestination"></select>
-                <button id="moveToCourseBtn" class="hideIfDefault" type="button">Move</button>
+                <select id="stationCourse"></select>
+                <button id="setAllStationCourse" class="setAllCourses" type="button">Set all stations</button>
+                <button id="resetStationCourse" class="hideIfDefault" type="button">Reset</button>
               </span>
             </li>
             <li>

@@ -47,7 +47,6 @@ function tcTemplate() {
       // this.btnList = ["addBtn", "deleteBtn", "upBtn", "downBtn"];
       // this.btnList.forEach((btn) => { this[btn] = obj[btn]; });
       if (obj.itemInFocus === undefined) { obj.itemInFocus = 0; };
-      this.defaultInFocus = obj.defaultInFocus;
       this.itemInFocus = obj.itemInFocus;
       this.items = [];
       this.counterField = obj.counterField;
@@ -59,6 +58,10 @@ function tcTemplate() {
       } else {
         return this.items[this.itemInFocus];
       }
+    }
+
+    get defaultInFocus() {
+      return courseList.defaultInFocus;
     }
 
     checkValidity(recheckFields = true) {
@@ -97,6 +100,11 @@ function tcTemplate() {
           field.setAllBtn.addEventListener("click", () => { activeField().setAll(); });
         }
       });
+      //Field groups
+      this.resetGroups.forEach((group) => {
+        group.resetBtn.addEventListener("click", () => { group.fieldClasses.forEach((field) => { field.resetBtn.click(); }); });
+        group.setAllBtn.addEventListener("click", () => { group.fieldClasses.forEach((field) => { field.setAllBtn.click(); }); });
+      });
     }
 
     static showHideMoveBtns() {
@@ -130,7 +138,14 @@ function tcTemplate() {
 
       //Name the new item
       newItem.itemName.value = (this.items.length + 1).toString();
+      //Check unique and increment by 1 if not
+      newItem.itemName.checkValidity();
+      while (!newItem.itemName.valid) {
+        newItem.itemName.value = (Number(newItem.itemName.value) + 1).toString();
+        newItem.itemName.checkValidity();
+      }
       newItem.optionElement.textContent = newItem.itemName.value;
+
       newItem.checkValidity(true);
 
       //Add to the end
@@ -140,6 +155,8 @@ function tcTemplate() {
       //Try to change to new item. The add station button is disabled when on defaults.
       newItem.optionElement.selected = true;
       this.refresh(true);
+
+      return newItem;
     }
 
     applyAll(action, fieldList) {
@@ -165,7 +182,7 @@ function tcTemplate() {
 
     newItem() {
       return new this.constructor.itemClass({
-        parentObj: this,
+        parentList: this,
         copy: (this.default === undefined) ? undefined : this.default
       });
     }
@@ -181,10 +198,11 @@ function tcTemplate() {
 
   class IterableItem {
     constructor(obj) {
-      this.parentList = obj.parentObj;
+      this.parentList = obj.parentList;
       if (!this.parentList.defaultInFocus) {
         this.optionElement = document.createElement("option");
       }
+      this.createFields(obj.copy);
       //TODO: This seems outdated
       if (this.constructor.itemType === "station") {
         this.station = this;
@@ -215,6 +233,28 @@ function tcTemplate() {
     //   //TODO: Move to more specialised classes
     //   return false;
     // }
+
+
+    isNonDefaultHidden() {
+      //Returns true if is hidden and default is not in focus
+      return this.isHidden() && !this.isDefault();
+    }
+
+    checkValidity(recheckFields = true) {
+      if (recheckFields) {
+        this.constructor.fieldNames.forEach((field) => { this[field].checkValidity(); });
+      }
+      this.valid = this.constructor.fieldNames.every((field) => this[field].valid);
+      //Highlight errors in the station selector
+      //Don't flag if uncalculated auto values
+      if (!this.isDefault()) {
+        if (this.valid || this.constructor.fieldNames.every((field) => this[field].valid || this[field].autoEnabled())) {
+          this.optionElement.classList.remove("error");
+        } else {
+          this.optionElement.classList.add("error");
+        }
+      }
+    }
 
     createFields(copy) {
       if (typeof copy === "undefined") {
@@ -299,6 +339,8 @@ function tcTemplate() {
       // this.stationList = this.station.parentList; //Shortcut
       this.inputElement = (obj.inputElement === undefined) ? this.constructor.inputElement : obj.inputElement;
       this.value = (obj.value === undefined) ? this.constructor.originalValue : obj.value;
+      this.valid = true;
+      this.ruleCompliant = true;
       if (this.constructor.autoElement !== undefined) {
         this.auto = new AutoField({
           parentItem: obj.parentItem, //TODO: Check this
@@ -389,15 +431,17 @@ function tcTemplate() {
 
     save(val) {
       //Saves value and determines whether a change has occurred
-      if (this.value !== val) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        this.value = val;
-        //Check whether this new value is valid
-        this.checkValidity();
-        this.parentItem.checkValidity(false);
-      }
+      if (this.value !== val) { this.saveValue(val); }
+    }
+
+    saveValue(val) {
+      //Flag value as changed
+      paramsSaved = false;
+      //Write new value to memory
+      this.value = val;
+      //Check whether this new value is valid
+      this.checkValidity();
+      this.parentItem.checkValidity(false);
     }
 
     setAll() {
@@ -407,12 +451,19 @@ function tcTemplate() {
 
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
-      if (this.valid || (this.constructor.ignoreErrorNonDefaultHidden && this.parentItem.isNonDefaultHidden())) {
+      if (this.valid) {
         contentFieldClass.remove("error");
-        if (this.constructor.errorElement !== undefined) {
-          this.constructor.errorElement.textContent = "";
+        if (this.ruleCompliant) {
+          contentFieldClass.remove("warning");
+          if (this.constructor.errorElement !== undefined) {
+            this.constructor.errorElement.textContent = "";
+          }
+        } else {
+          contentFieldClass.add("warning");
+          this.constructor.errorElement.textContent = this.errorMsg;
         }
       } else {
+        contentFieldClass.remove("warning");
         contentFieldClass.add("error");
         this.constructor.errorElement.textContent = this.errorMsg;
       }
@@ -421,17 +472,9 @@ function tcTemplate() {
     //Empty functions, which may be overwritten in inheriting classes if some action is required
     checkValidity() {} //Most likely: field always valid
   }
-  Object.assign(Field, {
-    originalValue: "",
-    ignoreErrorNonDefaultHidden: true
-  });
+  Field.originalValue = "";
 
   class BooleanField extends Field {
-    constructor(obj) {
-      super(obj);
-      this.valid = true;
-    }
-
     get inputValue() {
       return this.inputElement.checked;
     }
@@ -489,19 +532,12 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = Number.isFinite(this.value);
+      this.valid = Number.isFinite(this.value) || this.parentItem.isNonDefaultHidden();
     }
 
     save(val) {
       //New & saved values not equal and at least one of them not NaN (NaN === NaN is false)
-      if (this.value !== val && (Number.isNaN(this.value) === false || Number.isNaN(val) === false)) {
-        //Flag value as changed
-        paramsSaved = false;
-        //Write new value to memory
-        this.value = val;
-        //Check whether this new value is valid
-        this.checkValidity();
-      }
+      if (this.value !== val && (Number.isNaN(this.value) === false || Number.isNaN(val) === false)) { this.saveValue(val); }
     }
   }
   NumberField.originalValue = NaN;
@@ -513,7 +549,8 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = Number.isFinite(this.value) && this.value >= 0;
+      super.checkValidity();
+      this.valid = this.valid && this.value >= 0;
     }
   }
 
@@ -525,7 +562,8 @@ function tcTemplate() {
 
     checkValidity() {
       //LaTeX crashes if font size is set to zero
-      this.valid = Number.isFinite(this.value) && this.value > 0;
+      super.checkValidity();
+      this.valid = this.valid && this.value > 0;
     }
   }
 
@@ -536,15 +574,11 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = Number.isInteger(this.value) && this.value > 0;
+      this.valid = (Number.isInteger(this.value) && this.value > 0) || this.parentItem.isNonDefaultHidden();
     }
   }
 
   class RadioField extends Field {
-    constructor(obj) {
-      super(obj);
-      this.valid = true;
-    }
     get inputValue() {
       for (const val in this.inputElement) {
         if (this.inputElement[val].checked) { return val; }
@@ -560,11 +594,6 @@ function tcTemplate() {
   }
 
   class NameField extends Field {
-    constructor(obj) {
-      super(obj);
-      this.valid = true;
-    }
-
     checkValidity() {
       if (!this.parentItem.isDefault()) {
         //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
@@ -578,13 +607,15 @@ function tcTemplate() {
       } //Else remains valid
     }
   }
-  Object.assign(NameField, {
-    fieldName: "itemName",
-    ignoreErrorNonDefaultHidden: false
-  });
+  NameField.fieldName = "itemName";
 
   //Course - in reverse order of dependency
-  class CourseName extends NameField {}
+  class CourseName extends NameField {
+    saveValue(val) {
+      super.saveValue(val);
+      this.parentItem.stationOptionElement.textContent = this.value;
+    }
+  }
   Object.assign(CourseName, {
     inputElement: document.getElementById("courseName"),
     errorElement: document.getElementById("courseNameError")
@@ -593,6 +624,7 @@ function tcTemplate() {
   class TasksFile extends RadioField {
     saveInput() {
       super.saveInput();
+      this.parentItem.checkValidity(true);
       this.parentItem.refreshAllInput(false);
     }
   }
@@ -608,24 +640,14 @@ function tcTemplate() {
     setAllBtn: document.getElementById("setAllTasksFile")
   });
 
-  class TasksTemplate extends Field {
-    constructor(obj) {
-      super(obj);
-      this.valid = true;
-    }
-  }
+  class TasksTemplate extends Field {}
   Object.assign(TasksTemplate, {
     fieldName: "tasksTemplate",
     originalValue: "printA5onA4",
     inputElement: document.getElementById("tasksTemplate")
   });
 
-  class AppendTasksCourse extends Field {
-    constructor(obj) {
-      super(obj);
-      this.valid = true;
-    }
-  }
+  class AppendTasksCourse extends Field {}
   Object.assign(AppendTasksCourse, {
     fieldName: "appendTasksCourse",
     inputElement: document.getElementById("appendTasksCourse")
@@ -667,30 +689,21 @@ function tcTemplate() {
   });
 
   class MapScale extends StrictPositiveField {
-    updateMsgs() {
-      const contentFieldClass = this.inputElement.classList;
-      if (this.valid || this.parentItem.isNonDefaultHidden()) {
-        contentFieldClass.remove("error");
-        //Check whether all values are the same and (equal 4000 or 5000)
-        //No warning if non-default hidden station or (4000/5000 and (default or all stations same))
-        if (
-          this.parentItem.isNonDefaultHidden() ||
-          ((this.value === 4000 || this.value === 5000) && (this.parentItem.isDefault() || this.matchesAll(true)))
-        ) {
-          contentFieldClass.remove("warning");
-          this.constructor.errorElement.textContent = "";
+    checkValidity() {
+      super.checkValidity();
+      if (this.valid) {
+        //Check all values match
+        this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
+        if (this.ruleCompliant) {
+          //Permitted map scales is should, so don't throw error
+          this.ruleCompliant = this.value === 4000 || this.value === 5000;
+          this.errorMsg = tcTemplateMsg.mapScaleRule;
         } else {
-          contentFieldClass.add("warning");
-          if (this.value !== 4000 && this.value !== 5000) {
-          this.constructor.errorElement.textContent = tcTemplateMsg.mapScaleRule;
-        } else {
-          this.constructor.errorElement.textContent = tcTemplateMsg.notSameForAllCourses;
-        }
+          this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+          this.valid = !this.parentItem.enforceRules.value;
         }
       } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        this.constructor.errorElement.textContent = this.errorMsg;
+        this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
       }
     }
   }
@@ -704,24 +717,15 @@ function tcTemplate() {
   });
 
   class ContourInterval extends StrictPositiveField {
-    updateMsgs() {
-      const contentFieldClass = this.inputElement.classList;
-      //Check validity - don't bother if station is non-default hidden
-      if (this.valid || this.parentItem.isNonDefaultHidden()) {
-        contentFieldClass.remove("error");
-        //Check whether all values are the same
-        //No warning if non-default hidden station or defaults or all stations same
-        if (this.parentItem.isDefault() || this.matchesAll(true)) {
-          contentFieldClass.remove("warning");
-          this.constructor.errorElement.textContent = "";
-        } else {
-          contentFieldClass.add("warning");
-          this.constructor.errorElement.textContent = tcTemplateMsg.notSameForAllCourses;
-        }
+    checkValidity() {
+      super.checkValidity();
+      if (this.valid) {
+        //Check all values match
+        this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
+        this.valid = !this.parentItem.enforceRules.value || this.ruleCompliant;
+        this.errorMsg = tcTemplateMsg.notSameForAllCourses;
       } else {
-        contentFieldClass.add("error");
-        contentFieldClass.remove("warning");
-        this.constructor.errorElement.textContent = this.errorMsg;
+        this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
       }
     }
   }
@@ -736,10 +740,16 @@ function tcTemplate() {
   class MapShape extends Field {
     constructor(obj) {
       super(obj);
-      this.valid = true; //Always valid
+      this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+    }
+
+    checkValidity() {
+      //Don't throw error for not matching
+      this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
     }
 
     updateMsgs() {
+      super.updateMsgs();
       //Update labels for map size description
       const sizeTypeElement = document.getElementById("mapSizeType");
       if (this.value === "circle") {
@@ -758,13 +768,19 @@ function tcTemplate() {
     errorElement: document.getElementById("mapShapeRule")
   });
 
-  class MapSize extends NumberField {
+  class MapSize extends StrictPositiveField {
     checkValidity() {
-      this.valid = Number.isFinite(this.value) && this.value > 0 && this.value <= 12;
+      super.checkValidity();
+      this.valid = this.valid && this.value <= 12;
       if (this.valid) {
-        if (this.parentItem.enforceRules.value && this.value < 5) {
-          this.valid = false;
+        this.ruleCompliant = this.value >= 5;
+        if (this.ruleCompliant) {
+          //Don't throw error for not matching
+          this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
+          this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+        } else {
           this.errorMsg = tcTemplateMsg.mapSizeRule;
+          this.valid = !this.parentItem.enforceRules.value;
         }
       } else if (this.auto.value) {
         this.errorMsg = tcTemplateMsg.awaitingData;
@@ -789,7 +805,8 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = !this.parentItem.enforceRules.value || this.parentItem.isHidden() || this.value === 6;
+      this.ruleCompliant = this.parentItem.isHidden() || this.value === 6;
+      this.valid = !this.parentItem.enforceRules.value || this.ruleCompliant;
     }
   }
   Object.assign(NumKites, {
@@ -814,6 +831,14 @@ function tcTemplate() {
     inputElement: document.getElementById("enforceRules"),
     resetBtn: document.getElementById("resetEnforceRules"),
     setAllBtn: document.getElementById("setAllEnforceRules")
+  });
+
+  class DebugCircle extends BooleanField {}
+  Object.assign(DebugCircle, {
+    fieldName: "debugCircle",
+    inputElement: document.getElementById("debugCircle"),
+    resetBtn: document.getElementById("resetDebugCircle"),
+    setAllBtn: document.getElementById("setAllDebugCircle")
   });
 
   class IDFontSize extends StrictPositiveField {}
@@ -899,41 +924,26 @@ function tcTemplate() {
   class Course extends IterableItem {
     constructor(obj) {
       super(obj);
-      //Fields - populate with values given in copyStation, if present
-      this.createFields(obj.copy);
-
-      //FIXME: Why keep these?
-      // this.coreFields = coreFieldClasses.map((className) => className.getFieldName());
-      // this.customLayoutFields = customLayoutClasses.map((className) => className.getFieldName());
+      if (this.optionElement !== undefined) { this.stationOptionElement = this.optionElement.cloneNode(true); }
     }
 
     isHidden() {
       return this.tasksFile.value === "hide";
     }
 
-    isNonDefaultHidden() {
-      //Returns true if is hidden and default is not in focus
-      return this.isHidden() && !this.isDefault();
+    deleteThis() {
+      super.deleteThis();
+      this.parentList.refreshOtherCourseLists();
     }
 
-    checkValidity(recheckFields = true) {
-      if (recheckFields) {
-        this.constructor.fieldNames.forEach((field) => { this[field].checkValidity(); });
-      }
-      this.valid = this.isHidden() || this.constructor.fieldNames.every((field) => this[field].valid);
-      //Highlight errors in the station selector
-      //Don't flag if uncalculated auto values
-      if (!this.isDefault()) {
-        if (this.valid || this.constructor.fieldNames.every((field) => this[field].valid || this[field].autoEnabled())) {
-          this.optionElement.classList.remove("error");
-        } else {
-          this.optionElement.classList.add("error");
-        }
-      }
+    move(offset) {
+      super.move(offset);
+      this.parentList.refreshOtherCourseLists();
     }
   }
   Course.itemType = "course"; //FIXME: Is this needed?
   Course.customLayoutClasses = [
+    DebugCircle,
     IDFontSize,
     CheckWidth,
     CheckHeight,
@@ -962,15 +972,24 @@ function tcTemplate() {
   class CourseList extends IterableList {
     constructor() {
       const obj = {
-        defaultInFocus: false,
         itemInFocus: 0,
         counterField: undefined
       };
       super(obj);
       //Set up current/dynamic defaults
+      this.defaultInFocus = false;
       this.default = this.newItem();
       this.default.checkValidity(true);
       this.constructor.courseRadio.checked = true;
+    }
+
+    get defaultInFocus() {
+      return this.editingDefault;
+    }
+
+    set defaultInFocus(val) {
+      //Boolean
+      this.editingDefault = val;
     }
 
     static addListeners() {
@@ -978,6 +997,12 @@ function tcTemplate() {
       [this.defaultRadio, this.courseRadio].forEach((radio) => {
         radio.addEventListener("click", () => { courseList.refresh(true); });
       });
+    }
+
+    add() {
+      const newItem = super.add();
+      newItem.stationOptionElement.textContent = newItem.itemName.value;
+      this.refreshOtherCourseLists();
     }
 
     refresh(blockOnNameError = true) {
@@ -1035,6 +1060,10 @@ function tcTemplate() {
       //FIXME: and station
       this.activeItem.refreshAllInput(true);
     }
+
+    refreshOtherCourseLists() {
+      StationCourse.refreshList();
+    }
   }
   Object.assign(CourseList, {
     selector: document.getElementById("courseSelect"),
@@ -1044,10 +1073,107 @@ function tcTemplate() {
     downBtn: document.getElementById("moveDownCourse"),
     itemClass: Course,
     nameErrorAlert: tcTemplateMsg.courseNameAlert,
+    resetGroups: [
+      {
+        resetBtn: document.getElementById("resetAllCustomLayout"),
+        setAllBtn: document.getElementById("setAllCustomLayout"),
+        fieldClasses: Course.customLayoutClasses
+      }
+    ],
     //Radio button options
     defaultRadio: document.getElementById("defaultRadio"),
     courseRadio: document.getElementById("courseRadio")
   });
+
+  //Station - in reverse order of dependency
+  class StationName extends NameField {}
+  Object.assign(StationName, {
+    inputElement: document.getElementById("stationName"),
+    errorElement: document.getElementById("stationNameError")
+  });
+
+  class StationCourse extends Field {
+    static get originalValue() {
+      return courseList.items[courseList.itemInFocus];
+    }
+
+    get inputValue() {
+      return courseList.items[this.inputElement.selectedIndex];
+    }
+
+    set inputValue(val) {
+      this.inputElement.value = val.itemName.value;
+    }
+
+    static refreshList() {
+      //Remove existing contents
+      while (this.inputElement.hasChildNodes()) { this.inputElement.removeChild(this.inputElement.lastChild); }
+      //Repopulate
+      courseList.items.forEach((course) => { this.inputElement.appendChild(course.stationOptionElement); });
+    }
+  }
+  Object.assign(StationCourse, {
+    fieldName: "stationCourse",
+    inputElement: document.getElementById("stationCourse"),
+    resetBtn: document.getElementById("resetShowStationCourse"),
+    setAllBtn: document.getElementById("setAllShowStationCourse")
+  });
+
+  class ShowStationTasks extends BooleanField {
+    saveInput() {
+      super.saveInput();
+      this.parentItem.checkValidity(true);
+      this.parentItem.refreshAllInput(false);
+    }
+  }
+  Object.assign(ShowStationTasks, {
+    fieldName: "showStationTasks",
+    originalValue: true,
+    inputElement: document.getElementById("showStationTasks"),
+    resetBtn: document.getElementById("resetShowStationTasks"),
+    setAllBtn: document.getElementById("setAllShowStationTasks")
+  });
+
+  class Station extends IterableItem {
+    constructor(obj) {
+      super(obj);
+
+      //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
+      // this.taskList = new TaskList(this);
+      // this.taskList.setNumItems();
+    }
+
+    isHidden() {
+      return !this.showStation.value;
+    }
+
+    // checkValidity(recheckFields = true) {
+    //   if (recheckFields === true) {
+    //     //Recheck validity of all fields
+    //     for (const field of this.fieldNames) {
+    //       this[field].checkValidity();
+    //     }
+    //     this.taskList.checkValidity(true);
+    //   }
+    //
+    //   this.valid = this.fieldNames.every((field) => this[field].valid) && this.taskList.valid;
+    //   if (!this.isDefault()) {
+    //     //Highlight errors in the station selector
+    //     if (this.valid) {
+    //       this.optionElement.classList.remove("error");
+    //     } else {
+    //       this.optionElement.classList.add("error");
+    //     }
+    //   }
+    // }
+  }
+  Station.itemType = "station"; //FIXME: Is this needed?
+  Station.fieldClasses = [
+    StationName,
+    StationCourse,
+    ShowStationTasks
+  ];
+  Station.populateFieldNames();
 
   class StationList extends IterableList {
     constructor() {
@@ -1057,82 +1183,41 @@ function tcTemplate() {
         deleteBtn: document.getElementById("deleteStation"),
         upBtn: document.getElementById("moveUpStation"),
         downBtn: document.getElementById("moveDownStation"),
-        defaultInFocus: false,
         itemInFocus: 0,
         counterField: undefined
       };
       super(obj);
+      //Set up current/dynamic defaults
+      this.default = this.newItem();
+      this.default.checkValidity(true);
     }
 
-    refresh(storeValues = false) {
-      //storeValues is a boolean stating whether to commit values in form fields to variables in memory.
-
-      //Other DOM elements
-      const setAllResetCSS = document.getElementById("showSetAllCSS");
-
-      if (storeValues) {
-        //Only permit change of station if the name is valid and unique
-        if (this.activeItem.itemName.valid === false) {
-          //Abort
-          alert(tcTemplateMsg.stationNameAlert);
-          //Change radio buttons and selectors back to original values
-          if (this.defaultInFocus) {
-            this.defaultRadio.checked = true;
-          } else {
-            this.stationRadio.checked = true;
-            this.selector.selectedIndex = this.itemInFocus;
-          }
-          return;
-        }
-      }
-
-      //Hide task etc. selectors for station to be hidden
-      if (this.defaultInFocus === false) {
-        this.activeItem.taskList.selector.style.display = "none";
-        this.activeItem.taskList.removeBtnListeners();
-      }
+    refresh(blockOnNameError = true) {
+      //Only permit change of station if the name is valid and unique
+      if (this.blockNameError(blockOnNameError)) { return; }
 
       //Show/hide or enable/disable HTML elements according to new selected station
-      this.itemInFocus = this.selector.selectedIndex;
-      if (this.defaultRadio.checked) {
-        //Setting defaults for all stations
-        this.defaultInFocus = true;
+      this.itemInFocus = this.constructor.selector.selectedIndex;
+      this.constructor.showHideMoveBtns();
 
-        //Show/hide any buttons as required
-        setAllResetCSS.innerHTML = ".hideIfDefault{ display: none; }";
-
-        //Some fields need disabling
-        this.selector.disabled = true;
-        this.addBtn.disabled = true;
-        this.deleteBtn.disabled = true;
-        this.upBtn.disabled = true;
-        this.downBtn.disabled = true;
-        this.default.itemName.inputElement.disabled = true;
-        this.default.heading.inputElement.disabled = true;
-        this.default.numTasks.inputElement.readOnly = false;
-      } else {
-        this.defaultInFocus = false;
-
-        //Show/hide any buttons as required
-        setAllResetCSS.innerHTML = ".setAllCourses{ display: none; }";
-
-        //Some fields may need enabling
-        this.selector.disabled = false;
-        this.addBtn.disabled = false;
-        this.showHideMoveBtns();
-        this.activeItem.itemName.inputElement.disabled = false;
-        this.activeItem.heading.inputElement.disabled = false;
-        this.activeItem.numTasks.inputElement.readOnly = true;
-
-        //Show new task etc. selectors
-        this.activeItem.taskList.selector.style.display = "";
-        this.activeItem.taskList.addBtnListeners();
-      }
+      //Show new task etc. selectors
+      // this.activeItem.taskList.selector.style.display = "";
+      // this.activeItem.taskList.addBtnListeners();
 
       //Populate with values for new selected station and show error/warning messages
       this.activeItem.refreshAllInput();
     }
   }
+  Object.assign(StationList, {
+    selector: document.getElementById("stationSelect"),
+    addBtn: document.getElementById("addStation"),
+    deleteBtn: document.getElementById("deleteStation"),
+    upBtn: document.getElementById("moveUpStation"),
+    downBtn: document.getElementById("moveDownStation"),
+    itemClass: Station,
+    nameErrorAlert: tcTemplateMsg.stationNameAlert,
+    resetGroups: []
+  });
 
   class TaskList extends IterableList {
     constructor(parentObj) {
@@ -1192,83 +1277,7 @@ function tcTemplate() {
   //Types of items
 
 
-  class Station extends IterableItem {
-    constructor(obj) {
-      super(obj);
 
-      //Fields - populate with values given in copyStation, if present
-      const coreFieldClasses = [
-        StationName,
-        ShowStation,
-        NumKites,
-        Zeroes,
-        NumTasks,
-        Heading,
-        MapShape,
-        MapSize,
-        MapScale,
-        ContourInterval,
-      ];
-      const customLayoutClasses = [
-        IDFontSize,
-        CheckWidth,
-        CheckHeight,
-        CheckFontSize,
-        RemoveFontSize,
-        PointHeight,
-        LetterFontSize,
-        PhoneticFontSize
-      ];
-      const classNames = coreFieldClasses.concat(customLayoutClasses);
-      this.coreFields = coreFieldClasses.map((className) => className.getFieldName());
-      this.customLayoutFields = customLayoutClasses.map((className) => className.getFieldName());
-      this.fieldNames = this.coreFields.concat(this.customLayoutFields);
-      if (obj.copyStation === undefined) {
-        //Create an object to pass undefined parameters => triggers default values specified in class
-        obj.copyStation = {};
-        for (const field of this.fieldNames) {
-          obj.copyStation[field] = { value: undefined };
-        }
-      }
-      //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
-      let index = 0;
-      for (const field of this.fieldNames) {
-        this[field] = new classNames[index](this, obj.copyStation[field].value);
-        index++;
-      }
-      this.taskList = new TaskList(this);
-      this.taskList.setNumItems();
-    }
-
-    getItemType() {
-      return "station";
-    }
-
-    isNonDefaultHidden() {
-      //Returns true if the station is hidden and the default station is not in focus
-      return !(this.showStation.value || this.isDefault());
-    }
-
-    checkValidity(recheckFields = true) {
-      if (recheckFields === true) {
-        //Recheck validity of all fields
-        for (const field of this.fieldNames) {
-          this[field].checkValidity();
-        }
-        this.taskList.checkValidity(true);
-      }
-
-      this.valid = this.fieldNames.every((field) => this[field].valid) && this.taskList.valid;
-      if (!this.isDefault()) {
-        //Highlight errors in the station selector
-        if (this.valid) {
-          this.optionElement.classList.remove("error");
-        } else {
-          this.optionElement.classList.add("error");
-        }
-      }
-    }
-  }
 
   class Task extends IterableItem {
     constructor(obj) {
@@ -1328,87 +1337,7 @@ function tcTemplate() {
   //Fields
 
 
-  class StationName extends Field {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("stationName"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("stationNameError")
-      };
-      super(inputObj);
-    }
 
-    static getFieldName() {
-      return "itemName";
-    }
-
-    checkValidity() {
-      //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
-      const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
-      this.syntaxError = !(this.station.isDefault() || stringFormat.test(this.value));
-      this.duplicateError = !(this.station.isDefault()) && this.isDuplicate(false);
-      this.valid = !(this.syntaxError || this.duplicateError);
-
-      //Update station list
-      if (!this.station.isDefault()) {
-        this.station.optionElement.innerHTML = this.value;
-      }
-    }
-
-    updateMsgs() {
-      const contentFieldClass = this.inputElement.classList;
-      if (this.valid) {
-        contentFieldClass.remove("error");
-        this.errorElement.innerHTML = "";
-      } else {
-        contentFieldClass.add("error");
-        if (this.syntaxError) {
-          this.errorElement.textContent = tcTemplateMsg.nameSyntax;
-        } else {
-          this.errorElement.textContent = tcTemplateMsg.notUnique;
-        }
-      }
-    }
-  }
-
-  class ShowStation extends BooleanField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("showStationTasks"),
-        resetBtn: document.getElementById("resetShowStation"),
-        setAllBtn: document.getElementById("setAllShowStation"),
-        errorElement: undefined
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "showStation";
-    }
-
-    static getOriginalValue() {
-      return true;
-    }
-
-    checkValidity() {
-      //Always valid
-      //Most validity checks of other fields are ignored when station is hidden, so rerun all checks
-      for (const field of this.station.fieldNames) {
-        //Avoid infinite loops
-        if (field !== "showStation") {
-          this.station[field].checkValidity();
-          if (this.station.isActive()) {
-            this.station[field].updateMsgs();
-          }
-        }
-      }
-    }
-  }
 
 
 
@@ -3081,10 +3010,11 @@ function tcTemplate() {
 
   //Create root level objects
   courseList = new CourseList();
-  // stationList = new StationList();
+  stationList = new StationList();
 
   //Populate with essentials
   courseList.add();
+  stationList.add();
 
   const mapsCompiler = new Compiler({
     statusBox: document.getElementById("compileStatus"),
@@ -3286,6 +3216,7 @@ function tcTemplate() {
   // }
 
   CourseList.addListeners();
+  StationList.addListeners();
 
   //Make required functions and objects globally visible
   //TODO:This can probably all be removed: now using event listeners
