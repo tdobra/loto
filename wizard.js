@@ -46,8 +46,8 @@ function tcTemplate() {
       // this.selector = obj.selector;
       // this.btnList = ["addBtn", "deleteBtn", "upBtn", "downBtn"];
       // this.btnList.forEach((btn) => { this[btn] = obj[btn]; });
-      if (obj.itemInFocus === undefined) { obj.itemInFocus = 0; };
-      this.itemInFocus = obj.itemInFocus;
+      this.parentItem = obj.parentItem; //May be undefined
+      this.itemInFocus = obj.itemInFocus === undefined ? 0 : obj.itemInFocus;
       this.items = [];
       this.counterField = obj.counterField;
     }
@@ -144,8 +144,7 @@ function tcTemplate() {
         newItem.itemName.value = (Number(newItem.itemName.value) + 1).toString();
         newItem.itemName.checkValidity();
       }
-      newItem.optionElement.textContent = newItem.itemName.value;
-
+      newItem.setOptionText(newItem.itemName.value);
       newItem.checkValidity(true);
 
       //Add to the end
@@ -199,8 +198,10 @@ function tcTemplate() {
   class IterableItem {
     constructor(obj) {
       this.parentList = obj.parentList;
+      this.optionCopies = [];
       if (!this.parentList.defaultInFocus) {
         this.optionElement = document.createElement("option");
+        for (let i = 0; i < obj.numOptionCopies; ++i) { this.optionCopies.push(this.optionElement.cloneNode(false)); }
       }
       this.createFields(obj.copy);
       //TODO: This seems outdated
@@ -324,6 +325,11 @@ function tcTemplate() {
     refreshAllInput(inputChanged = true) {
       this.constructor.fieldNames.forEach((field) => { this[field].refreshInput(true, inputChanged); });
     }
+
+    setOptionText(val) {
+      this.optionElement.textContent = val;
+      this.optionCopies.forEach((el) => { el.textContent = val; });
+    }
   }
 
   class Field {
@@ -331,14 +337,19 @@ function tcTemplate() {
     constructor(obj) {
       this.parentItem = obj.parentItem;
       this.parentList = this.parentItem.parentList;
+      if (this.parentList.constructor.itemClass === Course || this.parentList.constructor.itemClass === Station) {
+        this.topItem = this.parentItem;
+      } else {
+        this.topItem = this.parentList.parentItem;
+      }
       // if (this.parentItem.getItemType() === "station") {
       //   this.station = this.parentItem;
       // } else {
       //   this.station = this.parentList.parentItem;
       // }
       // this.stationList = this.station.parentList; //Shortcut
-      this.inputElement = (obj.inputElement === undefined) ? this.constructor.inputElement : obj.inputElement;
-      this.value = (obj.value === undefined) ? this.constructor.originalValue : obj.value;
+      this.inputElement = obj.inputElement === undefined ? this.constructor.inputElement : obj.inputElement;
+      this.value = obj.value === undefined ? this.constructor.originalValue : obj.value;
       this.valid = true;
       this.ruleCompliant = true;
       if (this.constructor.autoElement !== undefined) {
@@ -595,27 +606,22 @@ function tcTemplate() {
 
   class NameField extends Field {
     checkValidity() {
-      if (!this.parentItem.isDefault()) {
+      if (!this.topItem.isDefault()) {
         //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
         const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
-        this.syntaxError = !(this.parentItem.isDefault() || stringFormat.test(this.value));
-        this.duplicateError = !(this.parentItem.isDefault()) && this.isDuplicate(false);
-        this.valid = !(this.syntaxError || this.duplicateError) || this.parentItem.isDefault();
-        if (!this.valid) { this.errorMsg = (this.syntaxError) ? tcTemplateMsg.nameSyntax : tcTemplateMsg.notUnique; }
+        const syntaxError = !stringFormat.test(this.value);
+        const duplicateError = this.isDuplicate(false);
+        this.valid = !(syntaxError || duplicateError);
+        if (!this.valid) { this.errorMsg = syntaxError ? tcTemplateMsg.nameSyntax : tcTemplateMsg.notUnique; }
         //Update station list
-        this.parentItem.optionElement.textContent = this.value;
+        this.parentItem.setOptionText(this.value);
       } //Else remains valid
     }
   }
   NameField.fieldName = "itemName";
 
   //Course - in reverse order of dependency
-  class CourseName extends NameField {
-    saveValue(val) {
-      super.saveValue(val);
-      this.parentItem.stationOptionElement.textContent = this.value;
-    }
-  }
+  class CourseName extends NameField {}
   Object.assign(CourseName, {
     inputElement: document.getElementById("courseName"),
     errorElement: document.getElementById("courseNameError")
@@ -653,7 +659,11 @@ function tcTemplate() {
     inputElement: document.getElementById("appendTasksCourse")
   });
 
-  class Zeroes extends BooleanField {}
+  class Zeroes extends BooleanField {
+    updateMsgs() {
+      dynamicCSS.hide(!this.value, "#mainView .zeroes");
+    }
+  }
   Object.assign(Zeroes, {
     fieldName: "zeroes",
     inputElement: document.getElementById("zeroes"),
@@ -923,8 +933,9 @@ function tcTemplate() {
 
   class Course extends IterableItem {
     constructor(obj) {
+      //Option copy allocation: 0 = StationCourse
+      obj.numOptionCopies = 1;
       super(obj);
-      if (this.optionElement !== undefined) { this.stationOptionElement = this.optionElement.cloneNode(true); }
     }
 
     isHidden() {
@@ -934,6 +945,11 @@ function tcTemplate() {
     deleteThis() {
       super.deleteThis();
       this.parentList.refreshOtherCourseLists();
+      //Change any stationCourse entries that point to this deleted station
+      if (stationList.default.stationCourse === this) { stationList.default.stationCourse = StationCourse.originalValue; }
+      stationList.items.forEach((station) => {
+        if (station.stationCourse === this) { station.stationCourse = stationList.default.stationCourse; }
+      });
     }
 
     move(offset) {
@@ -1001,7 +1017,6 @@ function tcTemplate() {
 
     add() {
       const newItem = super.add();
-      newItem.stationOptionElement.textContent = newItem.itemName.value;
       this.refreshOtherCourseLists();
     }
 
@@ -1028,24 +1043,16 @@ function tcTemplate() {
 
       //Show/hide or enable/disable HTML elements according to new selected station
       this.itemInFocus = this.constructor.selector.selectedIndex;
-      if (this.constructor.defaultRadio.checked) {
-        //Setting defaults for all stations
-        this.defaultInFocus = true;
+      this.defaultInFocus = this.constructor.defaultRadio.checked;
+      //Show/hide any buttons as required
+      dynamicCSS.hide(this.defaultInFocus, ".hideIfDefault");
+      dynamicCSS.hide(!this.defaultInFocus, ".setAllCourses");
 
-        //Show/hide any buttons as required
-        dynamicCSS.hide(".hideIfDefault");
-        dynamicCSS.show(".setAllCourses");
-
+      if (this.defaultInFocus) {
         //Some fields need disabling
         this.constructor.selector.disabled = true;
         this.constructor.btnList.forEach((btn) => { this.constructor[btn].disabled = true; });
       } else {
-        this.defaultInFocus = false;
-
-        //Show/hide any buttons as required
-        dynamicCSS.show(".hideIfDefault");
-        dynamicCSS.hide(".setAllCourses");
-
         //Some fields may need enabling
         this.constructor.selector.disabled = false;
         this.constructor.addBtn.disabled = false;
@@ -1109,14 +1116,21 @@ function tcTemplate() {
       //Remove existing contents
       while (this.inputElement.hasChildNodes()) { this.inputElement.removeChild(this.inputElement.lastChild); }
       //Repopulate
-      courseList.items.forEach((course) => { this.inputElement.appendChild(course.stationOptionElement); });
+      courseList.items.forEach((course) => { this.inputElement.appendChild(course.optionCopies[0]); });
+    }
+
+    updateMsgs() {
+      super.updateMsgs();
+      //Show relevant course
+      CourseList.selector.selectedIndex = this.value.index;
+      courseList.refresh(true);
     }
   }
   Object.assign(StationCourse, {
     fieldName: "stationCourse",
     inputElement: document.getElementById("stationCourse"),
-    resetBtn: document.getElementById("resetShowStationCourse"),
-    setAllBtn: document.getElementById("setAllShowStationCourse")
+    resetBtn: document.getElementById("resetStationCourse"),
+    setAllBtn: document.getElementById("setAllStationCourse")
   });
 
   class ShowStationTasks extends BooleanField {
@@ -1134,9 +1148,242 @@ function tcTemplate() {
     setAllBtn: document.getElementById("setAllShowStationTasks")
   });
 
+  // class AutoOrderKites extends BooleanField {
+  //   //Special field that attaches to IterableList rather than IterableItem
+  //   constructor(obj) {
+  //     this.inputElement = obj.inputElement === undefined ? this.constructor.inputElement : obj.inputElement;
+  //     this.value = obj.value === undefined ? this.constructor.originalValue : obj.value;
+  //     this.valid = true;
+  //     this.ruleCompliant = true;
+  //   }
+  // }
+  // Object.assign(AutoOrderKites, {
+  //   fieldName: "autoOrderKites",
+  //   originalValue: true,
+  //   inputElement: document.getElementById("autoOrderKites")
+  // });
+
+  class KiteName extends NameField {}
+  Object.assign(KiteName, {
+    inputElement: document.getElementById("kiteName"),
+    errorElement: document.getElementById("kiteNameError")
+  });
+
+  class KiteZero extends BooleanField {}
+  Object.assign(KiteZero, {
+    fieldName: "kiteZero",
+    inputElement: document.getElementById("zero")
+  });
+
+  class Kitex extends NonNegativeField {}
+  Object.assign(Kitex, {
+    fieldName: "kitex",
+    inputElement: document.getElementById("kitex"),
+    autoElement: document.getElementById("kitexAuto"),
+    errorElement: document.getElementById("kitexError")
+  });
+
+  class Kitey extends NonNegativeField {}
+  Object.assign(Kitey, {
+    fieldName: "kitey",
+    inputElement: document.getElementById("kitey"),
+    autoElement: document.getElementById("kiteyAuto"),
+    errorElement: document.getElementById("kiteyError")
+  });
+
+  class Kite extends IterableItem {}
+  Kite.fieldClasses = [
+    KiteName,
+    KiteZero,
+    Kitex,
+    Kitey
+  ];
+  Kite.populateFieldNames();
+
+  class KiteList extends IterableList {
+    constructor(obj) {
+      super(obj);
+      this.autoOrder = undefined; //TODO: new AutoOrderKites({ parentList: this });
+    }
+  }
+  Object.assign(KiteList, {
+    selector: document.getElementById("kiteSelect"),
+    addBtn: document.getElementById("addKite"),
+    deleteBtn: document.getElementById("deleteKite"),
+    upBtn: document.getElementById("moveUpKite"),
+    downBtn: document.getElementById("moveDownKite"),
+    itemClass: Kite,
+    nameErrorAlert: tcTemplateMsg.kiteNameAlert,
+    resetGroups: []
+  });
+
+  class TaskName extends NameField {
+    checkValidity() {
+      if (!this.topItem.isDefault()) {
+        super.checkValidity();
+        if (this.valid && !this.topItem.isDefault() && (this.value === "Kites" || this.value === "VP")) {
+          this.valid = false;
+          this.errorMsg = tcTemplateMsg.taskNameKeywords;
+        }
+      }
+    }
+  }
+  Object.assign(TaskName, {
+    inputElement: document.getElementById("taskName"),
+    errorElement: document.getElementById("taskNameError")
+  });
+
+  class Solution extends Field {}
+  Object.assign(Solution, {
+    fieldName: "solution",
+    inputElement: document.getElementById("solution"),
+    autoElement: document.getElementById("solutionAuto"),
+    errorElement: document.getElementById("solutionStatus")
+  });
+
+  class CirclePage extends NaturalNumberField {}
+  Object.assign(CirclePage, {
+    fieldName: "circlePage",
+    inputElement: document.getElementById("circlePage"),
+    autoElement: document.getElementById("circlePageAuto"),
+    errorElement: document.getElementById("circlePageError")
+  });
+
+  class Circlex extends NonNegativeField {}
+  Object.assign(Circlex, {
+    fieldName: "circlex",
+    inputElement: document.getElementById("circlex"),
+    inputElement: document.getElementById("circlexAuto"),
+    errorElement: document.getElementById("circlexError")
+  });
+
+  class Circley extends NonNegativeField {}
+  Object.assign(Circley, {
+    fieldName: "circley",
+    inputElement: document.getElementById("circley"),
+    inputElement: document.getElementById("circleyAuto"),
+    errorElement: document.getElementById("circleyError")
+  });
+
+  class CDPage extends NaturalNumberField {}
+  Object.assign(CDPage, {
+    fieldName: "cdPage",
+    inputElement: document.getElementById("CDPage"),
+    autoElement: document.getElementById("CDPageAuto"),
+    errorElement: document.getElementById("CDPageError")
+  });
+
+  class CDx extends NonNegativeField {}
+  Object.assign(CDx, {
+    fieldName: "cdx",
+    inputElement: document.getElementById("CDx"),
+    inputElement: document.getElementById("CDxAuto"),
+    errorElement: document.getElementById("CDxError")
+  });
+
+  class CDy extends NonNegativeField {}
+  Object.assign(CDy, {
+    fieldName: "cdy",
+    inputElement: document.getElementById("CDy"),
+    inputElement: document.getElementById("CDyAuto"),
+    errorElement: document.getElementById("CDyError")
+  });
+
+  class CDWidth extends NonNegativeField {}
+  Object.assign(CDWidth, {
+    fieldName: "cdWidth",
+    inputElement: document.getElementById("CDWidth"),
+    autoElement: document.getElementById("CDWidthAuto"),
+    errorElement: document.getElementById("CDWidthError")
+  });
+
+  class CDHeight extends NonNegativeField {}
+  Object.assign(CDHeight, {
+    fieldName: "cdHeight",
+    inputElement: document.getElementById("CDHeight"),
+    autoElement: document.getElementById("CDHeightAuto"),
+    errorElement: document.getElementById("CDHeightError")
+  });
+
+  class CDScale extends NonNegativeField {}
+  Object.assign(CDScale, {
+    fieldName: "cdScale",
+    inputElement: document.getElementById("CDScale"),
+    autoElement: document.getElementById("CDScaleAuto"),
+    errorElement: document.getElementById("CDScaleError")
+  });
+
+  class Task extends IterableItem {}
+  Task.fieldClasses = [
+    TaskName,
+    Solution,
+    CirclePage,
+    Circlex,
+    Circley,
+    CDPage,
+    CDx,
+    CDy,
+    CDWidth,
+    CDHeight,
+    CDScale
+  ];
+  Task.populateFieldNames();
+
+  class TaskList extends IterableList {
+    constructor(parentObj) {
+      const obj = {
+        itemInFocus: 0,
+        counterField: parentObj.numTasks
+      };
+      super(obj);
+      // this.parentItem = parentObj;
+    }
+
+    refresh(storeValues = false) {
+      //storeValues is a boolean stating whether to commit values in form fields to variables in memory.
+      if (storeValues) {
+        //Only permit change of station if the name is valid and unique
+        if (this.activeItem.itemName.valid === false) {
+          //Abort
+          alert(tcTemplateMsg.taskNameAlert);
+          //Change radio buttons and selectors back to original values
+          this.selector.selectedIndex = this.itemInFocus;
+          return;
+        }
+      }
+
+      this.itemInFocus = this.selector.selectedIndex;
+      this.showHideMoveBtns();
+      this.activeItem.refreshAllInput();
+    }
+
+    setNumItems() {
+      //Forcibly adds/removes items from end of list to get required length
+      //If this.numItems is NaN, both inequalities evaluate to false
+      while (this.items.length < this.parentItem.numTasks.value) {
+        this.add();
+      }
+      while (this.items.length > this.parentItem.numTasks.value) {
+        this.items[this.items.length - 1].deleteThis(false);
+      }
+    }
+  }
+  Object.assign(TaskList, {
+    selector: document.getElementById("taskSelect"),
+    addBtn: document.getElementById("addTask"),
+    deleteBtn: document.getElementById("deleteTask"),
+    upBtn: document.getElementById("moveUpTask"),
+    downBtn: document.getElementById("moveDownTask"),
+    itemClass: Task,
+    nameErrorAlert: tcTemplateMsg.taskNameAlert,
+    resetGroups: []
+  });
+
   class Station extends IterableItem {
     constructor(obj) {
       super(obj);
+      this.kites = new KiteList({ parentItem: this });
+      this.tasks = new TaskList({ parentItem: this });
 
       //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
       // this.taskList = new TaskList(this);
@@ -1144,7 +1391,7 @@ function tcTemplate() {
     }
 
     isHidden() {
-      return !this.showStation.value;
+      return !this.showStation.value || this.stationCourse.isHidden();
     }
 
     // checkValidity(recheckFields = true) {
@@ -1178,11 +1425,6 @@ function tcTemplate() {
   class StationList extends IterableList {
     constructor() {
       const obj = {
-        selector: document.getElementById("stationSelect"),
-        addBtn: document.getElementById("addStation"),
-        deleteBtn: document.getElementById("deleteStation"),
-        upBtn: document.getElementById("moveUpStation"),
-        downBtn: document.getElementById("moveDownStation"),
         itemInFocus: 0,
         counterField: undefined
       };
@@ -1219,123 +1461,6 @@ function tcTemplate() {
     resetGroups: []
   });
 
-  class TaskList extends IterableList {
-    constructor(parentObj) {
-      const obj = {
-        selectorSpan: document.getElementById("taskSelect"),
-        addBtn: document.getElementById("addTask"),
-        deleteBtn: document.getElementById("deleteTask"),
-        upBtn: document.getElementById("moveUpTask"),
-        downBtn: document.getElementById("moveDownTask"),
-        defaultInFocus: false,
-        itemInFocus: 0,
-        counterField: parentObj.numTasks
-      };
-      super(obj);
-      this.parentItem = parentObj;
-      this.selector.size = 5;
-    }
-
-    newItem(newNode) {
-      return new Task({
-        parentObj: this,
-        optionElement: newNode,
-        copyItem: undefined
-      });
-    }
-
-    refresh(storeValues = false) {
-      //storeValues is a boolean stating whether to commit values in form fields to variables in memory.
-      if (storeValues) {
-        //Only permit change of station if the name is valid and unique
-        if (this.activeItem.itemName.valid === false) {
-          //Abort
-          alert(tcTemplateMsg.taskNameAlert);
-          //Change radio buttons and selectors back to original values
-          this.selector.selectedIndex = this.itemInFocus;
-          return;
-        }
-      }
-
-      this.itemInFocus = this.selector.selectedIndex;
-      this.showHideMoveBtns();
-      this.activeItem.refreshAllInput();
-    }
-
-    setNumItems() {
-      //Forcibly adds/removes items from end of list to get required length
-      //If this.numItems is NaN, both inequalities evaluate to false
-      while (this.items.length < this.parentItem.numTasks.value) {
-        this.add();
-      }
-      while (this.items.length > this.parentItem.numTasks.value) {
-        this.items[this.items.length - 1].deleteThis(false);
-      }
-    }
-  }
-
-  //Types of items
-
-
-
-
-  class Task extends IterableItem {
-    constructor(obj) {
-      super(obj);
-
-      //Fields - populate with values given in copyTask, if present
-      const fieldClasses = [
-        TaskName,
-        CirclePage,
-        Circlex,
-        Circley,
-        CDPage,
-        CDx,
-        CDy,
-        CDWidth,
-        CDHeight,
-        CDScale
-      ];
-      this.fieldNames = fieldClasses.map((className) => className.getFieldName());
-      if (obj.copyTask === undefined) {
-        //Create an object to pass undefined parameters => triggers default values specified in class
-        obj.copyTask = {};
-        for (const field of this.fieldNames) {
-          obj.copyTask[field] = { value: undefined };
-        }
-      }
-      //WARNING: need to make a copy of any sub objects, otherwise will still refer to same memory
-      let index = 0;
-      for (const field of this.fieldNames) {
-        this[field] = new fieldClasses[index](this, obj.copyTask[field].value);
-        index++;
-      }
-    }
-
-    getItemType() {
-      return "task";
-    }
-
-    checkValidity(recheckFields = true) {
-      if (recheckFields === true) {
-        //Recheck validity of all fields
-        for (const field of this.fieldNames) {
-          this[field].checkValidity();
-        }
-      }
-
-      this.valid = this.fieldNames.every((field) => this[field].valid);
-      //Highlight errors in the task selector
-      if (this.valid) {
-        this.optionElement.classList.remove("error");
-      } else {
-        this.optionElement.classList.add("error");
-      }
-    }
-  }
-
-  //Fields
-
 
 
 
@@ -1369,212 +1494,9 @@ function tcTemplate() {
 
 
 
-  class TaskName extends Field {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("taskName"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("taskNameError")
-      };
-      super(inputObj);
-    }
 
-    static getFieldName() {
-      return "itemName";
-    }
 
-    checkValidity() {
-      //Check syntax even if hidden to avoid dodgy strings getting into LaTeX
-      const stringFormat = /^[A-Za-z0-9][,.\-+= \w]*$/;
-      this.syntaxError = !(this.station.isDefault() || stringFormat.test(this.value));
-      this.duplicateError = (!(this.station.isDefault()) && this.isDuplicate(false)) || this.value === "Kites" || this.value === "VP";
-      this.valid = !(this.syntaxError || this.duplicateError);
 
-      //Update task list
-      this.parentItem.optionElement.innerHTML = this.value;
-    }
-
-    updateMsgs() {
-      const contentFieldClass = this.inputElement.classList;
-      if (this.valid) {
-        contentFieldClass.remove("error");
-        this.errorElement.innerHTML = "";
-      } else {
-        contentFieldClass.add("error");
-        //Don't show both error messages together
-        if (this.syntaxError) {
-          this.errorElement.innerHTML = tcTemplateMsg.nameSyntax;
-        } else {
-          this.errorElement.innerHTML = tcTemplateMsg.taskNameNotUnique;
-        }
-      }
-    }
-  }
-
-  class CirclePage extends NaturalNumberField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("circlePage"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("circlePageError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "circlePage";
-    }
-  }
-
-  class Circlex extends NonNegativeField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("circlex"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("circlexError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "circlex";
-    }
-  }
-
-  class Circley extends NonNegativeField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("circley"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("circleyError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "circley";
-    }
-  }
-
-  class CDPage extends NaturalNumberField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("CDPage"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("CDPageError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "CDPage";
-    }
-  }
-
-  class CDx extends NonNegativeField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("CDx"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("CDxError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "CDx";
-    }
-  }
-
-  class CDy extends NonNegativeField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("CDy"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("CDyError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "CDy";
-    }
-  }
-
-  class CDWidth extends NonNegativeField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("CDWidth"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("CDWidthError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "CDWidth";
-    }
-  }
-
-  class CDHeight extends NonNegativeField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("CDHeight"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("CDHeightError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "CDHeight";
-    }
-  }
-
-  class CDScale extends NonNegativeField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("CDScale"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("CDScaleError")
-      };
-      super(inputObj);
-    }
-
-    static getFieldName() {
-      return "CDScale";
-    }
-  }
 
 
 
@@ -2992,28 +2914,20 @@ function tcTemplate() {
       return stylesheet.cssRules[index].style;
     }
 
-    function show(selector) {
+    function hide(hide, selector) {
       const style = getStyle(selector);
-      style.display = "";
-    }
-
-    function hide(selector) {
-      const style = getStyle(selector);
-      style.display = "none";
+      style.display = hide ? "none" : "";
     }
 
     return {
-      show: show,
       hide: hide
     }
   })();
 
-  //Create root level objects
+  //Create root level objects and populate with essentials
   courseList = new CourseList();
-  stationList = new StationList();
-
-  //Populate with essentials
   courseList.add();
+  stationList = new StationList();
   stationList.add();
 
   const mapsCompiler = new Compiler({

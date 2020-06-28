@@ -155,7 +155,7 @@ fieldset > ul:last-child {
   flex: auto;
 }
 
-.inputBlock .noStretch {
+input[id$="Auto"] {
   flex: initial;
 }
 

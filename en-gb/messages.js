@@ -24,5 +24,5 @@ const tcTemplateMsg = {
   mapSizeError: "0 < size ≤ 12",
   mapScaleRule: "IOF rule: normally 1:4000 or 1:5000",
   confirmRemoveTasks: (stationName) => "Some tasks will be removed from station " + stationName + ". Are you sure you want to delete these?",
-  taskNameNotUnique: "Must be unique and neither Kites nor VP"
+  taskNameKeywords: "Must not be Kites nor VP"
 };
