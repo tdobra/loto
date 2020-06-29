@@ -64,23 +64,24 @@ function tcTemplate() {
       return courseList.defaultInFocus;
     }
 
-    checkValidity(recheckFields = true) {
-      if (recheckFields) { this.items.forEach((item) => { item.checkValidity(true); }); }
-      this.valid = this.items.every((item) => item.valid);
-    }
+    static init() {
+      //Retrieve elements for given IDs and populate field names
+      id2element(this, ["selector", "addBtn", "deleteBtn", "upBtn", "downBtn"]);
+      this.resetGroups.forEach((group) => { id2element(group, ["resetBtn", "setAllBtn"]); });
+      this.itemClass.init();
 
-    static addListeners() {
+      //Add event listeners
       //Always use arrow functions to ensure this points to the IterableList rather than the calling DOM element
-      const listObj = (this === CourseList) ? courseList : stationList;
+      const listObj = () => this === CourseList ? courseList : stationList;
       //Course order buttons
-      this.selector.addEventListener("change", () => { listObj.refresh(true); });
-      this.addBtn.addEventListener("click", () => { listObj.add(); listObj.updateCount(); });
-      this.deleteBtn.addEventListener("click", () => { listObj.activeItem.deleteThis(true); listObj.updateCount(); });
-      this.upBtn.addEventListener("click", () => { listObj.activeItem.move(-1); });
-      this.downBtn.addEventListener("click", () => { listObj.activeItem.move(1); });
+      this.selector.addEventListener("change", () => { listObj().refresh(true); });
+      this.addBtn.addEventListener("click", () => { listObj().add(); listObj().updateCount(); });
+      this.deleteBtn.addEventListener("click", () => { listObj().activeItem.deleteThis(true); listObj().updateCount(); });
+      this.upBtn.addEventListener("click", () => { listObj().activeItem.move(-1); });
+      this.downBtn.addEventListener("click", () => { listObj().activeItem.move(1); });
       //Fields
       this.itemClass.fieldClasses.forEach((field, index) => {
-        const activeField = () => listObj.activeItem[this.itemClass.fieldNames[index]];
+        const activeField = () => listObj().activeItem[this.itemClass.fieldNames[index]];
         if (field.inputElement.tagName === undefined) {
           //Radio buttons
           Object.values(field.inputElement).forEach((element) => {
@@ -105,6 +106,11 @@ function tcTemplate() {
         group.resetBtn.addEventListener("click", () => { group.fieldClasses.forEach((field) => { field.resetBtn.click(); }); });
         group.setAllBtn.addEventListener("click", () => { group.fieldClasses.forEach((field) => { field.setAllBtn.click(); }); });
       });
+    }
+
+    checkValidity(recheckFields = true) {
+      if (recheckFields) { this.items.forEach((item) => { item.checkValidity(true); }); }
+      this.valid = this.items.every((item) => item.valid);
     }
 
     static showHideMoveBtns() {
@@ -218,8 +224,11 @@ function tcTemplate() {
       return thisIndex;
     }
 
-    static populateFieldNames() {
-      this.fieldNames = this.fieldClasses.map((className) => className.fieldName);
+    static init() {
+      this.fieldNames = this.fieldClasses.map((className) => {
+        className.init();
+        return className.fieldName;
+      });
     }
 
     isActive() {
@@ -336,11 +345,14 @@ function tcTemplate() {
     //Generic field: string or select
     constructor(obj) {
       this.parentItem = obj.parentItem;
-      this.parentList = this.parentItem.parentList;
-      if (this.parentList.constructor.itemClass === Course || this.parentList.constructor.itemClass === Station) {
-        this.topItem = this.parentItem;
-      } else {
-        this.topItem = this.parentList.parentItem;
+      if (this.parentItem.constructor.itemClass === undefined) {
+        //parentItem is an IterableItem
+        this.parentList = this.parentItem.parentList;
+        if (this.parentList.constructor.itemClass === Course || this.parentList.constructor.itemClass === Station) {
+          this.topItem = this.parentItem;
+        } else {
+          this.topItem = this.parentList.parentItem;
+        }
       }
       // if (this.parentItem.getItemType() === "station") {
       //   this.station = this.parentItem;
@@ -367,6 +379,10 @@ function tcTemplate() {
 
     set inputValue(val) {
       this.inputElement.value = val;
+    }
+
+    static init() {
+      id2element(this, ["inputElement", "autoElement", "resetBtn", "setAllBtn", "errorElement"]);
     }
 
     autoEnabled() {
@@ -623,11 +639,16 @@ function tcTemplate() {
   //Course - in reverse order of dependency
   class CourseName extends NameField {}
   Object.assign(CourseName, {
-    inputElement: document.getElementById("courseName"),
-    errorElement: document.getElementById("courseNameError")
+    inputElement: "courseName",
+    errorElement: "courseNameError"
   });
 
   class TasksFile extends RadioField {
+    static init() {
+      super.init();
+      id2element(this.inputElement, Object.keys(this.inputElement));
+    }
+
     saveInput() {
       super.saveInput();
       this.parentItem.checkValidity(true);
@@ -638,25 +659,25 @@ function tcTemplate() {
     fieldName: "tasksFile",
     originalValue: "newFile",
     inputElement: {
-      newFile: document.getElementById("newTasksFile"),
-      append: document.getElementById("appendTasksFile"),
-      hide: document.getElementById("hideTasksFile")
+      newFile: "newTasksFile",
+      append: "appendTasksFile",
+      hide: "hideTasksFile"
     },
-    resetBtn: document.getElementById("resetTasksFile"),
-    setAllBtn: document.getElementById("setAllTasksFile")
+    resetBtn: "resetTasksFile",
+    setAllBtn: "setAllTasksFile"
   });
 
   class TasksTemplate extends Field {}
   Object.assign(TasksTemplate, {
     fieldName: "tasksTemplate",
     originalValue: "printA5onA4",
-    inputElement: document.getElementById("tasksTemplate")
+    inputElement: "tasksTemplate"
   });
 
   class AppendTasksCourse extends Field {}
   Object.assign(AppendTasksCourse, {
     fieldName: "appendTasksCourse",
-    inputElement: document.getElementById("appendTasksCourse")
+    inputElement: "appendTasksCourse"
   });
 
   class Zeroes extends BooleanField {
@@ -666,9 +687,9 @@ function tcTemplate() {
   }
   Object.assign(Zeroes, {
     fieldName: "zeroes",
-    inputElement: document.getElementById("zeroes"),
-    resetBtn: document.getElementById("resetZeroes"),
-    setAllBtn: document.getElementById("setAllZeroes")
+    inputElement: "zeroes",
+    resetBtn: "resetZeroes",
+    setAllBtn: "setAllZeroes"
   });
 
   class NumTasks extends NaturalNumberField {
@@ -692,10 +713,10 @@ function tcTemplate() {
   Object.assign(NumTasks, {
     fieldName: "numTasks",
     originalValue: 5,
-    inputElement: document.getElementById("numTasks"),
-    resetBtn: document.getElementById("resetNumTasks"),
-    setAllBtn: document.getElementById("setAllNumTasks"),
-    errorElement: document.getElementById("numTasksError")
+    inputElement: "numTasks",
+    resetBtn: "resetNumTasks",
+    setAllBtn: "setAllNumTasks",
+    errorElement: "numTasksError"
   });
 
   class MapScale extends StrictPositiveField {
@@ -720,10 +741,10 @@ function tcTemplate() {
   Object.assign(MapScale, {
     fieldName: "mapScale",
     originalValue: 4000,
-    inputElement: document.getElementById("mapScale"),
-    resetBtn: document.getElementById("resetMapScale"),
-    setAllBtn: document.getElementById("setAllMapScale"),
-    errorElement: document.getElementById("mapScaleError")
+    inputElement: "mapScale",
+    resetBtn: "resetMapScale",
+    setAllBtn: "setAllMapScale",
+    errorElement: "mapScaleError"
   });
 
   class ContourInterval extends StrictPositiveField {
@@ -741,16 +762,21 @@ function tcTemplate() {
   }
   Object.assign(ContourInterval, {
     fieldName: "contourInterval",
-    inputElement: document.getElementById("contourInterval"),
-    resetBtn: document.getElementById("resetContourInterval"),
-    setAllBtn: document.getElementById("setAllContourInterval"),
-    errorElement: document.getElementById("contourIntervalError")
+    inputElement: "contourInterval",
+    resetBtn: "resetContourInterval",
+    setAllBtn: "setAllContourInterval",
+    errorElement: "contourIntervalError"
   });
 
   class MapShape extends Field {
     constructor(obj) {
       super(obj);
       this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+    }
+
+    static init() {
+      super.init();
+      id2element(this, ["sizeTypeElement"]);
     }
 
     checkValidity() {
@@ -761,21 +787,21 @@ function tcTemplate() {
     updateMsgs() {
       super.updateMsgs();
       //Update labels for map size description
-      const sizeTypeElement = document.getElementById("mapSizeType");
       if (this.value === "circle") {
-        sizeTypeElement.textContent = tcTemplateMsg.diameter;
+        this.constructor.sizeTypeElement.textContent = tcTemplateMsg.diameter;
       } else {
-        sizeTypeElement.textContent = tcTemplateMsg.sideLength;
+        this.constructor.sizeTypeElement.textContent = tcTemplateMsg.sideLength;
       }
     }
   }
   Object.assign(MapShape, {
     fieldName: "mapShape",
     originalValue: "circle",
-    inputElement: document.getElementById("mapShape"),
-    resetBtn: document.getElementById("resetMapShape"),
-    setAllBtn: document.getElementById("setAllMapShape"),
-    errorElement: document.getElementById("mapShapeRule")
+    inputElement: "mapShape",
+    resetBtn: "resetMapShape",
+    setAllBtn: "setAllMapShape",
+    errorElement: "mapShapeRule",
+    sizeTypeElement: "mapSizeType"
   });
 
   class MapSize extends StrictPositiveField {
@@ -801,11 +827,11 @@ function tcTemplate() {
   }
   Object.assign(MapSize, {
     fieldName: "mapSize",
-    inputElement: document.getElementById("mapSize"),
-    autoElement: document.getElementById("mapSizeAuto"),
-    resetBtn: document.getElementById("resetMapSize"),
-    setAllBtn: document.getElementById("setAllMapSize"),
-    errorElement: document.getElementById("mapSizeError")
+    inputElement: "mapSize",
+    autoElement: "mapSizeAuto",
+    resetBtn: "resetMapSize",
+    setAllBtn: "setAllMapSize",
+    errorElement: "mapSizeError"
   });
 
   class NumKites extends NumberField {
@@ -822,10 +848,10 @@ function tcTemplate() {
   Object.assign(NumKites, {
     fieldName: "numKites",
     originalValue: 6,
-    inputElement: document.getElementById("numKites"),
-    resetBtn: document.getElementById("resetNumKites"),
-    setAllBtn: document.getElementById("setAllNumKites"),
-    errorElement: document.getElementById("numKitesError")
+    inputElement: "numKites",
+    resetBtn: "resetNumKites",
+    setAllBtn: "setAllNumKites",
+    errorElement: "numKitesError"
   });
 
   class EnforceRules extends BooleanField {
@@ -838,97 +864,97 @@ function tcTemplate() {
   Object.assign(EnforceRules, {
     fieldName: "enforceRules",
     originalValue: true,
-    inputElement: document.getElementById("enforceRules"),
-    resetBtn: document.getElementById("resetEnforceRules"),
-    setAllBtn: document.getElementById("setAllEnforceRules")
+    inputElement: "enforceRules",
+    resetBtn: "resetEnforceRules",
+    setAllBtn: "setAllEnforceRules"
   });
 
   class DebugCircle extends BooleanField {}
   Object.assign(DebugCircle, {
     fieldName: "debugCircle",
-    inputElement: document.getElementById("debugCircle"),
-    resetBtn: document.getElementById("resetDebugCircle"),
-    setAllBtn: document.getElementById("setAllDebugCircle")
+    inputElement: "debugCircle",
+    resetBtn: "resetDebugCircle",
+    setAllBtn: "setAllDebugCircle"
   });
 
   class IDFontSize extends StrictPositiveField {}
   Object.assign(IDFontSize, {
     fieldName: "IDFontSize",
     originalValue: 0.7,
-    inputElement: document.getElementById("IDFontSize"),
-    resetBtn: document.getElementById("resetIDFontSize"),
-    setAllBtn: document.getElementById("setAllIDFontSize"),
-    errorElement: document.getElementById("IDFontSizeError")
+    inputElement: "IDFontSize",
+    resetBtn: "resetIDFontSize",
+    setAllBtn: "setAllIDFontSize",
+    errorElement: "IDFontSizeError"
   });
 
   class CheckWidth extends NonNegativeField {}
   Object.assign(CheckWidth, {
     fieldName: "checkWidth",
     originalValue: 1.5,
-    inputElement: document.getElementById("checkWidth"),
-    resetBtn: document.getElementById("resetCheckWidth"),
-    setAllBtn: document.getElementById("setAllCheckWidth"),
-    errorElement: document.getElementById("checkWidthError")
+    inputElement: "checkWidth",
+    resetBtn: "resetCheckWidth",
+    setAllBtn: "setAllCheckWidth",
+    errorElement: "checkWidthError"
   });
 
   class CheckHeight extends NonNegativeField {}
   Object.assign(CheckHeight, {
     fieldName: "checkHeight",
     originalValue: 1.5,
-    inputElement: document.getElementById("checkHeight"),
-    resetBtn: document.getElementById("resetCheckHeight"),
-    setAllBtn: document.getElementById("setAllCheckHeight"),
-    errorElement: document.getElementById("checkHeightError")
+    inputElement: "checkHeight",
+    resetBtn: "resetCheckHeight",
+    setAllBtn: "setAllCheckHeight",
+    errorElement: "checkHeightError"
   });
 
   class CheckFontSize extends StrictPositiveField {}
   Object.assign(CheckFontSize, {
     fieldName: "checkFontSize",
     originalValue: 0.8,
-    inputElement: document.getElementById("checkFontSize"),
-    resetBtn: document.getElementById("resetCheckFontSize"),
-    setAllBtn: document.getElementById("setAllCheckFontSize"),
-    errorElement: document.getElementById("checkFontSizeError")
+    inputElement: "checkFontSize",
+    resetBtn: "resetCheckFontSize",
+    setAllBtn: "setAllCheckFontSize",
+    errorElement: "checkFontSizeError"
   });
 
   class RemoveFontSize extends StrictPositiveField {}
   Object.assign(RemoveFontSize, {
     fieldName: "removeFontSize",
     originalValue: 0.3,
-    inputElement: document.getElementById("removeFontSize"),
-    resetBtn: document.getElementById("resetRemoveFontSize"),
-    setAllBtn: document.getElementById("setAllRemoveFontSize"),
-    errorElement: document.getElementById("removeFontSizeError")
+    inputElement: "removeFontSize",
+    resetBtn: "resetRemoveFontSize",
+    setAllBtn: "setAllRemoveFontSize",
+    errorElement: "removeFontSizeError"
   });
 
   class PointHeight extends NonNegativeField {}
   Object.assign(PointHeight, {
     fieldName: "pointHeight",
     originalValue: 2.5,
-    inputElement: document.getElementById("pointHeight"),
-    resetBtn: document.getElementById("resetPointHeight"),
-    setAllBtn: document.getElementById("setAllPointHeight"),
-    errorElement: document.getElementById("pointHeightError")
+    inputElement: "pointHeight",
+    resetBtn: "resetPointHeight",
+    setAllBtn: "setAllPointHeight",
+    errorElement: "pointHeightError"
   });
 
   class LetterFontSize extends StrictPositiveField {}
   Object.assign(LetterFontSize, {
     fieldName: "letterFontSize",
     originalValue: 1.8,
-    inputElement: document.getElementById("letterFontSize"),
-    resetBtn: document.getElementById("resetLetterFontSize"),
-    setAllBtn: document.getElementById("setAllLetterFontSize"),
-    errorElement: document.getElementById("letterFontSizeError")
+    inputElement: "letterFontSize",
+    resetBtn: "resetLetterFontSize",
+    setAllBtn: "setAllLetterFontSize",
+    errorElement: "letterFontSizeError"
   });
 
   class PhoneticFontSize extends StrictPositiveField {}
   Object.assign(PhoneticFontSize, {
     fieldName: "phoneticFontSize",
     originalValue: 0.6,
-    inputElement: document.getElementById("phoneticFontSize"),
-    resetBtn: document.getElementById("resetPhoneticFontSize"),
-    setAllBtn: document.getElementById("setAllPhoneticFontSize"),
-    errorElement: document.getElementById("phoneticFontSizeError")
+    inputElement: "phoneticFontSize",
+    resetBtn: "resetPhoneticFontSize",
+    setAllBtn: "setAllPhoneticFontSize",
+    errorElement: "phoneticFontSizeError"
   });
 
   class Course extends IterableItem {
@@ -983,7 +1009,6 @@ function tcTemplate() {
     NumKites,
     EnforceRules
   ].concat(Course.customLayoutClasses);
-  Course.populateFieldNames();
 
   class CourseList extends IterableList {
     constructor() {
@@ -1008,8 +1033,8 @@ function tcTemplate() {
       this.editingDefault = val;
     }
 
-    static addListeners() {
-      super.addListeners();
+    static init() {
+      super.init();
       [this.defaultRadio, this.courseRadio].forEach((radio) => {
         radio.addEventListener("click", () => { courseList.refresh(true); });
       });
@@ -1020,20 +1045,17 @@ function tcTemplate() {
       this.refreshOtherCourseLists();
     }
 
-    refresh(blockOnNameError = true) {
+    refresh() {
+    // refresh(blockOnNameError = true) {
       //blockOnNameError must be set to true when keeping the data
-
-      //Other DOM elements
-      // const setAllResetCSS = document.getElementById("showSetAllCSS");
-
-      if (this.blockNameError(blockOnNameError)) {
-        if (this.defaultInFocus) {
-          this.constructor.defaultRadio.checked = true;
-        } else {
-          this.constructor.courseRadio.checked = true;
-        }
-        return;
-      }
+      // if (this.blockNameError(blockOnNameError)) {
+      //   if (this.defaultInFocus) {
+      //     this.constructor.defaultRadio.checked = true;
+      //   } else {
+      //     this.constructor.courseRadio.checked = true;
+      //   }
+      //   return;
+      // }
 
       //TODO: Hide task etc. selectors for station to be hidden
       // if (this.defaultInFocus === false) {
@@ -1073,17 +1095,17 @@ function tcTemplate() {
     }
   }
   Object.assign(CourseList, {
-    selector: document.getElementById("courseSelect"),
-    addBtn: document.getElementById("addCourse"),
-    deleteBtn: document.getElementById("deleteCourse"),
-    upBtn: document.getElementById("moveUpCourse"),
-    downBtn: document.getElementById("moveDownCourse"),
+    selector: "courseSelect",
+    addBtn: "addCourse",
+    deleteBtn: "deleteCourse",
+    upBtn: "moveUpCourse",
+    downBtn: "moveDownCourse",
     itemClass: Course,
     nameErrorAlert: tcTemplateMsg.courseNameAlert,
     resetGroups: [
       {
-        resetBtn: document.getElementById("resetAllCustomLayout"),
-        setAllBtn: document.getElementById("setAllCustomLayout"),
+        resetBtn: "resetAllCustomLayout",
+        setAllBtn: "setAllCustomLayout",
         fieldClasses: Course.customLayoutClasses
       }
     ],
@@ -1095,8 +1117,8 @@ function tcTemplate() {
   //Station - in reverse order of dependency
   class StationName extends NameField {}
   Object.assign(StationName, {
-    inputElement: document.getElementById("stationName"),
-    errorElement: document.getElementById("stationNameError")
+    inputElement: "stationName",
+    errorElement: "stationNameError"
   });
 
   class StationCourse extends Field {
@@ -1128,9 +1150,9 @@ function tcTemplate() {
   }
   Object.assign(StationCourse, {
     fieldName: "stationCourse",
-    inputElement: document.getElementById("stationCourse"),
-    resetBtn: document.getElementById("resetStationCourse"),
-    setAllBtn: document.getElementById("setAllStationCourse")
+    inputElement: "stationCourse",
+    resetBtn: "resetStationCourse",
+    setAllBtn: "setAllStationCourse"
   });
 
   class ShowStationTasks extends BooleanField {
@@ -1143,52 +1165,44 @@ function tcTemplate() {
   Object.assign(ShowStationTasks, {
     fieldName: "showStationTasks",
     originalValue: true,
-    inputElement: document.getElementById("showStationTasks"),
-    resetBtn: document.getElementById("resetShowStationTasks"),
-    setAllBtn: document.getElementById("setAllShowStationTasks")
+    inputElement: "showStationTasks",
+    resetBtn: "resetShowStationTasks",
+    setAllBtn: "setAllShowStationTasks"
   });
 
-  // class AutoOrderKites extends BooleanField {
-  //   //Special field that attaches to IterableList rather than IterableItem
-  //   constructor(obj) {
-  //     this.inputElement = obj.inputElement === undefined ? this.constructor.inputElement : obj.inputElement;
-  //     this.value = obj.value === undefined ? this.constructor.originalValue : obj.value;
-  //     this.valid = true;
-  //     this.ruleCompliant = true;
-  //   }
-  // }
-  // Object.assign(AutoOrderKites, {
-  //   fieldName: "autoOrderKites",
-  //   originalValue: true,
-  //   inputElement: document.getElementById("autoOrderKites")
-  // });
+  class AutoOrderKites extends BooleanField {}
+  Object.assign(AutoOrderKites, {
+    fieldName: "autoOrderKites",
+    originalValue: true,
+    inputElement: "autoOrderKites"
+  });
 
   class KiteName extends NameField {}
   Object.assign(KiteName, {
-    inputElement: document.getElementById("kiteName"),
-    errorElement: document.getElementById("kiteNameError")
+    inputElement: "kiteName",
+    errorElement: "kiteNameError"
   });
 
   class KiteZero extends BooleanField {}
   Object.assign(KiteZero, {
     fieldName: "kiteZero",
-    inputElement: document.getElementById("zero")
+    inputElement: "zero"
   });
 
   class Kitex extends NonNegativeField {}
   Object.assign(Kitex, {
     fieldName: "kitex",
-    inputElement: document.getElementById("kitex"),
-    autoElement: document.getElementById("kitexAuto"),
-    errorElement: document.getElementById("kitexError")
+    inputElement: "kitex",
+    autoElement: "kitexAuto",
+    errorElement: "kitexError"
   });
 
   class Kitey extends NonNegativeField {}
   Object.assign(Kitey, {
     fieldName: "kitey",
-    inputElement: document.getElementById("kitey"),
-    autoElement: document.getElementById("kiteyAuto"),
-    errorElement: document.getElementById("kiteyError")
+    inputElement: "kitey",
+    autoElement: "kiteyAuto",
+    errorElement: "kiteyError"
   });
 
   class Kite extends IterableItem {}
@@ -1198,20 +1212,19 @@ function tcTemplate() {
     Kitex,
     Kitey
   ];
-  Kite.populateFieldNames();
 
   class KiteList extends IterableList {
     constructor(obj) {
       super(obj);
-      this.autoOrder = undefined; //TODO: new AutoOrderKites({ parentList: this });
+      this.autoOrder = new AutoOrderKites({ parentItem: this });
     }
   }
   Object.assign(KiteList, {
-    selector: document.getElementById("kiteSelect"),
-    addBtn: document.getElementById("addKite"),
-    deleteBtn: document.getElementById("deleteKite"),
-    upBtn: document.getElementById("moveUpKite"),
-    downBtn: document.getElementById("moveDownKite"),
+    selector: "kiteSelect",
+    addBtn: "addKite",
+    deleteBtn: "deleteKite",
+    upBtn: "moveUpKite",
+    downBtn: "moveDownKite",
     itemClass: Kite,
     nameErrorAlert: tcTemplateMsg.kiteNameAlert,
     resetGroups: []
@@ -1229,88 +1242,88 @@ function tcTemplate() {
     }
   }
   Object.assign(TaskName, {
-    inputElement: document.getElementById("taskName"),
-    errorElement: document.getElementById("taskNameError")
+    inputElement: "taskName",
+    errorElement: "taskNameError"
   });
 
   class Solution extends Field {}
   Object.assign(Solution, {
     fieldName: "solution",
-    inputElement: document.getElementById("solution"),
-    autoElement: document.getElementById("solutionAuto"),
-    errorElement: document.getElementById("solutionStatus")
+    inputElement: "solution",
+    autoElement: "solutionAuto",
+    errorElement: "solutionStatus"
   });
 
   class CirclePage extends NaturalNumberField {}
   Object.assign(CirclePage, {
     fieldName: "circlePage",
-    inputElement: document.getElementById("circlePage"),
-    autoElement: document.getElementById("circlePageAuto"),
-    errorElement: document.getElementById("circlePageError")
+    inputElement: "circlePage",
+    autoElement: "circlePageAuto",
+    errorElement: "circlePageError"
   });
 
   class Circlex extends NonNegativeField {}
   Object.assign(Circlex, {
     fieldName: "circlex",
-    inputElement: document.getElementById("circlex"),
-    inputElement: document.getElementById("circlexAuto"),
-    errorElement: document.getElementById("circlexError")
+    inputElement: "circlex",
+    autoElement: "circlexAuto",
+    errorElement: "circlexError"
   });
 
   class Circley extends NonNegativeField {}
   Object.assign(Circley, {
     fieldName: "circley",
-    inputElement: document.getElementById("circley"),
-    inputElement: document.getElementById("circleyAuto"),
-    errorElement: document.getElementById("circleyError")
+    inputElement: "circley",
+    autoElement: "circleyAuto",
+    errorElement: "circleyError"
   });
 
   class CDPage extends NaturalNumberField {}
   Object.assign(CDPage, {
     fieldName: "cdPage",
-    inputElement: document.getElementById("CDPage"),
-    autoElement: document.getElementById("CDPageAuto"),
-    errorElement: document.getElementById("CDPageError")
+    inputElement: "CDPage",
+    autoElement: "CDPageAuto",
+    errorElement: "CDPageError"
   });
 
   class CDx extends NonNegativeField {}
   Object.assign(CDx, {
     fieldName: "cdx",
-    inputElement: document.getElementById("CDx"),
-    inputElement: document.getElementById("CDxAuto"),
-    errorElement: document.getElementById("CDxError")
+    inputElement: "CDx",
+    autoElement: "CDxAuto",
+    errorElement: "CDxError"
   });
 
   class CDy extends NonNegativeField {}
   Object.assign(CDy, {
     fieldName: "cdy",
-    inputElement: document.getElementById("CDy"),
-    inputElement: document.getElementById("CDyAuto"),
-    errorElement: document.getElementById("CDyError")
+    inputElement: "CDy",
+    autoElement: "CDyAuto",
+    errorElement: "CDyError"
   });
 
   class CDWidth extends NonNegativeField {}
   Object.assign(CDWidth, {
     fieldName: "cdWidth",
-    inputElement: document.getElementById("CDWidth"),
-    autoElement: document.getElementById("CDWidthAuto"),
-    errorElement: document.getElementById("CDWidthError")
+    inputElement: "CDWidth",
+    autoElement: "CDWidthAuto",
+    errorElement: "CDWidthError"
   });
 
   class CDHeight extends NonNegativeField {}
   Object.assign(CDHeight, {
     fieldName: "cdHeight",
-    inputElement: document.getElementById("CDHeight"),
-    autoElement: document.getElementById("CDHeightAuto"),
-    errorElement: document.getElementById("CDHeightError")
+    inputElement: "CDHeight",
+    autoElement: "CDHeightAuto",
+    errorElement: "CDHeightError"
   });
 
   class CDScale extends NonNegativeField {}
   Object.assign(CDScale, {
     fieldName: "cdScale",
-    inputElement: document.getElementById("CDScale"),
-    autoElement: document.getElementById("CDScaleAuto"),
-    errorElement: document.getElementById("CDScaleError")
+    inputElement: "CDScale",
+    autoElement: "CDScaleAuto",
+    errorElement: "CDScaleError"
   });
 
   class Task extends IterableItem {}
@@ -1327,7 +1340,6 @@ function tcTemplate() {
     CDHeight,
     CDScale
   ];
-  Task.populateFieldNames();
 
   class TaskList extends IterableList {
     constructor(parentObj) {
@@ -1369,11 +1381,11 @@ function tcTemplate() {
     }
   }
   Object.assign(TaskList, {
-    selector: document.getElementById("taskSelect"),
-    addBtn: document.getElementById("addTask"),
-    deleteBtn: document.getElementById("deleteTask"),
-    upBtn: document.getElementById("moveUpTask"),
-    downBtn: document.getElementById("moveDownTask"),
+    selector: "taskSelect",
+    addBtn: "addTask",
+    deleteBtn: "deleteTask",
+    upBtn: "moveUpTask",
+    downBtn: "moveDownTask",
     itemClass: Task,
     nameErrorAlert: tcTemplateMsg.taskNameAlert,
     resetGroups: []
@@ -1420,7 +1432,6 @@ function tcTemplate() {
     StationCourse,
     ShowStationTasks
   ];
-  Station.populateFieldNames();
 
   class StationList extends IterableList {
     constructor() {
@@ -1434,9 +1445,10 @@ function tcTemplate() {
       this.default.checkValidity(true);
     }
 
-    refresh(blockOnNameError = true) {
+    refresh() {
+    // refresh(blockOnNameError = true) {
       //Only permit change of station if the name is valid and unique
-      if (this.blockNameError(blockOnNameError)) { return; }
+      // if (this.blockNameError(blockOnNameError)) { return; }
 
       //Show/hide or enable/disable HTML elements according to new selected station
       this.itemInFocus = this.constructor.selector.selectedIndex;
@@ -1451,11 +1463,11 @@ function tcTemplate() {
     }
   }
   Object.assign(StationList, {
-    selector: document.getElementById("stationSelect"),
-    addBtn: document.getElementById("addStation"),
-    deleteBtn: document.getElementById("deleteStation"),
-    upBtn: document.getElementById("moveUpStation"),
-    downBtn: document.getElementById("moveDownStation"),
+    selector: "stationSelect",
+    addBtn: "addStation",
+    deleteBtn: "deleteStation",
+    upBtn: "moveUpStation",
+    downBtn: "moveDownStation",
     itemClass: Station,
     nameErrorAlert: tcTemplateMsg.stationNameAlert,
     resetGroups: []
@@ -1488,6 +1500,10 @@ function tcTemplate() {
     }
   }
 
+  function id2element(obj, props) {
+    //Replaces properties on object that specify an element ID by the element itself
+    props.forEach((elName) => { if (typeof obj[elName] === "string") { obj[elName] = document.getElementById(obj[elName]); } });
+  }
 
 
 
@@ -2924,6 +2940,8 @@ function tcTemplate() {
     }
   })();
 
+  [CourseList, StationList, KiteList, TaskList].forEach((list) => { list.init(); });
+
   //Create root level objects and populate with essentials
   courseList = new CourseList();
   courseList.add();
@@ -3128,9 +3146,6 @@ function tcTemplate() {
   //     stationList.items[0].taskList.items[0][field].setAllBtn.addEventListener("click", () => { stationList.activeItem.taskList.activeItem[field].setAll(); });
   //   }
   // }
-
-  CourseList.addListeners();
-  StationList.addListeners();
 
   //Make required functions and objects globally visible
   //TODO:This can probably all be removed: now using event listeners

@@ -42,6 +42,7 @@ summary, .warning {
 }
 
 .error {
+  color: white;
   background-color: #f56600;
 }
 
