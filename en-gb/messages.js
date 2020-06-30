@@ -3,9 +3,6 @@
 "use strict";
 
 const tcTemplateMsg = {
-  courseNameAlert: "Please insert a valid and unique course name",
-  stationNameAlert: "Please insert a valid and unique station name",
-  taskNameAlert: "Please insert a valid and unique task name",
   confirmDelete: "Are you sure you want to delete? This cannot be undone.",
   awaitingData: "Awaiting other data",
   numberFieldError: "Must be a number",

@@ -92,14 +92,14 @@
         <details>
           <summary>Name and order</summary>
           <ul>
-            <li>
-              <input id="defaultRadio" type="radio" name="editType" />
-              <label for="defaultRadio">Set defaults for all courses</label>
+            <li class="tickRow">
+              <input id="viewDefault" type="checkbox" />
+              <label for="viewDefault">View defaults</label>
             </li>
+          </ul>
+          <ul class="hideIfDefault">
             <li>
-              <input id="courseRadio" type="radio" name="editType" />
-              <label for="courseRadio">Customise course</label>
-              <select id="courseSelect" size="6"></select>
+              <label for="courseSelect">Course <select id="courseSelect" size="6"></select></label>
               <span class="btnGroup">
                 <button id="addCourse" type="button">+ Add</button>
                 <button id="deleteCourse" type="button">− Delete</button>
@@ -167,6 +167,7 @@
               <label for="mapScale">Map scale</label>
               <span class="inputBlock">
                 <span class="withUnit">1:<input id="mapScale" type="number" min="0" step="any" /></span>
+                <input id="mapScaleRule" type="checkbox" /><label for="mapScaleRule">Ignore rules</label>
                 <button id="setAllMapScale" class="setAllCourses" type="button">Set all courses</button>
                 <button id="resetMapScale" class="hideIfDefault" type="button">Reset</button>
               </span>
@@ -176,6 +177,7 @@
               <label for="contourInterval">Contour interval</label>
               <span class="inputBlock">
                 <span class="withUnit"><input id="contourInterval" type="number" min="0" step="any" /><span>m</span></span>
+                <input id="contourIntervalRule" type="checkbox" /><label for="contourIntervalRule">Ignore rules</label>
                 <button id="setAllContourInterval" class="setAllCourses" type="button">Set all courses</button>
                 <button id="resetContourInterval" class="hideIfDefault" type="button">Reset</button>
               </span>
@@ -194,16 +196,18 @@
                   <option value="circle">Circle</option>
                   <option value="square">Square</option>
                 </select>
+                <input id="mapShapeRule" type="checkbox" /><label for="mapShapeRule">Ignore rules</label>
                 <button id="setAllMapShape" class="setAllCourses" type="button">Set all courses</button>
                 <button id="resetMapShape" class="hideIfDefault" type="button">Reset</button>
               </span>
-              <span id="mapShapeRule"></span>
+              <span id="mapShapeError"></span>
             </li>
             <li class="tcMap">
               <label for="mapSize">Map <span id="mapSizeType"></span></label>
               <span class="inputBlock">
                 <input id="mapSizeAuto" type="checkbox" /><label for="mapSizeAuto">Auto</label>
                 <span class="withUnit"><input id="mapSize" type="number" min="0" max="12" step="any" /><span>cm</span></span>
+                <input id="mapSizeRule" type="checkbox" /><label for="mapSizeRule">Ignore rules</label>
                 <button id="setAllMapSize" class="setAllCourses" type="button">Set all courses</button>
                 <button id="resetMapSize" class="hideIfDefault" type="button">Reset</button>
               </span>
@@ -220,6 +224,7 @@
                   <option>5</option>
                   <option>6</option>
                 </select>
+                <input id="numKitesRule" type="checkbox" /><label for="numKitesRule">Ignore rules</label>
                 <button id="setAllNumKites" class="setAllCourses" type="button">Set all courses</button>
                 <button id="resetNumKites" class="hideIfDefault" type="button">Reset</button>
               </span>
@@ -423,18 +428,21 @@
 
           <fieldset>
             <legend>Position</legend>
-            <ul class="autoBtnList">
-              <li>
-                <span>All stations</span>
-                <button id="autoAllKitePosAll" type="button">Automatically set all</button>
-                <button id="manualAllKitePosAll" type="button">Manually set all</button>
-              </li>
-              <li class="hideIfDefault">
-                <span>This station</span>
-                <button id="autoAllKitePosStation" type="button">Automatically set all</button>
-                <button id="manualAllKitePosStation" type="button">Manually set all</button>
-              </li>
-            </ul>
+            <fieldset>
+              <legend>Set all</legend>
+              <ul class="autoBtnList">
+                <li>
+                  <span>All stations</span>
+                  <button id="autoAllKitePosAll" type="button">Automatically</button>
+                  <button id="manualAllKitePosAll" type="button">Manually</button>
+                </li>
+                <li class="hideIfDefault">
+                  <span>This station</span>
+                  <button id="autoAllKitePosStation" type="button">Automatically</button>
+                  <button id="manualAllKitePosStation" type="button">Manually</button>
+                </li>
+              </ul>
+            </fieldset>
             <ul class="fieldList hideIfDefault">
               <li>
                 <label for="kitex">x</label>
@@ -457,18 +465,21 @@
 
         <details>
           <summary>Heading and viewing point</summary>
-          <ul class="autoBtnList">
-            <li>
-              <span>All stations</span>
-              <button id="autoAllHeadingVPAll" type="button">Automatically set all</button>
-              <button id="manualAllHeadingVPAll" type="button">Manually set all</button>
-            </li>
-            <li class="hideIfDefault">
-              <span>This station</span>
-              <button id="autoAllHeadingVPStation" type="button">Automatically set all</button>
-              <button id="manualAllHeadingVPStation" type="button">Manually set all</button>
-            </li>
-          </ul>
+          <fieldset>
+            <legend>Set all</legend>
+            <ul class="autoBtnList">
+              <li>
+                <span>All stations</span>
+                <button id="autoAllHeadingVPAll" type="button">Automatically</button>
+                <button id="manualAllHeadingVPAll" type="button">Manually</button>
+              </li>
+              <li class="hideIfDefault">
+                <span>This station</span>
+                <button id="autoAllHeadingVPStation" type="button">Automatically</button>
+                <button id="manualAllHeadingVPStation" type="button">Manually</button>
+              </li>
+            </ul>
+          </fieldset>
           <fieldset class="hideIfDefault">
             <legend>Viewing point</legend>
             <ul class="fieldList">
@@ -533,18 +544,21 @@
           </ul>
           <fieldset>
             <legend>Solution</legend>
-            <ul class="autoBtnList">
-              <li>
-                <span>All stations</span>
-                <button id="autoAllSolutionAll" type="button">Automatically set all</button>
-                <button id="manualAllSolutionAll" type="button">Manually set all</button>
-              </li>
-              <li class="hideIfDefault">
-                <span>This station</span>
-                <button id="autoAllSolutionStation" type="button">Automatically set all</button>
-                <button id="manualAllSolutionStation" type="button">Manually set all</button>
-              </li>
-            </ul>
+            <fieldset>
+              <legend>Set all</legend>
+              <ul class="autoBtnList">
+                <li>
+                  <span>All stations</span>
+                  <button id="autoAllSolutionAll" type="button">Automatically</button>
+                  <button id="manualAllSolutionAll" type="button">Manually</button>
+                </li>
+                <li class="hideIfDefault">
+                  <span>This station</span>
+                  <button id="autoAllSolutionStation" type="button">Automatically</button>
+                  <button id="manualAllSolutionStation" type="button">Manually</button>
+                </li>
+              </ul>
+            </fieldset>
             <ul class="fieldList hideIfDefault">
               <li>
                 <label for="solution">Answer</label>
@@ -560,18 +574,21 @@
           <details>
             <summary>Positions on input PDFs</summary>
             <p>TODO: MOVE TO HELP FILE Positions are measured from the bottom-left corner of the page.</p>
-            <ul class="autoBtnList">
-              <li>
-                <span>All stations</span>
-                <button id="autoAllTaskPositionsAll" type="button">Automatically set all</button>
-                <button id="manualAllTaskPositionsAll" type="button">Manually set all</button>
-              </li>
-              <li class="hideIfDefault">
-                <span>This station</span>
-                <button id="autoAllTaskPositionsStation" type="button">Automatically set all</button>
-                <button id="manualAllTaskPositionsStation" type="button">Manually set all</button>
-              </li>
-            </ul>
+            <fieldset>
+              <legend>Set all</legend>
+              <ul class="autoBtnList">
+                <li>
+                  <span>All stations</span>
+                  <button id="autoAllTaskPositionsAll" type="button">Automatically</button>
+                  <button id="manualAllTaskPositionsAll" type="button">Manually</button>
+                </li>
+                <li class="hideIfDefault">
+                  <span>This station</span>
+                  <button id="autoAllTaskPositionsStation" type="button">Automatically</button>
+                  <button id="manualAllTaskPositionsStation" type="button">Manually</button>
+                </li>
+              </ul>
+            </fieldset>
             <fieldset class="hideIfDefault">
               <legend>Control circle</legend>
               <ul class="fieldList">

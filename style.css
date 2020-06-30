@@ -118,7 +118,7 @@ fieldset > ul:last-child {
   margin-bottom: 2ex;
 }
 
-@media (min-width: 76ch) {
+@media (min-width: 81ch) {
   .fieldList li {
     flex-wrap: nowrap;
     margin-bottom: initial;
@@ -133,14 +133,15 @@ fieldset > ul:last-child {
 
 /* Buttons and input fields after label arranged into nice block where input expands to fill space */
 .inputBlock {
-  width: 28ch;
+  width: 33ch;
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
 }
 
-@media (min-width: 36ch) {
+@media (min-width: 41ch) {
   .inputBlock {
+    flex: none;
     flex-wrap: nowrap;
   }
 }
@@ -156,7 +157,7 @@ fieldset > ul:last-child {
   flex: auto;
 }
 
-input[id$="Auto"] {
+input[id$="Auto"], input[id$="Rule"] {
   flex: initial;
 }
 
@@ -186,7 +187,7 @@ input[id$="Auto"] {
   flex: none;
 }
 
-@media (min-width: 41ch) {
+@media (min-width: 46ch) {
   .autoBtnList li {
     margin-bottom: initial;
     display: flex;
