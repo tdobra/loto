@@ -174,7 +174,7 @@ function tcTemplate() {
     }
 
     refresh() {
-      if (!this.viewDefault.value) {
+      if (!courseList.viewDefault.value) {
         this.itemInFocus = this.constructor.selector.selectedIndex;
         this.constructor.showHideMoveBtns();
       }
@@ -346,7 +346,7 @@ function tcTemplate() {
         });
       }
       if (this.constructor.ruleElement !== undefined) {
-        this.ignoreRules = new IgnoreRulesField({
+        this.ignoreRules = new IgnoreRules({
           parentItem: obj.parentItem,
           parentField: this,
           inputElement: this.constructor.ruleElement
@@ -385,19 +385,24 @@ function tcTemplate() {
       }
     }
 
-    matchesAll(ignoreHidden = false) {
+    matchesAll(ignoreHidden = false, skipIgnoreRules = false) {
       //Returns true if this field matches those on all other items in this list, excluding number fields set to NaN. Ignores NaN if number. Ignores hidden stations on request.
 
       //Return true if the tested index is ignored
       if (ignoreHidden && this.parentItem.isHidden()) { return true; }
+      if (skipIgnoreRules) { if (this.ignoreRules.value) { return true; }}
 
       const isMatch = (item) => item[this.constructor.fieldName].value === this.value || Number.isNaN(item[this.constructor.fieldName].value);
+      const isMatchHidden = (item) => isMatch(item) || (ignoreHidden && item.isHidden());
 
-      if (ignoreHidden) {
-        return this.parentList.items.every((item) => isMatch(item) || item.isHidden());
+      let isMatchRules;
+      if (skipIgnoreRules) {
+        //Only call if ignoreRules is defined
+        isMatchRules = (item) => isMatchHidden(item) || item[this.constructor.fieldName].ignoreRules.value;
       } else {
-        return this.parentList.items.every(isMatch);
+        isMatchRules = isMatchHidden;
       }
+      return this.parentList.items.every(isMatchRules);
     }
 
     refreshInput(alsoSubfields = false, inputChanged = true) {
@@ -414,19 +419,25 @@ function tcTemplate() {
     }
 
     resetValue() {
-      //FIXME: ignoreRules
       const resetField = (field) => {
+        let val;
         if (this.parentItem.isDefault()) {
           //Resets to original value
-          field.save(field.constructor.originalValue);
+          val = field.constructor.originalValue;
         } else {
           //Resets to current default value
           let defaultField = this.parentList.default[this.constructor.fieldName];
-          if (field !== this) { defaultField = defaultField.auto; }
-          field.save(defaultField.value);
+          switch (field.constructor.fieldName) {
+          case "auto":
+          case "ignoreRules":
+            defaultField = defaultField[field.constructor.fieldName];
+          }
+          val = defaultField.value;
         }
+        field.save(val);
       };
 
+      if (this.ignoreRules !== undefined) { resetField(this.ignoreRules); }
       if (this.auto !== undefined) {
         resetField(this.auto);
         if (!this.auto.value) { resetField(this); }
@@ -468,9 +479,17 @@ function tcTemplate() {
     }
 
     setAll() {
-      //FIXME: auto and ignoreRules
       //Sets this field to this value in all items
-      this.parentList.items.forEach((item) => { item[this.constructor.fieldName].save(this.value); });
+      this.parentList.items.forEach((item) => {
+        const field = item[this.constructor.fieldName];
+        if (field.ignoreRules !== undefined) { field.ignoreRules.save(this.ignoreRules.value); }
+        if (field.auto !== undefined) {
+          field.auto.save(this.auto.value);
+          if (!field.auto.value) { field.save(this.value); }
+        } else {
+          field.save(this.value);
+        }
+      });
     }
 
     updateMsgs() {
@@ -532,14 +551,23 @@ function tcTemplate() {
       this.parentField.updateMsgs();
     }
   }
-  AutoField.originalValue = true;
+  Object.assign(AutoField, {
+    fieldName: "auto",
+    originalValue: true
+  });
 
-  class IgnoreRulesField extends BooleanField {
+  class IgnoreRules extends BooleanField {
     constructor(obj) {
       super(obj);
       this.parentField = obj.parentField;
     }
+
+    updateMsgs() {
+      this.parentField.checkValidity();
+      this.parentField.refreshInput(false, false);
+    }
   }
+  IgnoreRules.fieldName = "ignoreRules";
 
   class NumberField extends Field {
     constructor(obj) {
@@ -734,14 +762,14 @@ function tcTemplate() {
       super.checkValidity();
       if (this.valid) {
         //Check all values match
-        this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
+        this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true, !this.ignoreRules.value);
         if (this.ruleCompliant) {
           //Permitted map scales is should, so don't throw error
           this.ruleCompliant = this.value === 4000 || this.value === 5000;
           this.errorMsg = tcTemplateMsg.mapScaleRule;
         } else {
           this.errorMsg = tcTemplateMsg.notSameForAllCourses;
-          this.valid = !this.parentItem.enforceRules.value;
+          this.valid = this.ignoreRules.value;
         }
       } else {
         this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
@@ -764,8 +792,8 @@ function tcTemplate() {
       super.checkValidity();
       if (this.valid) {
         //Check all values match
-        this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
-        this.valid = !this.parentItem.enforceRules.value || this.ruleCompliant;
+        this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true, !this.ignoreRules.value);
+        this.valid = this.ignoreRules.value || this.ruleCompliant;
         this.errorMsg = tcTemplateMsg.notSameForAllCourses;
       } else {
         this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
@@ -795,7 +823,7 @@ function tcTemplate() {
 
     checkValidity() {
       //Don't throw error for not matching
-      this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
+      this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true, false);
     }
 
     updateMsgs() {
@@ -828,11 +856,11 @@ function tcTemplate() {
         this.ruleCompliant = this.value >= 5;
         if (this.ruleCompliant) {
           //Don't throw error for not matching
-          this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true);
+          this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true, false);
           this.errorMsg = tcTemplateMsg.notSameForAllCourses;
         } else {
           this.errorMsg = tcTemplateMsg.mapSizeRule;
-          this.valid = !this.parentItem.enforceRules.value;
+          this.valid = this.ignoreRules.value;
         }
       } else if (this.auto.value) {
         this.errorMsg = tcTemplateMsg.awaitingData;
@@ -860,7 +888,7 @@ function tcTemplate() {
 
     checkValidity() {
       this.ruleCompliant = this.parentItem.isHidden() || this.value === 6;
-      this.valid = !this.parentItem.enforceRules.value || this.ruleCompliant;
+      this.valid = this.ignoreRules.value || this.ruleCompliant;
     }
   }
   Object.assign(NumKites, {
@@ -871,21 +899,6 @@ function tcTemplate() {
     resetBtn: "resetNumKites",
     setAllBtn: "setAllNumKites",
     errorElement: "numKitesError"
-  });
-
-  class EnforceRules extends BooleanField {
-    saveInput() {
-      super.saveInput();
-      this.parentItem.checkValidity(true);
-      this.parentItem.refreshAllInput(false);
-    }
-  }
-  Object.assign(EnforceRules, {
-    fieldName: "enforceRules",
-    originalValue: true,
-    inputElement: "enforceRules",
-    resetBtn: "resetEnforceRules",
-    setAllBtn: "setAllEnforceRules"
   });
 
   class DebugCircle extends BooleanField {}
@@ -1024,8 +1037,7 @@ function tcTemplate() {
     ContourInterval,
     MapShape,
     MapSize,
-    NumKites,
-    EnforceRules
+    NumKites
   ].concat(Course.customLayoutClasses);
 
   class ViewDefault extends BooleanField {
