@@ -1161,6 +1161,24 @@ function tcTemplate() {
     setAllBtn: "setAllShowStationTasks"
   });
 
+  class AutoPopulateKites extends BooleanField {}
+  Object.assign(AutoPopulateKites, {
+    fieldName: "autoPopulateKites",
+    originalValue: true,
+    inputElement: "kitesAutoPopulate",
+    resetBtn: "resetKitesAutoPopulate",
+    setAllBtn: "setAllKitesAutoPopulate"
+  });
+
+  class AutoOrderKites extends BooleanField {}
+  Object.assign(AutoOrderKites, {
+    fieldName: "autoOrderKites",
+    originalValue: true,
+    inputElement: "autoOrderKites",
+    resetBtn: "resetAutoOrderKites",
+    setAllBtn: "setAllAutoOrderKites"
+  });
+
   class KiteName extends NameField {}
   Object.assign(KiteName, {
     inputElement: "kiteName",
@@ -1197,24 +1215,7 @@ function tcTemplate() {
     Kitey
   ];
 
-  class AutoOrderKites extends BooleanField {}
-  Object.assign(AutoOrderKites, {
-    fieldName: "autoOrderKites",
-    originalValue: true,
-    inputElement: "autoOrderKites"
-  });
-
-  class KiteList extends IterableList {
-    constructor(obj) {
-      super(obj);
-      this.autoOrder = new AutoOrderKites({ parentItem: this });
-    }
-
-    init() {
-      super.init();
-      AutoOrderKites.init();
-    }
-  }
+  class KiteList extends IterableList {}
   Object.assign(KiteList, {
     selector: "kiteSelect",
     addBtn: "addKite",
@@ -1401,7 +1402,9 @@ function tcTemplate() {
   Station.fieldClasses = [
     StationName,
     StationCourse,
-    ShowStationTasks
+    ShowStationTasks,
+    AutoPopulateKites,
+    AutoOrderKites
   ];
 
   class StationList extends IterableList {
