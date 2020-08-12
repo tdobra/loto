@@ -538,11 +538,18 @@ function tcTemplate() {
       this.calculated = this.parentField.constructor.originalValue;
     }
 
+    saveValue(val) {
+      if (val) {
+        //Overwrite parent field value with the calculated value
+        this.parentField.saveValue(this.calculated);
+        this.parentField.checkValidity();
+      }
+      super.saveValue(val);
+    }
+
     updateMsgs() {
       if (this.value) {
         this.parentField.inputElement.readOnly = true;
-        //Insert calculated value
-        this.parentField.save(this.calculated); //Only checks validity if value changed, so always recheck
         this.parentField.refreshInput(false, true);
       } else {
         this.parentField.inputElement.readOnly = false;
@@ -678,6 +685,39 @@ function tcTemplate() {
     fieldName: "itemName",
     checkSiblings: true
   });
+
+  class AutoBtnSet {
+    //Set of buttons to set given fields of all items of given type in this/all station to automatic or manual
+    constructor(obj) {
+      ["listType", "fields", "autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"].forEach((fieldName) => {
+        this[fieldName] = obj[fieldName];
+      })
+    }
+
+    setStation(autoState, station) {
+      //autoState is boolean
+      station[this.listType].items.forEach((item) => {
+        this.fields.forEach((field) => { item[field].auto.save(autoState); });
+      });
+    }
+
+    setAllStations(autoState) {
+      //WARNING: Not required for default course/station, so not implemented
+      stationList.items.forEach((station) => { this.setStation(autoState, station); });
+    }
+
+    setThisStation(autoState) {
+      this.setStation(autoState, stationList.activeItem);
+    }
+
+    init() {
+      id2element(this, ["autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"]);
+      this.autoAllBtn.addEventListener("click", () => { this.setAllStations(true); });
+      this.autoOneBtn.addEventListener("click", () => { this.setThisStation(true); });
+      this.manualAllBtn.addEventListener("click", () => { this.setAllStations(false); });
+      this.manualOneBtn.addEventListener("click", () => { this.setThisStation(false); });
+    }
+  }
 
   //Course - in reverse order of dependency
   class CourseName extends NameField {}
@@ -1206,6 +1246,15 @@ function tcTemplate() {
     autoElement: "kiteyAuto",
     errorElement: "kiteyError"
   });
+
+  const kitesPosAutoBtnSet = new AutoBtnSet({
+    listType: "kites",
+    fields: ["kitex", "kitey"],
+    autoAllBtn: "autoAllKitePosAll",
+    manualAllBtn: "manualAllKitePosAll",
+    autoOneBtn: "autoAllKitePosStation",
+    manualOneBtn: "manualAllKitePosStation"
+  })
 
   class Kite extends IterableItem {}
   Kite.fieldClasses = [
@@ -2895,7 +2944,7 @@ function tcTemplate() {
     }
   })();
 
-  [CourseList, StationList, KiteList, TaskList].forEach((list) => { list.init(); });
+  [CourseList, StationList, KiteList, TaskList, kitesPosAutoBtnSet].forEach((list) => { list.init(); });
 
   //Create root level objects and populate with essentials
   courseList = new CourseList();
