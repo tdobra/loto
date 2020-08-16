@@ -200,6 +200,10 @@ input[id$="Auto"], input[id$="Rule"] {
 
 /* Keep tick box label as a multiline to right of tick box */
 .tickRow {
+  display: flex;
+}
+
+span.tickRow {
   display: inline-flex;
 }
 

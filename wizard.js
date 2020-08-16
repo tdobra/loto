@@ -61,16 +61,22 @@ function tcTemplate() {
 
       //Add event listeners
       //Always use arrow functions to ensure this points to the IterableList rather than the calling DOM element
-      const listObj = () => this === CourseList ? courseList : stationList;
       //Course order buttons
-      this.selector.addEventListener("change", () => { listObj().refresh(true); });
-      this.addBtn.addEventListener("click", () => { listObj().add(); listObj().updateCount(); });
-      this.deleteBtn.addEventListener("click", () => { listObj().activeItem.deleteThis(true); listObj().updateCount(); });
-      this.upBtn.addEventListener("click", () => { listObj().activeItem.move(-1); });
-      this.downBtn.addEventListener("click", () => { listObj().activeItem.move(1); });
+      this.selector.addEventListener("change", () => { this.activeList.refreshItem(); });
+      this.addBtn.addEventListener("click", () => {
+        this.activeList.add();
+        this.activeList.updateCount();
+        this.activeList.refreshList();
+      });
+      this.deleteBtn.addEventListener("click", () => {
+        this.activeList.activeItem.deleteThis(true);
+        this.activeList.updateCount();
+      });
+      this.upBtn.addEventListener("click", () => { this.activeList.activeItem.move(-1); });
+      this.downBtn.addEventListener("click", () => { this.activeList.activeItem.move(1); });
       //Fields
       this.itemClass.fieldClasses.forEach((field, index) => {
-        const activeField = () => listObj().activeItem[this.itemClass.fieldNames[index]];
+        const activeField = () => this.activeList.activeItem[this.itemClass.fieldNames[index]];
         if (field.inputElement.tagName === undefined) {
           //Radio buttons
           Object.values(field.inputElement).forEach((element) => {
@@ -98,11 +104,6 @@ function tcTemplate() {
         group.resetBtn.addEventListener("click", () => { group.fieldClasses.forEach((field) => { field.resetBtn.click(); }); });
         group.setAllBtn.addEventListener("click", () => { group.fieldClasses.forEach((field) => { field.setAllBtn.click(); }); });
       });
-    }
-
-    checkValidity(recheckFields = true) {
-      if (recheckFields) { this.items.forEach((item) => { item.checkValidity(true); }); }
-      this.valid = this.items.every((item) => item.valid);
     }
 
     static showHideMoveBtns() {
@@ -145,13 +146,8 @@ function tcTemplate() {
       newItem.setOptionText(newItem.itemName.value);
       newItem.checkValidity(true);
 
-      //Add to the end
-      this.items.push(newItem);
-      this.constructor.selector.appendChild(newItem.optionElement);
-
-      //Change to new item
-      newItem.optionElement.selected = true;
-      this.refresh(true);
+      //Add to the end and give focus
+      this.itemInFocus = this.items.push(newItem) - 1;
 
       return newItem;
     }
@@ -165,6 +161,11 @@ function tcTemplate() {
       });
     }
 
+    checkValidity(recheckFields = true) {
+      if (recheckFields) { this.items.forEach((item) => { item.checkValidity(true); }); }
+      this.valid = this.items.every((item) => item.valid);
+    }
+
     newItem(isDefault = false) {
       return new this.constructor.itemClass({
         parentList: this,
@@ -173,12 +174,24 @@ function tcTemplate() {
       });
     }
 
-    refresh() {
+    refreshItem() {
       if (!courseList.viewDefault.value) {
         this.itemInFocus = this.constructor.selector.selectedIndex;
         this.constructor.showHideMoveBtns();
       }
       this.activeItem.refreshAllInput(true);
+    }
+
+    refreshList() {
+      //Remove all nodes
+      while (this.constructor.selector.hasChildNodes()) {
+        this.constructor.selector.removeChild(this.constructor.selector.lastChild);
+      }
+      //Add nodes for current item
+      this.items.forEach((item) => { this.constructor.selector.appendChild(item.optionElement); });
+      this.constructor.selector.selectedIndex = this.itemInFocus;
+      //Refresh fields
+      this.refreshItem();
     }
 
     updateCount() {
@@ -273,8 +286,7 @@ function tcTemplate() {
       this.parentList.constructor.selector.selectedIndex = 0;
       //Remove this station from array
       this.parentList.items.splice(this.index, 1);
-      //Don't save deleted values then refresh input fields
-      this.parentList.refresh(false);
+      this.parentList.refreshItem();
     }
 
     move(offset = 0) {
@@ -374,11 +386,12 @@ function tcTemplate() {
       //Determines whether this value is duplicated at another item in this list. Ignores hidden stations on request.
 
       //Return false if the tested index is ignored
-      if (ignoreHidden && this.parentItem.isHidden()) { return false; }
+      if (ignoreHidden && this.topItem.isHidden()) { return false; }
 
       const isDup = (item) => item[this.constructor.fieldName].value === this.value && item !== this.parentItem;
 
       if (ignoreHidden) {
+        //FIXME: ITEM.ISHIDDEN probably doesn't work for kites/tasks
         return this.parentList.items.some((item) => isDup(item) || item.isHidden());
       } else {
         return this.parentList.items.some(isDup);
@@ -389,10 +402,11 @@ function tcTemplate() {
       //Returns true if this field matches those on all other items in this list, excluding number fields set to NaN. Ignores NaN if number. Ignores hidden stations on request.
 
       //Return true if the tested index is ignored
-      if (ignoreHidden && this.parentItem.isHidden()) { return true; }
+      if (ignoreHidden && this.topItem.isHidden()) { return true; }
       if (skipIgnoreRules) { if (this.ignoreRules.value) { return true; }}
 
       const isMatch = (item) => item[this.constructor.fieldName].value === this.value || Number.isNaN(item[this.constructor.fieldName].value);
+      //FIXME: item.isHidden() doesn't work for kites/tasks
       const isMatchHidden = (item) => isMatch(item) || (ignoreHidden && item.isHidden());
 
       let isMatchRules;
@@ -494,6 +508,7 @@ function tcTemplate() {
 
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
+      const errorMsg = (this.auto !== undefined && this.auto.value) ? tcTemplateMsg.awaitingData : this.errorMsg;
       if (this.valid) {
         contentFieldClass.remove("error");
         if (this.ruleCompliant) {
@@ -503,12 +518,12 @@ function tcTemplate() {
           }
         } else {
           contentFieldClass.add("warning");
-          this.constructor.errorElement.textContent = this.errorMsg;
+          this.constructor.errorElement.textContent = errorMsg;
         }
       } else {
         contentFieldClass.remove("warning");
         contentFieldClass.add("error");
-        this.constructor.errorElement.textContent = this.errorMsg;
+        this.constructor.errorElement.textContent = errorMsg;
       }
     }
 
@@ -601,7 +616,7 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = Number.isFinite(this.value) || this.parentItem.isNonDefaultHidden();
+      this.valid = Number.isFinite(this.value) || this.topItem.isNonDefaultHidden();
     }
 
     save(val) {
@@ -643,7 +658,7 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.valid = (Number.isInteger(this.value) && this.value > 0) || this.parentItem.isNonDefaultHidden();
+      this.valid = (Number.isInteger(this.value) && this.value > 0) || this.topItem.isNonDefaultHidden();
     }
   }
 
@@ -685,39 +700,6 @@ function tcTemplate() {
     fieldName: "itemName",
     checkSiblings: true
   });
-
-  class AutoBtnSet {
-    //Set of buttons to set given fields of all items of given type in this/all station to automatic or manual
-    constructor(obj) {
-      ["listType", "fields", "autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"].forEach((fieldName) => {
-        this[fieldName] = obj[fieldName];
-      })
-    }
-
-    setStation(autoState, station) {
-      //autoState is boolean
-      station[this.listType].items.forEach((item) => {
-        this.fields.forEach((field) => { item[field].auto.save(autoState); });
-      });
-    }
-
-    setAllStations(autoState) {
-      //WARNING: Not required for default course/station, so not implemented
-      stationList.items.forEach((station) => { this.setStation(autoState, station); });
-    }
-
-    setThisStation(autoState) {
-      this.setStation(autoState, stationList.activeItem);
-    }
-
-    init() {
-      id2element(this, ["autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"]);
-      this.autoAllBtn.addEventListener("click", () => { this.setAllStations(true); });
-      this.autoOneBtn.addEventListener("click", () => { this.setThisStation(true); });
-      this.manualAllBtn.addEventListener("click", () => { this.setAllStations(false); });
-      this.manualOneBtn.addEventListener("click", () => { this.setThisStation(false); });
-    }
-  }
 
   //Course - in reverse order of dependency
   class CourseName extends NameField {}
@@ -902,8 +884,6 @@ function tcTemplate() {
           this.errorMsg = tcTemplateMsg.mapSizeRule;
           this.valid = this.ignoreRules.value;
         }
-      } else if (this.auto.value) {
-        this.errorMsg = tcTemplateMsg.awaitingData;
       } else {
         this.errorMsg = tcTemplateMsg.mapSizeError;
       }
@@ -927,7 +907,7 @@ function tcTemplate() {
     }
 
     checkValidity() {
-      this.ruleCompliant = this.parentItem.isHidden() || this.value === 6;
+      this.ruleCompliant = this.topItem.isHidden() || this.value === 6;
       this.valid = this.ignoreRules.value || this.ruleCompliant;
     }
   }
@@ -1083,7 +1063,7 @@ function tcTemplate() {
   class ViewDefault extends BooleanField {
     saveInput() {
       super.saveInput();
-      this.parentItem.refresh();
+      this.parentItem.refreshItem();
     }
 
     updateMsgs() {
@@ -1109,6 +1089,10 @@ function tcTemplate() {
       this.default.checkValidity(true);
     }
 
+    static get activeList() {
+      return courseList;
+    }
+
     static init() {
       super.init();
       id2element(ViewDefault, ["inputElement"]);
@@ -1116,13 +1100,13 @@ function tcTemplate() {
     }
 
     add() {
-      const newItem = super.add();
+      super.add();
       this.refreshOtherCourseLists();
     }
 
-    refresh() {
+    refreshItem() {
       this.viewDefault.refreshInput(false, true);
-      super.refresh();
+      super.refreshItem();
     }
 
     refreshOtherCourseLists() {
@@ -1176,7 +1160,7 @@ function tcTemplate() {
       super.updateMsgs();
       //Show relevant course
       CourseList.selector.selectedIndex = this.value.index;
-      courseList.refresh(true);
+      courseList.refreshItem();
     }
   }
   Object.assign(StationCourse, {
@@ -1247,15 +1231,6 @@ function tcTemplate() {
     errorElement: "kiteyError"
   });
 
-  const kitesPosAutoBtnSet = new AutoBtnSet({
-    listType: "kites",
-    fields: ["kitex", "kitey"],
-    autoAllBtn: "autoAllKitePosAll",
-    manualAllBtn: "manualAllKitePosAll",
-    autoOneBtn: "autoAllKitePosStation",
-    manualOneBtn: "manualAllKitePosStation"
-  })
-
   class Kite extends IterableItem {}
   Kite.fieldClasses = [
     KiteName,
@@ -1264,7 +1239,11 @@ function tcTemplate() {
     Kitey
   ];
 
-  class KiteList extends IterableList {}
+  class KiteList extends IterableList {
+    static get activeList() {
+      return stationList.activeItem.kites;
+    }
+  }
   Object.assign(KiteList, {
     selector: "kiteSelect",
     addBtn: "addKite",
@@ -1274,11 +1253,48 @@ function tcTemplate() {
     itemClass: Kite
   });
 
+  class VPx extends NonNegativeField {}
+  Object.assign(VPx, {
+    fieldName: "vpx",
+    inputElement: "VPx",
+    autoElement: "VPxAuto",
+    errorElement: "VPxError"
+  });
+
+  class VPy extends NonNegativeField {}
+  Object.assign(VPy, {
+    fieldName: "vpy",
+    inputElement: "VPy",
+    autoElement: "VPyAuto",
+    errorElement: "VPyError"
+  });
+
+  class Heading extends NumberField {}
+  Object.assign(Heading, {
+    fieldName: "heading",
+    inputElement: "heading",
+    autoElement: "headingAuto",
+    errorElement: "headingError"
+  });
+
+  class BlankMapPage extends NaturalNumberField {}
+  Object.assign(BlankMapPage, {
+    fieldName: "blankMapPage",
+    inputElement: "blankMapPage",
+    autoElement: "blankMapPageAuto",
+    resetBtn: "resetBlankMapPage",
+    setAllBtn: "setAllBlankMapPage",
+    errorElement: "blankMapPageError"
+  });
+
   class TaskName extends NameField {
     checkValidity() {
       if (!this.topItem.isDefault()) {
         super.checkValidity();
-        if (this.valid && !this.topItem.isDefault() && (this.value === "Kites" || this.value === "VP")) {
+        if (
+          this.valid && !this.topItem.isDefault() &&
+          (this.value === "Kites" || this.value === "VP" || this.value === "Zs")
+        ) {
           this.valid = false;
           this.errorMsg = tcTemplateMsg.taskNameKeywords;
         }
@@ -1386,16 +1402,19 @@ function tcTemplate() {
   ];
 
   class TaskList extends IterableList {
-    constructor(parentObj) {
-      const obj = {
+    constructor(obj) {
+      Object.assign(obj, {
         itemInFocus: 0,
-        counterField: parentObj.numTasks
-      };
+        counterField: obj.parentItem.numTasks
+      });
       super(obj);
-      // this.parentItem = parentObj;
     }
 
-    refresh(storeValues = false) {
+    static get activeList() {
+      return stationList.activeItem.tasks;
+    }
+
+    refreshItem(storeValues = false) {
       //storeValues is a boolean stating whether to commit values in form fields to variables in memory.
       if (storeValues) {
         //Only permit change of station if the name is valid and unique
@@ -1408,8 +1427,8 @@ function tcTemplate() {
         }
       }
 
-      this.itemInFocus = this.selector.selectedIndex;
-      this.showHideMoveBtns();
+      this.itemInFocus = this.constructor.selector.selectedIndex;
+      this.constructor.showHideMoveBtns();
       this.activeItem.refreshAllInput();
     }
 
@@ -1445,7 +1464,7 @@ function tcTemplate() {
     }
 
     isHidden() {
-      return !this.showStation.value || this.stationCourse.isHidden();
+      return !this.showStationTasks.value || this.stationCourse.value.isHidden();
     }
   }
   Station.fieldClasses = [
@@ -1453,7 +1472,11 @@ function tcTemplate() {
     StationCourse,
     ShowStationTasks,
     AutoPopulateKites,
-    AutoOrderKites
+    AutoOrderKites,
+    VPx,
+    VPy,
+    Heading,
+    BlankMapPage
   ];
 
   class StationList extends IterableList {
@@ -1467,6 +1490,23 @@ function tcTemplate() {
       this.default = this.newItem(true);
       this.default.checkValidity(true);
     }
+
+    static get activeList() {
+      return stationList;
+    }
+
+    add() {
+      const station = super.add();
+      const course = station.stationCourse.value;
+      for (let i = 0; i < course.numKites.value; ++i) { station.kites.add(); }
+      for (let i = 0; i < course.numTasks.value; ++i) { station.tasks.add(); }
+    }
+
+    refreshItem() {
+      super.refreshItem();
+      //Clear and repopulate selectors
+      [this.activeItem.kites, this.activeItem.tasks].forEach((list) => { list.refreshList(); });
+    }
   }
   Object.assign(StationList, {
     selector: "stationSelect",
@@ -1477,32 +1517,62 @@ function tcTemplate() {
     itemClass: Station
   });
 
-
-
-
-
-
-  class Heading extends NumberField {
-    constructor(parentObj, value) {
-      const inputObj = {
-        parentObj: parentObj,
-        value: value,
-        inputElement: document.getElementById("heading"),
-        resetBtn: undefined,
-        setAllBtn: undefined,
-        errorElement: document.getElementById("headingError")
-      };
-      super(inputObj);
+  //Group auto/manual buttons
+  class AutoBtnSet {
+    //Set of buttons to set given fields of all items of given type in this/all station to automatic or manual
+    constructor(obj) {
+      ["listType", "fields", "autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"].forEach((fieldName) => {
+        this[fieldName] = obj[fieldName];
+      })
     }
 
-    static getFieldName() {
-      return "heading";
+    setStation(autoState, station) {
+      //autoState is boolean
+      (this.listType === null ? [station] : station[this.listType].items).forEach((item) => {
+        this.fields.forEach((field) => {
+          item[field].auto.save(autoState);
+          if (station === stationList.activeItem) {
+            item[field].auto.refreshInput(false, true);
+          }
+        });
+      });
     }
 
-    checkValidity() {
-      this.valid = (Number.isFinite(this.value) || this.station.showStation.value === false) || this.station.isDefault();
+    setAllStations(autoState) {
+      //WARNING: Not required for default course/station, so not implemented
+      stationList.items.forEach((station) => { this.setStation(autoState, station); });
+    }
+
+    setThisStation(autoState) {
+      this.setStation(autoState, stationList.activeItem);
+    }
+
+    init() {
+      id2element(this, ["autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"]);
+      this.autoAllBtn.addEventListener("click", () => { this.setAllStations(true); });
+      this.autoOneBtn.addEventListener("click", () => { this.setThisStation(true); });
+      this.manualAllBtn.addEventListener("click", () => { this.setAllStations(false); });
+      this.manualOneBtn.addEventListener("click", () => { this.setThisStation(false); });
     }
   }
+
+  const kitesPosAutoBtnSet = new AutoBtnSet({
+    listType: "kites",
+    fields: ["kitex", "kitey"],
+    autoAllBtn: "autoAllKitePosAll",
+    manualAllBtn: "manualAllKitePosAll",
+    autoOneBtn: "autoAllKitePosStation",
+    manualOneBtn: "manualAllKitePosStation"
+  });
+
+  const headingVPAutoBtnSet = new AutoBtnSet({
+    listType: null,
+    fields: ["vpx", "vpy", "heading", "blankMapPage"],
+    autoAllBtn: "autoAllHeadingVPAll",
+    manualAllBtn: "manualAllHeadingVPAll",
+    autoOneBtn: "autoAllHeadingVPStation",
+    manualOneBtn: "manualAllHeadingVPStation"
+  });
 
   function id2element(obj, props) {
     //Replaces properties on object that specify an element ID by the element itself
@@ -2944,13 +3014,22 @@ function tcTemplate() {
     }
   })();
 
-  [CourseList, StationList, KiteList, TaskList, kitesPosAutoBtnSet].forEach((list) => { list.init(); });
+  [
+    CourseList,
+    StationList,
+    KiteList,
+    TaskList,
+    kitesPosAutoBtnSet,
+    headingVPAutoBtnSet
+  ].forEach((list) => { list.init(); });
 
   //Create root level objects and populate with essentials
+  //Must do courseList before stationList
   courseList = new CourseList();
   courseList.add();
   stationList = new StationList();
   stationList.add();
+  [courseList, stationList].forEach((list) => { list.refreshList(); });
 
   const mapsCompiler = new Compiler({
     statusBox: document.getElementById("compileStatus"),
