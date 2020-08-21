@@ -1517,63 +1517,6 @@ function tcTemplate() {
     itemClass: Station
   });
 
-  //Group auto/manual buttons
-  class AutoBtnSet {
-    //Set of buttons to set given fields of all items of given type in this/all station to automatic or manual
-    constructor(obj) {
-      ["listType", "fields", "autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"].forEach((fieldName) => {
-        this[fieldName] = obj[fieldName];
-      })
-    }
-
-    setStation(autoState, station) {
-      //autoState is boolean
-      (this.listType === null ? [station] : station[this.listType].items).forEach((item) => {
-        this.fields.forEach((field) => {
-          item[field].auto.save(autoState);
-          if (station === stationList.activeItem) {
-            item[field].auto.refreshInput(false, true);
-          }
-        });
-      });
-    }
-
-    setAllStations(autoState) {
-      //WARNING: Not required for default course/station, so not implemented
-      stationList.items.forEach((station) => { this.setStation(autoState, station); });
-    }
-
-    setThisStation(autoState) {
-      this.setStation(autoState, stationList.activeItem);
-    }
-
-    init() {
-      id2element(this, ["autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"]);
-      this.autoAllBtn.addEventListener("click", () => { this.setAllStations(true); });
-      this.autoOneBtn.addEventListener("click", () => { this.setThisStation(true); });
-      this.manualAllBtn.addEventListener("click", () => { this.setAllStations(false); });
-      this.manualOneBtn.addEventListener("click", () => { this.setThisStation(false); });
-    }
-  }
-
-  const kitesPosAutoBtnSet = new AutoBtnSet({
-    listType: "kites",
-    fields: ["kitex", "kitey"],
-    autoAllBtn: "autoAllKitePosAll",
-    manualAllBtn: "manualAllKitePosAll",
-    autoOneBtn: "autoAllKitePosStation",
-    manualOneBtn: "manualAllKitePosStation"
-  });
-
-  const headingVPAutoBtnSet = new AutoBtnSet({
-    listType: null,
-    fields: ["vpx", "vpy", "heading", "blankMapPage"],
-    autoAllBtn: "autoAllHeadingVPAll",
-    manualAllBtn: "manualAllHeadingVPAll",
-    autoOneBtn: "autoAllHeadingVPStation",
-    manualOneBtn: "manualAllHeadingVPStation"
-  });
-
   function id2element(obj, props) {
     //Replaces properties on object that specify an element ID by the element itself
     props.forEach((elName) => { if (typeof obj[elName] === "string") { obj[elName] = document.getElementById(obj[elName]); } });
@@ -2986,7 +2929,6 @@ function tcTemplate() {
   })();
 
   //Initialisation
-
   const dynamicCSS = (() => {
     //For changing styles of classes on the fly
     const styleElement = document.createElement("style");
@@ -3018,9 +2960,81 @@ function tcTemplate() {
     CourseList,
     StationList,
     KiteList,
-    TaskList,
-    kitesPosAutoBtnSet,
-    headingVPAutoBtnSet
+    TaskList
+  ].forEach((list) => { list.init(); });
+
+  //Group auto/manual buttons
+  class AutoBtnSet {
+    //Set of buttons to set given fields of all items of given type in this/all station to automatic or manual
+    constructor(obj) {
+      ["listType", "fields", "autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"].forEach((fieldName) => {
+        this[fieldName] = obj[fieldName];
+      })
+    }
+
+    setStation(autoState, station) {
+      //autoState is boolean
+      (this.listType === null ? [station] : station[this.listType].items).forEach((item) => {
+        this.fields.forEach((field) => {
+          item[field].auto.save(autoState);
+          if (station === stationList.activeItem) {
+            item[field].auto.refreshInput(false, true);
+          }
+        });
+      });
+    }
+
+    setAllStations(autoState) {
+      //WARNING: Not required for default course/station, so not implemented
+      stationList.items.forEach((station) => { this.setStation(autoState, station); });
+    }
+
+    setThisStation(autoState) {
+      this.setStation(autoState, stationList.activeItem);
+    }
+
+    init() {
+      id2element(this, ["autoAllBtn", "autoOneBtn", "manualAllBtn", "manualOneBtn"]);
+      this.autoAllBtn.addEventListener("click", () => { this.setAllStations(true); });
+      this.autoOneBtn.addEventListener("click", () => { this.setThisStation(true); });
+      this.manualAllBtn.addEventListener("click", () => { this.setAllStations(false); });
+      this.manualOneBtn.addEventListener("click", () => { this.setThisStation(false); });
+    }
+  }
+
+  [
+    new AutoBtnSet({
+      listType: "kites",
+      fields: ["kitex", "kitey"],
+      autoAllBtn: "autoAllKitePosAll",
+      manualAllBtn: "manualAllKitePosAll",
+      autoOneBtn: "autoAllKitePosStation",
+      manualOneBtn: "manualAllKitePosStation"
+    }),
+    new AutoBtnSet({
+      listType: null,
+      fields: ["vpx", "vpy", "heading", "blankMapPage"],
+      autoAllBtn: "autoAllHeadingVPAll",
+      manualAllBtn: "manualAllHeadingVPAll",
+      autoOneBtn: "autoAllHeadingVPStation",
+      manualOneBtn: "manualAllHeadingVPStation"
+    }),
+    new AutoBtnSet({
+      listType: "tasks",
+      fields: ["solution"],
+      autoAllBtn: "autoAllSolutionAll",
+      manualAllBtn: "manualAllSolutionAll",
+      autoOneBtn: "autoAllSolutionStation",
+      manualOneBtn: "manualAllSolutionStation"
+    }),
+    new AutoBtnSet({
+      listType: "tasks",
+      fields: ["circlePage", "circlex", "circley", "cdPage", "cdx", "cdy", "cdWidth", "cdHeight", "cdScale"],
+      autoAllBtn: "autoAllTaskPositionsAll",
+      manualAllBtn: "manualAllTaskPositionsAll",
+      autoOneBtn: "autoAllTaskPositionsStation",
+      manualOneBtn: "manualAllTaskPositionsStation"
+    })
   ].forEach((list) => { list.init(); });
 
   //Create root level objects and populate with essentials
