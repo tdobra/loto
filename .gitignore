@@ -1,2 +1,6 @@
+TemplateParameters.tex
 .DS_Store
-
+*.aux
+*.gz
+*.log
+*.pdf
