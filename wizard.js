@@ -1,6 +1,6 @@
 "use strict";
 
-//FIXME: Chrome has bug that defer script loading doesn't work with XHTML
+//TODO: Chrome has bug that defer script loading doesn't work with XHTML
 //This function is currently called by DOMContentLoaded event
 //Once fixed, load messages.js then this script both with defer, delete domLoad and change tcTemplate() to anonymous IIFE
 domLoad.then(async () => {
@@ -1522,6 +1522,19 @@ function tcTemplate() {
     props.forEach((elName) => { if (typeof obj[elName] === "string") { obj[elName] = document.getElementById(obj[elName]); } });
   }
 
+  //Save and retrieve parameters
+  function buildXML() {
+    const xmlDoc = document.implementation.createDocument("https://tdobra.github.io/tctemplate", "tctemplate");
+
+    //Convert to string
+    const xmlSerial = new XMLSerializer();
+    let xmlStr = xmlSerial.serializeToString(xmlDoc);
+    //Add XML declaration if not already present - varies by browser
+    if (!xmlStr.startsWith("<?")) {
+      xmlStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xmlStr;
+    }
+  }
+  document.getElementById("saveParameters").addEventListener("click", buildXML);
 
 
 
