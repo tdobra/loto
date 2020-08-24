@@ -345,6 +345,7 @@ function tcTemplate() {
         } else {
           this.topItem = this.parentList.parentItem;
         }
+        this.topList = this.topItem.parentList;
       }
       this.inputElement = obj.inputElement === undefined ? this.constructor.inputElement : obj.inputElement;
       this.value = obj.value === undefined ? this.constructor.originalValue : obj.value;
@@ -403,7 +404,7 @@ function tcTemplate() {
 
       //Return true if the tested index is ignored
       if (ignoreHidden && this.topItem.isHidden()) { return true; }
-      if (skipIgnoreRules) { if (this.ignoreRules.value) { return true; }}
+      if (skipIgnoreRules) { if (this.ignoreRules.value) { return true; } }
 
       const isMatch = (item) => item[this.constructor.fieldName].value === this.value || Number.isNaN(item[this.constructor.fieldName].value);
       //FIXME: item.isHidden() doesn't work for kites/tasks
@@ -435,16 +436,27 @@ function tcTemplate() {
     resetValue() {
       const resetField = (field) => {
         let val;
-        if (this.parentItem.isDefault()) {
+        if (this.topItem.isDefault()) {
           //Resets to original value
           val = field.constructor.originalValue;
         } else {
           //Resets to current default value
-          let defaultField = this.parentList.default[this.constructor.fieldName];
+          let defaultItem;
+          switch (this.parentList.itemClass) {
+            case Kite:
+              defaultItem = this.topList.default.kites.item[0];
+              break;
+            case Task:
+              defaultItem = this.topList.default.tasks.item[0];
+              break;
+            default:
+              defaultItem = this.topList.default;
+          }
+          let defaultField = defaultItem[this.constructor.fieldName];
           switch (field.constructor.fieldName) {
-          case "auto":
-          case "ignoreRules":
-            defaultField = defaultField[field.constructor.fieldName];
+            case "auto":
+            case "ignoreRules":
+              defaultField = defaultField[field.constructor.fieldName];
           }
           val = defaultField.value;
         }
@@ -494,22 +506,35 @@ function tcTemplate() {
 
     setAll() {
       //Sets this field to this value in all items
-      this.parentList.items.forEach((item) => {
-        const field = item[this.constructor.fieldName];
-        if (field.ignoreRules !== undefined) { field.ignoreRules.save(this.ignoreRules.value); }
-        if (field.auto !== undefined) {
-          field.auto.save(this.auto.value);
-          if (!field.auto.value) { field.save(this.value); }
-        } else {
-          field.save(this.value);
-        }
-      });
+      const setAllList = (list) => {
+        list.items.forEach((item) => {
+          const field = item[this.constructor.fieldName];
+          if (field.ignoreRules !== undefined) { field.ignoreRules.save(this.ignoreRules.value); }
+          if (field.auto !== undefined) {
+            field.auto.save(this.auto.value);
+            if (!field.auto.value) { field.save(this.value); }
+          } else {
+            field.save(this.value);
+          }
+        });
+      }
+
+      if (this.parentList.itemClass === Kite) {
+        //Apply to all stations
+        this.topList.items.forEach((item) => { setAllList(item.kites); });
+      } else if (this.parentList.itemClass === Task) {
+        this.topList.items.forEach((item) => { setAllList(item.tasks); });
+      } else {
+        setAllList(this.parentList);
+      }
     }
 
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
-      const errorMsg = (this.auto !== undefined && this.auto.value) ? tcTemplateMsg.awaitingData : this.errorMsg;
-      if (this.valid) {
+      const autoEnabled = this.auto !== undefined && this.auto.value;
+      const errorMsg = autoEnabled ? tcTemplateMsg.awaitingData : this.errorMsg;
+      if (this.valid || (this.topItem.isDefault() && autoEnabled)) {
+        //Don't flag error on defaults if setting automatically
         contentFieldClass.remove("error");
         if (this.ruleCompliant) {
           contentFieldClass.remove("warning");
@@ -528,7 +553,7 @@ function tcTemplate() {
     }
 
     //Empty functions, which may be overwritten in inheriting classes if some action is required
-    checkValidity() {} //Most likely: field always valid
+    checkValidity() { } //Most likely: field always valid
   }
   Object.assign(Field, {
     originalValue: "",
@@ -679,7 +704,7 @@ function tcTemplate() {
       this.inputElement[val].checked = true;
     }
 
-    updateMsgs() {}
+    updateMsgs() { }
   }
 
   class NameField extends Field {
@@ -702,7 +727,7 @@ function tcTemplate() {
   });
 
   //Course - in reverse order of dependency
-  class CourseName extends NameField {}
+  class CourseName extends NameField { }
   Object.assign(CourseName, {
     inputElement: "courseName",
     errorElement: "courseNameError"
@@ -727,14 +752,14 @@ function tcTemplate() {
     setAllBtn: "setAllTasksFile"
   });
 
-  class TasksTemplate extends Field {}
+  class TasksTemplate extends Field { }
   Object.assign(TasksTemplate, {
     fieldName: "tasksTemplate",
     originalValue: "printA5onA4",
     inputElement: "tasksTemplate"
   });
 
-  class AppendTasksCourse extends Field {}
+  class AppendTasksCourse extends Field { }
   Object.assign(AppendTasksCourse, {
     fieldName: "appendTasksCourse",
     inputElement: "appendTasksCourse"
@@ -921,7 +946,7 @@ function tcTemplate() {
     errorElement: "numKitesError"
   });
 
-  class DebugCircle extends BooleanField {}
+  class DebugCircle extends BooleanField { }
   Object.assign(DebugCircle, {
     fieldName: "debugCircle",
     inputElement: "debugCircle",
@@ -929,7 +954,7 @@ function tcTemplate() {
     setAllBtn: "setAllDebugCircle"
   });
 
-  class IDFontSize extends StrictPositiveField {}
+  class IDFontSize extends StrictPositiveField { }
   Object.assign(IDFontSize, {
     fieldName: "IDFontSize",
     originalValue: 0.7,
@@ -939,7 +964,7 @@ function tcTemplate() {
     errorElement: "IDFontSizeError"
   });
 
-  class CheckWidth extends NonNegativeField {}
+  class CheckWidth extends NonNegativeField { }
   Object.assign(CheckWidth, {
     fieldName: "checkWidth",
     originalValue: 1.5,
@@ -949,7 +974,7 @@ function tcTemplate() {
     errorElement: "checkWidthError"
   });
 
-  class CheckHeight extends NonNegativeField {}
+  class CheckHeight extends NonNegativeField { }
   Object.assign(CheckHeight, {
     fieldName: "checkHeight",
     originalValue: 1.5,
@@ -959,7 +984,7 @@ function tcTemplate() {
     errorElement: "checkHeightError"
   });
 
-  class CheckFontSize extends StrictPositiveField {}
+  class CheckFontSize extends StrictPositiveField { }
   Object.assign(CheckFontSize, {
     fieldName: "checkFontSize",
     originalValue: 0.8,
@@ -969,7 +994,7 @@ function tcTemplate() {
     errorElement: "checkFontSizeError"
   });
 
-  class RemoveFontSize extends StrictPositiveField {}
+  class RemoveFontSize extends StrictPositiveField { }
   Object.assign(RemoveFontSize, {
     fieldName: "removeFontSize",
     originalValue: 0.3,
@@ -979,7 +1004,7 @@ function tcTemplate() {
     errorElement: "removeFontSizeError"
   });
 
-  class PointHeight extends NonNegativeField {}
+  class PointHeight extends NonNegativeField { }
   Object.assign(PointHeight, {
     fieldName: "pointHeight",
     originalValue: 2.5,
@@ -989,7 +1014,7 @@ function tcTemplate() {
     errorElement: "pointHeightError"
   });
 
-  class LetterFontSize extends StrictPositiveField {}
+  class LetterFontSize extends StrictPositiveField { }
   Object.assign(LetterFontSize, {
     fieldName: "letterFontSize",
     originalValue: 1.8,
@@ -999,7 +1024,7 @@ function tcTemplate() {
     errorElement: "letterFontSizeError"
   });
 
-  class PhoneticFontSize extends StrictPositiveField {}
+  class PhoneticFontSize extends StrictPositiveField { }
   Object.assign(PhoneticFontSize, {
     fieldName: "phoneticFontSize",
     originalValue: 0.6,
@@ -1130,7 +1155,7 @@ function tcTemplate() {
   });
 
   //Station - in reverse order of dependency
-  class StationName extends NameField {}
+  class StationName extends NameField { }
   Object.assign(StationName, {
     inputElement: "stationName",
     errorElement: "stationNameError"
@@ -1185,7 +1210,7 @@ function tcTemplate() {
     setAllBtn: "setAllShowStationTasks"
   });
 
-  class AutoPopulateKites extends BooleanField {}
+  class AutoPopulateKites extends BooleanField { }
   Object.assign(AutoPopulateKites, {
     fieldName: "autoPopulateKites",
     originalValue: true,
@@ -1194,7 +1219,7 @@ function tcTemplate() {
     setAllBtn: "setAllKitesAutoPopulate"
   });
 
-  class AutoOrderKites extends BooleanField {}
+  class AutoOrderKites extends BooleanField { }
   Object.assign(AutoOrderKites, {
     fieldName: "autoOrderKites",
     originalValue: true,
@@ -1203,19 +1228,19 @@ function tcTemplate() {
     setAllBtn: "setAllAutoOrderKites"
   });
 
-  class KiteName extends NameField {}
+  class KiteName extends NameField { }
   Object.assign(KiteName, {
     inputElement: "kiteName",
     errorElement: "kiteNameError"
   });
 
-  class KiteZero extends BooleanField {}
+  class KiteZero extends BooleanField { }
   Object.assign(KiteZero, {
     fieldName: "kiteZero",
     inputElement: "zero"
   });
 
-  class Kitex extends NonNegativeField {}
+  class Kitex extends NonNegativeField { }
   Object.assign(Kitex, {
     fieldName: "kitex",
     inputElement: "kitex",
@@ -1223,7 +1248,7 @@ function tcTemplate() {
     errorElement: "kitexError"
   });
 
-  class Kitey extends NonNegativeField {}
+  class Kitey extends NonNegativeField { }
   Object.assign(Kitey, {
     fieldName: "kitey",
     inputElement: "kitey",
@@ -1231,7 +1256,7 @@ function tcTemplate() {
     errorElement: "kiteyError"
   });
 
-  class Kite extends IterableItem {}
+  class Kite extends IterableItem { }
   Kite.fieldClasses = [
     KiteName,
     KiteZero,
@@ -1253,7 +1278,7 @@ function tcTemplate() {
     itemClass: Kite
   });
 
-  class VPx extends NonNegativeField {}
+  class VPx extends NonNegativeField { }
   Object.assign(VPx, {
     fieldName: "vpx",
     inputElement: "VPx",
@@ -1261,7 +1286,7 @@ function tcTemplate() {
     errorElement: "VPxError"
   });
 
-  class VPy extends NonNegativeField {}
+  class VPy extends NonNegativeField { }
   Object.assign(VPy, {
     fieldName: "vpy",
     inputElement: "VPy",
@@ -1269,7 +1294,7 @@ function tcTemplate() {
     errorElement: "VPyError"
   });
 
-  class Heading extends NumberField {}
+  class Heading extends NumberField { }
   Object.assign(Heading, {
     fieldName: "heading",
     inputElement: "heading",
@@ -1277,7 +1302,7 @@ function tcTemplate() {
     errorElement: "headingError"
   });
 
-  class BlankMapPage extends NaturalNumberField {}
+  class BlankMapPage extends NaturalNumberField { }
   Object.assign(BlankMapPage, {
     fieldName: "blankMapPage",
     inputElement: "blankMapPage",
@@ -1306,7 +1331,7 @@ function tcTemplate() {
     errorElement: "taskNameError"
   });
 
-  class Solution extends Field {}
+  class Solution extends Field { }
   Object.assign(Solution, {
     fieldName: "solution",
     inputElement: "solution",
@@ -1314,7 +1339,7 @@ function tcTemplate() {
     errorElement: "solutionStatus"
   });
 
-  class CirclePage extends NaturalNumberField {}
+  class CirclePage extends NaturalNumberField { }
   Object.assign(CirclePage, {
     fieldName: "circlePage",
     inputElement: "circlePage",
@@ -1322,7 +1347,7 @@ function tcTemplate() {
     errorElement: "circlePageError"
   });
 
-  class Circlex extends NonNegativeField {}
+  class Circlex extends NonNegativeField { }
   Object.assign(Circlex, {
     fieldName: "circlex",
     inputElement: "circlex",
@@ -1330,7 +1355,7 @@ function tcTemplate() {
     errorElement: "circlexError"
   });
 
-  class Circley extends NonNegativeField {}
+  class Circley extends NonNegativeField { }
   Object.assign(Circley, {
     fieldName: "circley",
     inputElement: "circley",
@@ -1338,7 +1363,7 @@ function tcTemplate() {
     errorElement: "circleyError"
   });
 
-  class CDPage extends NaturalNumberField {}
+  class CDPage extends NaturalNumberField { }
   Object.assign(CDPage, {
     fieldName: "cdPage",
     inputElement: "CDPage",
@@ -1346,7 +1371,7 @@ function tcTemplate() {
     errorElement: "CDPageError"
   });
 
-  class CDx extends NonNegativeField {}
+  class CDx extends NonNegativeField { }
   Object.assign(CDx, {
     fieldName: "cdx",
     inputElement: "CDx",
@@ -1354,7 +1379,7 @@ function tcTemplate() {
     errorElement: "CDxError"
   });
 
-  class CDy extends NonNegativeField {}
+  class CDy extends NonNegativeField { }
   Object.assign(CDy, {
     fieldName: "cdy",
     inputElement: "CDy",
@@ -1362,7 +1387,7 @@ function tcTemplate() {
     errorElement: "CDyError"
   });
 
-  class CDWidth extends NonNegativeField {}
+  class CDWidth extends NonNegativeField { }
   Object.assign(CDWidth, {
     fieldName: "cdWidth",
     inputElement: "CDWidth",
@@ -1370,7 +1395,7 @@ function tcTemplate() {
     errorElement: "CDWidthError"
   });
 
-  class CDHeight extends NonNegativeField {}
+  class CDHeight extends NonNegativeField { }
   Object.assign(CDHeight, {
     fieldName: "cdHeight",
     inputElement: "CDHeight",
@@ -1378,7 +1403,7 @@ function tcTemplate() {
     errorElement: "CDHeightError"
   });
 
-  class CDScale extends NonNegativeField {}
+  class CDScale extends NonNegativeField { }
   Object.assign(CDScale, {
     fieldName: "cdScale",
     inputElement: "CDScale",
@@ -1386,7 +1411,7 @@ function tcTemplate() {
     errorElement: "CDScaleError"
   });
 
-  class Task extends IterableItem {}
+  class Task extends IterableItem { }
   Task.fieldClasses = [
     TaskName,
     Solution,
@@ -1488,6 +1513,8 @@ function tcTemplate() {
       super(obj);
       //Set up current/dynamic defaults
       this.default = this.newItem(true);
+      this.default.kites.add();
+      this.default.tasks.add();
       this.default.checkValidity(true);
     }
 
@@ -1496,6 +1523,7 @@ function tcTemplate() {
     }
 
     add() {
+      //Never called for default station
       const station = super.add();
       const course = station.stationCourse.value;
       for (let i = 0; i < course.numKites.value; ++i) { station.kites.add(); }
@@ -1524,7 +1552,27 @@ function tcTemplate() {
 
   //Save and retrieve parameters
   function buildXML() {
-    const xmlDoc = document.implementation.createDocument("https://tdobra.github.io/tctemplate", "tctemplate");
+    function createXMLFields(itemClass, item, parentNode) {
+      itemClass.fieldClasses.forEach((field) => {
+        const fieldName = field.fieldName;
+        const newNode = xmlDoc.createElementNS(tctNamespace, fieldName);
+        newNode.appendChild(xmlDoc.createTextNode(item[fieldName].value));
+        if (field.autoElement !== undefined) { newNode.setAttribute("auto", item[fieldName].auto.value); }
+        if (field.ruleElement !== undefined) { newNode.setAttribute("ignoreRules", item[fieldName].ignoreRules.value); }
+        xmlNode.appendChild(newNode);
+      });
+    }
+
+    const tctNamespace = "https://tdobra.github.io/tctemplate";
+    const xmlDoc = document.implementation.createDocument(tctNamespace, "tctemplate");
+    let xmlParent = xmlDoc.documentElement;
+
+    let xmlNode = xmlDoc.createElementNS(tctNamespace, "default");
+    createXMLFields(Course, courseList.default, xmlNode);
+    createXMLFields(Station, stationList.default, xmlNode);
+    // createXMLFields(Task, stationList.default.tasks.items[0], xmlNode);
+    xmlParent.appendChild(xmlNode);
+
 
     //Convert to string
     const xmlSerial = new XMLSerializer();
@@ -1533,6 +1581,7 @@ function tcTemplate() {
     if (!xmlStr.startsWith("<?")) {
       xmlStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xmlStr;
     }
+    console.log(xmlStr);
   }
   document.getElementById("saveParameters").addEventListener("click", buildXML);
 
@@ -1649,7 +1698,7 @@ function tcTemplate() {
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
           courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
         }
-        courseOrderUsed.sort(function(a, b){return a - b});
+        courseOrderUsed.sort(function (a, b) { return a - b });
 
         //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
@@ -1682,7 +1731,7 @@ function tcTemplate() {
 
             //Create first column - station name + hidden values
             tableColNode = document.createElement("td");
-            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0,-2);
+            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0, -2);
             tableContentNode = document.createElement("span");
             tableContentNode.className = "stationName";
             tableContentNode.innerHTML = stationNameRoot;
@@ -1939,7 +1988,7 @@ function tcTemplate() {
             //Insert row in correct position in tables for course order
             //existingRows is a list of course order spans, which are 2nd generation descendants of table rows
             existingRows = document.getElementById("courseTableBody").getElementsByClassName("courseOrder");
-            for (existingRowID = 0;; existingRowID++) {
+            for (existingRowID = 0; ; existingRowID++) {
               existingRowID++;
               //One header row in main table
               existingRow = existingRows[existingRowID + 1];
@@ -2251,7 +2300,7 @@ function tcTemplate() {
                 if (varArray[rowId] !== "") {
                   if (varArray[rowId].includes("cm")) {
                     //cm unit and quotes added, needs removing
-                    fields[rowId + 2].value = Number(varArray[rowId].slice(1,-3));
+                    fields[rowId + 2].value = Number(varArray[rowId].slice(1, -3));
                   } else {
                     fields[rowId + 2].value = Number(varArray[rowId]);
                   }
@@ -2442,7 +2491,7 @@ function tcTemplate() {
       if (contentField.checkValidity() == false) {
         contentField.focus();
         throw new Error("The map size for station " + stationName + " must be > 0 and <= 12.");
-      }	else if (contentField.value == 0) {
+      } else if (contentField.value == 0) {
         contentField.focus();
         throw new Error("The map size for station " + stationName + " must be strictly greater than 0.");
       } else {
@@ -2802,7 +2851,7 @@ function tcTemplate() {
         this.statusBox.textContent = err;
         console.error(err);
         const logLength = this.logContent.length;
-        if (logLength > 0){
+        if (logLength > 0) {
           //Display log
           let logStr = "";
           for (let rowId = 0; rowId < logLength; rowId++) {
@@ -3065,7 +3114,7 @@ function tcTemplate() {
   });
 
   //Do not use arrow functions when binding methods as properties
-  mapsCompiler.makePNGs = async function(pdfURL) {
+  mapsCompiler.makePNGs = async function (pdfURL) {
     this.statusBox.textContent = "Preparing to split into images.";
 
     //Create objects
@@ -3181,28 +3230,28 @@ function tcTemplate() {
     this.downloadOutput(URL.createObjectURL(zipBlob));
   }
 
-  mapsCompiler.setTemplate = function(name) {
+  mapsCompiler.setTemplate = function (name) {
     //Compile time units are determined empirically for each template to give an approximate progress of compiler
     switch (name) {
-    case "printA5onA4":
-      this.texsrc = "maps.tex";
-      this.postCompile = this.downloadOutput;
-      this.downloadFileName = "TCMapCards.pdf";
-      this.compileUnitsPre = 7.5;
-      this.compileUnitsPost = 3;
-      break;
-    case "onlineTempO":
-      this.texsrc = "onlinetempo.tex";
-      this.postCompile = this.makePNGs;
-      this.downloadFileName = "TCMapCards.zip";
-      this.compileUnitsPre = 10;
-      this.compileUnitsPost = 0.2;
-      //Load prequisities for post-processing
-      loadScript("pdfjs");
-      loadScript("jszip");
-      break;
-    default:
-      throw new ReferenceError("Template " + name + " not recognised");
+      case "printA5onA4":
+        this.texsrc = "maps.tex";
+        this.postCompile = this.downloadOutput;
+        this.downloadFileName = "TCMapCards.pdf";
+        this.compileUnitsPre = 7.5;
+        this.compileUnitsPost = 3;
+        break;
+      case "onlineTempO":
+        this.texsrc = "onlinetempo.tex";
+        this.postCompile = this.makePNGs;
+        this.downloadFileName = "TCMapCards.zip";
+        this.compileUnitsPre = 10;
+        this.compileUnitsPost = 0.2;
+        //Load prequisities for post-processing
+        loadScript("pdfjs");
+        loadScript("jszip");
+        break;
+      default:
+        throw new ReferenceError("Template " + name + " not recognised");
     }
     if (this.texlive !== undefined) {
       //Fetch template ready for use - async, so won't block code
