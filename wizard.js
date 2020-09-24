@@ -3100,7 +3100,9 @@ function tcTemplate() {
   ].forEach((list) => { list.init(); });
 
   //Create root level objects and populate with essentials
-  //Must do courseList before stationList
+  //Must create default holders before courseList before stationList
+  const defaultKite = new Kite({ isDefault: true });
+  const defaultTask = new Task({ isDefault: true });
   courseList = new CourseList();
   courseList.add();
   stationList = new StationList();
