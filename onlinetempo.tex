@@ -114,7 +114,7 @@
 \end{scope}
 
 % Control descriptions
-\begin{scope}[shift={(\DescriptionLeft,1-\CircleRadius)}]
+\begin{scope}[shift={(\DescriptionLeft,\MapCentreyCoordinate-1.5*\DescriptionHeight)}]
 \clip (0,0) rectangle (\DescriptionWidth,\DescriptionHeight);
 \node[anchor=south west, inner sep=0] at (-\DescriptionxCoordinate*\DescriptionPDFScale,-\DescriptionyCoordinate*\DescriptionPDFScale) {\includegraphics[page=\DescriptionPage, scale=\DescriptionPDFScale]{\DescriptionFile}};
 % Problem number
@@ -135,9 +135,9 @@
 %\node[anchor=south west] at (-\CardHalfWidth,\DescriptionBaseyCoordinate) {\fontsize{0.35cm}{0.35cm}\selectfont TCTemplate};
 
 % North arrow
-\begin{scope}[shift={(\NorthArrowCentrexCoordinate,\MapCentreyCoordinate)}, rotate=\Heading]
-\draw[-latex,ultra thick, blue, line width=0.3cm] (0,-1.5) -- (0,1.5);
-\node[blue] at (0,-0.5) {\rotatebox{\Heading}{\resizebox{!}{1.5cm}{\Huge N}}};
+\begin{scope}[shift={(\NorthArrowCentrexCoordinate,0.7+\MapCentreyCoordinate)}, rotate=\Heading]
+\draw[-latex,ultra thick, blue, line width=0.15cm] (0,-0.7) -- (0,0.7);
+\node[blue] at (0,-0.3) {\rotatebox{\Heading}{\resizebox{!}{0.6cm}{\Huge N}}};
 \end{scope}
 
 }	%End ProblemsPerStation if statement

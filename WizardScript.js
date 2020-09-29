@@ -138,7 +138,7 @@ const tcTemplate = (() => {
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
           courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
         }
-        courseOrderUsed.sort(function(a, b){return a - b});
+        courseOrderUsed.sort(function (a, b) { return a - b; });
 
         //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
@@ -171,7 +171,7 @@ const tcTemplate = (() => {
 
             //Create first column - station name + hidden values
             tableColNode = document.createElement("td");
-            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0,-2);
+            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0, -2);
             tableContentNode = document.createElement("span");
             tableContentNode.className = "stationName";
             tableContentNode.innerHTML = stationNameRoot;
@@ -428,7 +428,7 @@ const tcTemplate = (() => {
             //Insert row in correct position in tables for course order
             //existingRows is a list of course order spans, which are 2nd generation descendants of table rows
             existingRows = document.getElementById("courseTableBody").getElementsByClassName("courseOrder");
-            for (existingRowID = 0;; existingRowID++) {
+            for (existingRowID = 0; ; existingRowID++) {
               existingRowID++;
               //One header row in main table
               existingRow = existingRows[existingRowID + 1];
@@ -740,7 +740,7 @@ const tcTemplate = (() => {
                 if (varArray[rowId] !== "") {
                   if (varArray[rowId].includes("cm")) {
                     //cm unit and quotes added, needs removing
-                    fields[rowId + 2].value = Number(varArray[rowId].slice(1,-3));
+                    fields[rowId + 2].value = Number(varArray[rowId].slice(1, -3));
                   } else {
                     fields[rowId + 2].value = Number(varArray[rowId]);
                   }
@@ -896,7 +896,7 @@ const tcTemplate = (() => {
       if (contentField.checkValidity() == false) {
         contentField.focus();
         throw new Error("The map size for station " + stationName + " must be > 0 and <= 12.");
-      }	else if (contentField.value == 0) {
+      } else if (contentField.value == 0) {
         contentField.focus();
         throw new Error("The map size for station " + stationName + " must be strictly greater than 0.");
       } else {
@@ -1297,7 +1297,7 @@ const tcTemplate = (() => {
         this.statusBox.textContent = err;
         console.error(err);
         const logLength = this.logContent.length;
-        if (logLength > 0){
+        if (logLength > 0) {
           //Display log
           let logStr = "";
           for (let rowId = 0; rowId < logLength; rowId++) {
@@ -1443,7 +1443,7 @@ const tcTemplate = (() => {
   });
 
   //Do not use arrow functions when binding methods as properties
-  mapsCompiler.makePNGs = async function(pdfURL) {
+  mapsCompiler.makePNGs = async function (pdfURL) {
     this.statusBox.textContent = "Preparing to split into images.";
 
     //Create objects
@@ -1471,11 +1471,8 @@ const tcTemplate = (() => {
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
         const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].textContent;
 
-        //Calculate scale required to render PDF at correct resolution
-        const circleDiameter = Number(tableRows[stationId].getElementsByClassName("mapSize")[0].value);
-        const mapDescriptionSeparation = (9.5 - circleDiameter - 0.77) / 3;
-        const pdfHeight = 9.5 - 2 * mapDescriptionSeparation; //cm
-        const imDPI = 300 / pdfHeight * 2.54;
+        //Image resolution
+        const imDPI = 200;
         const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
 
         for (let taskId = 1; taskId <= numTasks; taskId++) {
@@ -1559,28 +1556,28 @@ const tcTemplate = (() => {
     this.downloadOutput(URL.createObjectURL(zipBlob));
   }
 
-  mapsCompiler.setTemplate = function(name) {
+  mapsCompiler.setTemplate = function (name) {
     //Compile time units are determined empirically for each template to give an approximate progress of compiler
     switch (name) {
-    case "printA5onA4":
-      this.texsrc = "TCTemplate.tex";
-      this.postCompile = this.downloadOutput;
-      this.downloadFileName = "TCMapCards.pdf";
-      this.compileUnitsPre = 7.5;
-      this.compileUnitsPost = 3;
-      break;
-    case "onlineTempO":
-      this.texsrc = "onlinetempo.tex";
-      this.postCompile = this.makePNGs;
-      this.downloadFileName = "TCMapCards.zip";
-      this.compileUnitsPre = 10;
-      this.compileUnitsPost = 0.2;
-      //Load prequisities for post-processing
-      loadScript("pdfjs");
-      loadScript("jszip");
-      break;
-    default:
-      throw new ReferenceError("Template " + name + " not recognised");
+      case "printA5onA4":
+        this.texsrc = "TCTemplate.tex";
+        this.postCompile = this.downloadOutput;
+        this.downloadFileName = "TCMapCards.pdf";
+        this.compileUnitsPre = 7.5;
+        this.compileUnitsPost = 3;
+        break;
+      case "onlineTempO":
+        this.texsrc = "onlinetempo.tex";
+        this.postCompile = this.makePNGs;
+        this.downloadFileName = "TCMapCards.zip";
+        this.compileUnitsPre = 10;
+        this.compileUnitsPost = 0.2;
+        //Load prequisities for post-processing
+        loadScript("pdfjs");
+        loadScript("jszip");
+        break;
+      default:
+        throw new ReferenceError("Template " + name + " not recognised");
     }
     if (this.texlive !== undefined) {
       //Fetch template ready for use - async, so won't block code
