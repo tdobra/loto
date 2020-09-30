@@ -1533,8 +1533,17 @@ const tcTemplate = (() => {
           }
 
           //Put cropped image onto cropped canvas
-          const croppedHeight = bottomRow - topRow + 1;
+          let croppedHeight = bottomRow - topRow + 1;
           const croppedWidth = rightCol - leftCol + 1;
+
+          //Crop map to max height 300px
+          if (croppedHeight > 300) {
+            const cropAmount = Math.ceil((croppedHeight - 300) / 2);
+            bottomRow -= cropAmount;
+            topRow += cropAmount;
+            croppedHeight -= 2 * cropAmount;
+          }
+
           canvasCropped.height = croppedHeight;
           canvasCropped.width = croppedWidth;
           ctxCropped.drawImage(canvasFull, leftCol, topRow, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
