@@ -1,2 +1,7 @@
 .DS_Store
-
+*.pdf
+*.aux
+*.log
+*.synctex(busy)
+*.synctex.gz
+TemplateParameters.tex
