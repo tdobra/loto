@@ -64,10 +64,10 @@ const tcTemplate = (() => {
     fileobj = fileInput.files[0];
     if (!fileobj) { return; }	//Nothing selected
 
+    const ppenStatusBox = document.getElementById("ppenStatus");
     freader = new FileReader();
     freader.onload = function () {
       var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
-      const ppenStatusBox = document.getElementById("ppenStatus");
       xmlParser = new DOMParser();
       xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
       //Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -1475,7 +1475,7 @@ const tcTemplate = (() => {
         const imDPI = 200;
         const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
 
-        for (let taskId = 1; taskId <= numTasks; taskId++) {
+        for (let taskId = 0; taskId <= numTasks; taskId++) {
           //Read page into canvas
           const page = await pdfDoc.getPage(pageNum);
           const viewport = page.getViewport({ scale: pdfScale });
@@ -1544,9 +1544,16 @@ const tcTemplate = (() => {
             croppedHeight -= 2 * cropAmount;
           }
 
+          //Expand to width 1000px, keeping centred
+          const targetWidth = 1000;
+          const xOffset = croppedWidth < targetWidth ? Math.floor((targetWidth - croppedWidth) / 2) : 0;
+
           canvasCropped.height = croppedHeight;
-          canvasCropped.width = croppedWidth;
-          ctxCropped.drawImage(canvasFull, leftCol, topRow, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+          canvasCropped.width = croppedWidth > targetWidth ? croppedWidth : targetWidth;
+          //Initialise to white background
+          ctxCropped.fillStyle = "white";
+          ctxCropped.fillRect(0, 0, canvasCropped.width, canvasCropped.height);
+          ctxCropped.drawImage(canvasFull, leftCol, topRow, croppedWidth, croppedHeight, xOffset, 0, croppedWidth, croppedHeight);
 
           //Save to zip
           const blob = await new Promise((resolve) => { canvasCropped.toBlob(resolve); });
