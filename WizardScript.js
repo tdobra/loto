@@ -67,7 +67,7 @@ const tcTemplate = (() => {
     const ppenStatusBox = document.getElementById("ppenStatus");
     freader = new FileReader();
     freader.onload = function () {
-      var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
+      var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
       xmlParser = new DOMParser();
       xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
       //Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -318,13 +318,32 @@ const tcTemplate = (() => {
             tableColNode.appendChild(tableContentNode);
             //Loop while another control can be added to the station
             while (existingRowID < courseNodesNum) {
-              bottomcoord = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
-              if (!bottomcoord) {
+              const printNode = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
+              if (!printNode) {
                 window.alert("Page setup not complete for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
                 return;
               }
-              leftcoord = Number(bottomcoord.getAttribute("left"));
-              bottomcoord = Number(bottomcoord.getAttribute("bottom"));
+              //Calculate positions of circles relative to bottom left of page in cm
+              //Work in mm, changing to cm at the last moment
+              //Cannot rely only on bottom and left coordinates because might be for wrong page size if scale has changed recently/multiple scales in use
+              //Emulate PPen behaviour: calculates centre of page using left, right, ...; then scale for ratio between map and course scales
+              //Get page dimensions in mm; saved in ppen file in hundredths of inch
+              let pageHalfWidth, pageHalfHeight;
+              if (printNode.getAttribute("page-landscape") === "true") {
+                pageHalfWidth = printNode.getAttribute("page-height");
+                pageHalfHeight = printNode.getAttribute("page-width");
+              } else {
+                pageHalfWidth = printNode.getAttribute("page-width");
+                pageHalfHeight = printNode.getAttribute("page-height");
+              }
+              pageHalfWidth = Number(pageHalfWidth) * 0.127;
+              pageHalfHeight = Number(pageHalfHeight) * 0.127;
+              const pageCentreH = (Number(printNode.getAttribute("right")) + Number(printNode.getAttribute("left"))) / 2;
+              const pageCentreV = (Number(printNode.getAttribute("top")) + Number(printNode.getAttribute("bottom"))) / 2;
+              if (isNaN(pageCentreH) || isNaN(pageCentreV)) {
+                window.alert("Page setup missing attributes for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
+                return;
+              }
               courseControlNode = getNodeByID(xmlobj, "course-control", courseNodes[existingRowID].getElementsByTagName("first")[0].getAttribute("course-control"));
               controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
               controlsSkipped = 0;    //Keep tabs on position of desired control in control descriptions
@@ -340,9 +359,9 @@ const tcTemplate = (() => {
               }
 
               //Append comma to lists - always have a trailing comma
-              //Circle position in cm with origin in bottom left corner
-              tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord) * mapFileScale / courseScale).toString() + ",";
-              tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord) * mapFileScale / courseScale).toString() + ",";
+              //Circle position in cm with origin in bottom left corner; saved in mm relative to map file scale in PPen
+              tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (pageHalfWidth + (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - pageCentreH) * mapFileScale / courseScale)).toString() + ",";
+              tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (pageHalfHeight + (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - pageCentreV) * mapFileScale / courseScale)).toString() + ",";
 
               //Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
               tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
@@ -1153,7 +1172,7 @@ const tcTemplate = (() => {
   function saveParameters() {
     var rtn;
     rtn = generateLaTeX();
-    downloadFile(rtn.file, "TemplateParameters.tex");
+    downloadFile(rtn, "TemplateParameters.tex");
 
     //Indicate that parameters data is currently saved - unedited opened file
     paramsSaved = true;
@@ -1466,6 +1485,7 @@ const tcTemplate = (() => {
     const zip = new JSZip();
 
     this.statusBox.textContent = "Splitting into images (0%).";
+    const numImages = this.compileUnitsItems + numStations;
     for (let stationId = 1; stationId <= numStations; stationId++) {
       const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].textContent);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
@@ -1561,7 +1581,7 @@ const tcTemplate = (() => {
 
           pageNum++;
           taskCount++;
-          this.statusBox.textContent = "Splitting into images (" + (taskCount / this.compileUnitsItems * 100).toFixed() + "%).";
+          this.statusBox.textContent = "Splitting into images (" + (taskCount / numImages * 100).toFixed() + "%).";
         }
       } else {
         pageNum += numTasks;
