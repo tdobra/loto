@@ -141,8 +141,9 @@ const tcTemplate = (() => {
         courseOrderUsed.sort(function (a, b) { return a - b; });
 
         //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
+        //Ignore courses with no controls
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
-          if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1")) {
+          if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1") && courseNodes[courseNodesId].getElementsByTagName("first").length > 0) {
             //Check course type = score
             if (courseNodes[courseNodesId].getAttribute("kind") != "score") {
               ppenStatusBox.innerHTML = "Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + " type must be set to score.";
@@ -367,10 +368,10 @@ const tcTemplate = (() => {
               tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
               tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped + ",";
 
-              //Find next control at station
+              //Find next control at station: course with name *.? and course has a control
               otherNode = stationNameRoot + "." + (numProblems + 1);
               for (existingRowID = 0; existingRowID < courseNodesNum; existingRowID++) {
-                if (courseNodes[existingRowID].getElementsByTagName("name")[0].textContent == otherNode) {
+                if (courseNodes[existingRowID].getElementsByTagName("name")[0].textContent == otherNode && courseNodes[existingRowID].getElementsByTagName("first").length > 0) {
                   //Found another control
                   numProblems++;
                   //Check new course type, margin and manual print selection
@@ -492,14 +493,19 @@ const tcTemplate = (() => {
       tableContentNode.checked = false;
       tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 
-      //Prepare view
       tableContentNode = document.getElementById("stationProperties");
-      tableContentNode.hidden = false;
-      tableContentNode.scrollIntoView();
-      ppenStatusBox.innerHTML = "Purple Pen file loaded successfully."
+      if (document.getElementById("courseTableBody").getElementsByTagName("tr").length > 1) {
+        //Prepare view
+        tableContentNode.hidden = false;
+        tableContentNode.scrollIntoView();
+        ppenStatusBox.innerHTML = "Purple Pen file loaded successfully.";
 
-      //Activate compilers
-      mapsCompiler.startTeXLive();
+        //Activate compilers
+        mapsCompiler.startTeXLive();
+      } else {
+        tableContentNode.hidden = true;
+        ppenStatusBox.innerHTML = "No valid courses found - perhaps the name is wrong or a control is missing.";
+      }
     };
     freader.onerror = function () {
       ppenStatusBox.innerHTML = "Could not read Purple Pen file. Try reselecting it, then click Reload.";
