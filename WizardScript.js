@@ -141,9 +141,15 @@ const tcTemplate = (() => {
         courseOrderUsed.sort(function (a, b) { return a - b; });
 
         //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
-        //Ignore courses with no controls
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
-          if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1") && courseNodes[courseNodesId].getElementsByTagName("first").length > 0) {
+          if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1")) {
+            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0, -2);
+            //Check course has a control
+            if (courseNodes[courseNodesId].getElementsByTagName("first").length === 0) {
+              alert("Task 1 at station " + stationNameRoot + " is empty, so this station will be ignored.");
+              existingRowID = courseNodesNum;
+              continue;
+            }
             //Check course type = score
             if (courseNodes[courseNodesId].getAttribute("kind") != "score") {
               ppenStatusBox.innerHTML = "Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + " type must be set to score.";
@@ -172,7 +178,6 @@ const tcTemplate = (() => {
 
             //Create first column - station name + hidden values
             tableColNode = document.createElement("td");
-            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0, -2);
             tableContentNode = document.createElement("span");
             tableContentNode.className = "stationName";
             tableContentNode.innerHTML = stationNameRoot;
@@ -368,10 +373,16 @@ const tcTemplate = (() => {
               tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
               tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped + ",";
 
-              //Find next control at station: course with name *.? and course has a control
+              //Find next control at station: course with name *.?
               otherNode = stationNameRoot + "." + (numProblems + 1);
               for (existingRowID = 0; existingRowID < courseNodesNum; existingRowID++) {
-                if (courseNodes[existingRowID].getElementsByTagName("name")[0].textContent == otherNode && courseNodes[existingRowID].getElementsByTagName("first").length > 0) {
+                if (courseNodes[existingRowID].getElementsByTagName("name")[0].textContent == otherNode) {
+                  //Check course has a control
+                  if (courseNodes[existingRowID].getElementsByTagName("first").length === 0) {
+                    alert("Task " + (numProblems + 1) + " at station " + stationNameRoot + " is empty, so this station will be truncated to " + numProblems + " tasks.");
+                    existingRowID = courseNodesNum;
+                    break;
+                  }
                   //Found another control
                   numProblems++;
                   //Check new course type, margin and manual print selection
