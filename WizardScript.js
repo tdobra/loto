@@ -67,7 +67,7 @@ const tcTemplate = (() => {
     const ppenStatusBox = document.getElementById("ppenStatus");
     freader = new FileReader();
     freader.onload = function () {
-      var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
+      var xmlParser, xmlobj, parsererrorNS, mapFileScale, mapFileType, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
       xmlParser = new DOMParser();
       xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
       //Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -108,6 +108,9 @@ const tcTemplate = (() => {
           ppenStatusBox.innerHTML = "Could not read map scale.";
           return;
         }
+
+        //Save map file type - if PDF and printing at native scale, then print area is ignored
+        mapFileType = otherNode.getAttribute("kind");
 
         //Global print scale
         otherNode = xmlobj.getElementsByTagName("all-controls")[0];
@@ -329,27 +332,8 @@ const tcTemplate = (() => {
                 window.alert("Page setup not complete for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
                 return;
               }
-              //Calculate positions of circles relative to bottom left of page in cm
-              //Work in mm, changing to cm at the last moment
-              //Cannot rely only on bottom and left coordinates because might be for wrong page size if scale has changed recently/multiple scales in use
-              //Emulate PPen behaviour: calculates centre of page using left, right, ...; then scale for ratio between map and course scales
-              //Get page dimensions in mm; saved in ppen file in hundredths of inch
-              let pageHalfWidth, pageHalfHeight;
-              if (printNode.getAttribute("page-landscape") === "true") {
-                pageHalfWidth = printNode.getAttribute("page-height");
-                pageHalfHeight = printNode.getAttribute("page-width");
-              } else {
-                pageHalfWidth = printNode.getAttribute("page-width");
-                pageHalfHeight = printNode.getAttribute("page-height");
-              }
-              pageHalfWidth = Number(pageHalfWidth) * 0.127;
-              pageHalfHeight = Number(pageHalfHeight) * 0.127;
-              const pageCentreH = (Number(printNode.getAttribute("right")) + Number(printNode.getAttribute("left"))) / 2;
-              const pageCentreV = (Number(printNode.getAttribute("top")) + Number(printNode.getAttribute("bottom"))) / 2;
-              if (isNaN(pageCentreH) || isNaN(pageCentreV)) {
-                window.alert("Page setup missing attributes for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
-                return;
-              }
+
+              //Get PPen coordinates of centre of circle in mm
               courseControlNode = getNodeByID(xmlobj, "course-control", courseNodes[existingRowID].getElementsByTagName("first")[0].getAttribute("course-control"));
               controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
               controlsSkipped = 0;    //Keep tabs on position of desired control in control descriptions
@@ -363,11 +347,44 @@ const tcTemplate = (() => {
                 courseControlNode = getNodeByID(xmlobj, "course-control", courseControlNode.getAttribute("course-control"));
                 controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
               }
+              const ppx = Number(controlNode.getElementsByTagName("location")[0].getAttribute("x"));
+              const ppy = Number(controlNode.getElementsByTagName("location")[0].getAttribute("y"));
+              let printCentrex, printCentrey; //In cm
+
+              //Calculate positions of circles relative to bottom left of page in cm
+              //Work in mm, changing to cm at the last moment
+              if (mapFileType === "PDF" && courseScale === mapFileScale) {
+                //Printed at native size and print area of PDF with origin in bottom left
+                printCentrex = 0.1 * ppx;
+                printCentrey = 0.1 * ppy;
+              } else {
+                //Cannot rely only on bottom and left coordinates because might be for wrong page size if scale has changed recently/multiple scales in use
+                //Emulate PPen behaviour: calculates centre of page using left, right, ...; then scale for ratio between map and course scales
+                //Get page dimensions in mm; saved in ppen file in hundredths of inch
+                let pageHalfWidth, pageHalfHeight;
+                if (printNode.getAttribute("page-landscape") === "true") {
+                  pageHalfWidth = printNode.getAttribute("page-height");
+                  pageHalfHeight = printNode.getAttribute("page-width");
+                } else {
+                  pageHalfWidth = printNode.getAttribute("page-width");
+                  pageHalfHeight = printNode.getAttribute("page-height");
+                }
+                pageHalfWidth = Number(pageHalfWidth) * 0.127;
+                pageHalfHeight = Number(pageHalfHeight) * 0.127;
+                const pageCentreH = (Number(printNode.getAttribute("right")) + Number(printNode.getAttribute("left"))) / 2;
+                const pageCentreV = (Number(printNode.getAttribute("top")) + Number(printNode.getAttribute("bottom"))) / 2;
+                if (isNaN(pageCentreH) || isNaN(pageCentreV)) {
+                  window.alert("Page setup missing attributes for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
+                  return;
+                }
+                printCentrex = 0.1 * (pageHalfWidth + (ppx - pageCentreH) * mapFileScale / courseScale);
+                printCentrey = 0.1 * (pageHalfHeight + (ppy - pageCentreV) * mapFileScale / courseScale);
+              }
 
               //Append comma to lists - always have a trailing comma
               //Circle position in cm with origin in bottom left corner; saved in mm relative to map file scale in PPen
-              tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (pageHalfWidth + (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - pageCentreH) * mapFileScale / courseScale)).toString() + ",";
-              tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (pageHalfHeight + (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - pageCentreV) * mapFileScale / courseScale)).toString() + ",";
+              tableColNode.getElementsByClassName("circlex")[0].innerHTML += printCentrex.toString() + ",";
+              tableColNode.getElementsByClassName("circley")[0].innerHTML += printCentrey.toString() + ",";
 
               //Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
               tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
