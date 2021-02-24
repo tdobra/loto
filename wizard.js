@@ -1624,10 +1624,10 @@ function tcTemplate() {
     fileobj = fileInput.files[0];
     if (!fileobj) { return; }	//Nothing selected
 
+    const ppenStatusBox = document.getElementById("ppenStatus");
     freader = new FileReader();
     freader.onload = function () {
-      var xmlParser, xmlobj, parsererrorNS, mapFileScale, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, leftcoord, bottomcoord, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
-      const ppenStatusBox = document.getElementById("ppenStatus");
+      var xmlParser, xmlobj, parsererrorNS, mapFileScale, mapFileType, globalScale, courseNodes, courseNodesId, courseNodesNum, tableRowNode, tableColNode, tableContentNode, layoutRowNode, selectOptionNode, existingRows, existingRowID, existingRow, otherNode, courseControlNode, controlNode, controlsSkipped, numProblems, stationNameRoot, courseScale;
       xmlParser = new DOMParser();
       xmlobj = xmlParser.parseFromString(freader.result, "text/xml");
       //Check XML is well-formed - see Rast on https://stackoverflow.com/questions/11563554/how-do-i-detect-xml-parsing-errors-when-using-javascripts-domparser-in-a-cross - will have a parsererror element somewhere in a namespace that depends on the browser
@@ -1669,6 +1669,9 @@ function tcTemplate() {
           return;
         }
 
+        //Save map file type - if PDF and printing at native scale, then print area is ignored
+        mapFileType = otherNode.getAttribute("kind");
+
         //Global print scale
         otherNode = xmlobj.getElementsByTagName("all-controls")[0];
         if (otherNode) {
@@ -1698,11 +1701,18 @@ function tcTemplate() {
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
           courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
         }
-        courseOrderUsed.sort(function (a, b) { return a - b });
+        courseOrderUsed.sort(function (a, b) { return a - b; });
 
         //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
           if (courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.endsWith(".1")) {
+            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0, -2);
+            //Check course has a control
+            if (courseNodes[courseNodesId].getElementsByTagName("first").length === 0) {
+              alert("Task 1 at station " + stationNameRoot + " is empty, so this station will be ignored.");
+              existingRowID = courseNodesNum;
+              continue;
+            }
             //Check course type = score
             if (courseNodes[courseNodesId].getAttribute("kind") != "score") {
               ppenStatusBox.innerHTML = "Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent + " type must be set to score.";
@@ -1731,7 +1741,6 @@ function tcTemplate() {
 
             //Create first column - station name + hidden values
             tableColNode = document.createElement("td");
-            stationNameRoot = courseNodes[courseNodesId].getElementsByTagName("name")[0].textContent.slice(0, -2);
             tableContentNode = document.createElement("span");
             tableContentNode.className = "stationName";
             tableContentNode.innerHTML = stationNameRoot;
@@ -1878,13 +1887,13 @@ function tcTemplate() {
             tableColNode.appendChild(tableContentNode);
             //Loop while another control can be added to the station
             while (existingRowID < courseNodesNum) {
-              bottomcoord = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
-              if (!bottomcoord) {
+              const printNode = courseNodes[existingRowID].getElementsByTagName("print-area")[0];
+              if (!printNode) {
                 window.alert("Page setup not complete for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
                 return;
               }
-              leftcoord = Number(bottomcoord.getAttribute("left"));
-              bottomcoord = Number(bottomcoord.getAttribute("bottom"));
+
+              //Get PPen coordinates of centre of circle in mm
               courseControlNode = getNodeByID(xmlobj, "course-control", courseNodes[existingRowID].getElementsByTagName("first")[0].getAttribute("course-control"));
               controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
               controlsSkipped = 0;    //Keep tabs on position of desired control in control descriptions
@@ -1898,20 +1907,59 @@ function tcTemplate() {
                 courseControlNode = getNodeByID(xmlobj, "course-control", courseControlNode.getAttribute("course-control"));
                 controlNode = getNodeByID(xmlobj, "control", courseControlNode.getAttribute("control"));
               }
+              const ppx = Number(controlNode.getElementsByTagName("location")[0].getAttribute("x"));
+              const ppy = Number(controlNode.getElementsByTagName("location")[0].getAttribute("y"));
+              let printCentrex, printCentrey; //In cm
+
+              //Calculate positions of circles relative to bottom left of page in cm
+              //Work in mm, changing to cm at the last moment
+              if (mapFileType === "PDF" && courseScale === mapFileScale) {
+                //Printed at native size and print area of PDF with origin in bottom left
+                printCentrex = 0.1 * ppx;
+                printCentrey = 0.1 * ppy;
+              } else {
+                //Cannot rely only on bottom and left coordinates because might be for wrong page size if scale has changed recently/multiple scales in use
+                //Emulate PPen behaviour: calculates centre of page using left, right, ...; then scale for ratio between map and course scales
+                //Get page dimensions in mm; saved in ppen file in hundredths of inch
+                let pageHalfWidth, pageHalfHeight;
+                if (printNode.getAttribute("page-landscape") === "true") {
+                  pageHalfWidth = printNode.getAttribute("page-height");
+                  pageHalfHeight = printNode.getAttribute("page-width");
+                } else {
+                  pageHalfWidth = printNode.getAttribute("page-width");
+                  pageHalfHeight = printNode.getAttribute("page-height");
+                }
+                pageHalfWidth = Number(pageHalfWidth) * 0.127;
+                pageHalfHeight = Number(pageHalfHeight) * 0.127;
+                const pageCentreH = (Number(printNode.getAttribute("right")) + Number(printNode.getAttribute("left"))) / 2;
+                const pageCentreV = (Number(printNode.getAttribute("top")) + Number(printNode.getAttribute("bottom"))) / 2;
+                if (isNaN(pageCentreH) || isNaN(pageCentreV)) {
+                  window.alert("Page setup missing attributes for Purple Pen course " + courseNodes[courseNodesId].getElementsByTagName("name")[0] + ".");
+                  return;
+                }
+                printCentrex = 0.1 * (pageHalfWidth + (ppx - pageCentreH) * mapFileScale / courseScale);
+                printCentrey = 0.1 * (pageHalfHeight + (ppy - pageCentreV) * mapFileScale / courseScale);
+              }
 
               //Append comma to lists - always have a trailing comma
-              //Circle position in cm with origin in bottom left corner
-              tableColNode.getElementsByClassName("circlex")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("x")) - leftcoord) * mapFileScale / courseScale).toString() + ",";
-              tableColNode.getElementsByClassName("circley")[0].innerHTML += (0.1 * (Number(controlNode.getElementsByTagName("location")[0].getAttribute("y")) - bottomcoord) * mapFileScale / courseScale).toString() + ",";
+              //Circle position in cm with origin in bottom left corner; saved in mm relative to map file scale in PPen
+              tableColNode.getElementsByClassName("circlex")[0].innerHTML += printCentrex.toString() + ",";
+              tableColNode.getElementsByClassName("circley")[0].innerHTML += printCentrey.toString() + ",";
 
               //Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
               tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
               tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped + ",";
 
-              //Find next control at station
+              //Find next control at station: course with name *.?
               otherNode = stationNameRoot + "." + (numProblems + 1);
               for (existingRowID = 0; existingRowID < courseNodesNum; existingRowID++) {
                 if (courseNodes[existingRowID].getElementsByTagName("name")[0].textContent == otherNode) {
+                  //Check course has a control
+                  if (courseNodes[existingRowID].getElementsByTagName("first").length === 0) {
+                    alert("Task " + (numProblems + 1) + " at station " + stationNameRoot + " is empty, so this station will be truncated to " + numProblems + " tasks.");
+                    existingRowID = courseNodesNum;
+                    break;
+                  }
                   //Found another control
                   numProblems++;
                   //Check new course type, margin and manual print selection
@@ -2033,14 +2081,19 @@ function tcTemplate() {
       tableContentNode.checked = false;
       tableContentNode.addEventListener("change", () => { paramsSaved = false; });
 
-      //Prepare view
       tableContentNode = document.getElementById("stationProperties");
-      tableContentNode.hidden = false;
-      tableContentNode.scrollIntoView();
-      ppenStatusBox.innerHTML = "Purple Pen file loaded successfully."
+      if (document.getElementById("courseTableBody").getElementsByTagName("tr").length > 1) {
+        //Prepare view
+        tableContentNode.hidden = false;
+        tableContentNode.scrollIntoView();
+        ppenStatusBox.innerHTML = "Purple Pen file loaded successfully.";
 
-      //Activate compilers
-      mapsCompiler.startTeXLive();
+        //Activate compilers
+        mapsCompiler.startTeXLive();
+      } else {
+        tableContentNode.hidden = true;
+        ppenStatusBox.innerHTML = "No valid courses found - perhaps the name is wrong or a control is missing.";
+      }
     };
     freader.onerror = function () {
       ppenStatusBox.innerHTML = "Could not read Purple Pen file. Try reselecting it, then click Reload.";
@@ -2707,7 +2760,7 @@ function tcTemplate() {
   function saveParameters() {
     var rtn;
     rtn = generateLaTeX();
-    downloadFile(rtn.file, "TemplateParameters.tex");
+    downloadFile(rtn, "TemplateParameters.tex");
 
     //Indicate that parameters data is currently saved - unedited opened file
     paramsSaved = true;
@@ -3139,19 +3192,17 @@ function tcTemplate() {
     const zip = new JSZip();
 
     this.statusBox.textContent = "Splitting into images (0%).";
+    const numImages = this.compileUnitsItems + numStations;
     for (let stationId = 1; stationId <= numStations; stationId++) {
       const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].textContent);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
         const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].textContent;
 
-        //Calculate scale required to render PDF at correct resolution
-        const circleDiameter = Number(tableRows[stationId].getElementsByClassName("mapSize")[0].value);
-        const mapDescriptionSeparation = (9.5 - circleDiameter - 0.77) / 3;
-        const pdfHeight = 9.5 - 2 * mapDescriptionSeparation; //cm
-        const imDPI = 300 / pdfHeight * 2.54;
+        //Image resolution
+        const imDPI = 200;
         const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
 
-        for (let taskId = 1; taskId <= numTasks; taskId++) {
+        for (let taskId = 0; taskId <= numTasks; taskId++) {
           //Read page into canvas
           const page = await pdfDoc.getPage(pageNum);
           const viewport = page.getViewport({ scale: pdfScale });
@@ -3209,11 +3260,27 @@ function tcTemplate() {
           }
 
           //Put cropped image onto cropped canvas
-          const croppedHeight = bottomRow - topRow + 1;
+          let croppedHeight = bottomRow - topRow + 1;
           const croppedWidth = rightCol - leftCol + 1;
+
+          //Crop map to max height 300px
+          if (croppedHeight > 300) {
+            const cropAmount = Math.ceil((croppedHeight - 300) / 2);
+            bottomRow -= cropAmount;
+            topRow += cropAmount;
+            croppedHeight -= 2 * cropAmount;
+          }
+
+          //Expand to width 1000px, keeping centred
+          const targetWidth = 1000;
+          const xOffset = croppedWidth < targetWidth ? Math.floor((targetWidth - croppedWidth) / 2) : 0;
+
           canvasCropped.height = croppedHeight;
-          canvasCropped.width = croppedWidth;
-          ctxCropped.drawImage(canvasFull, leftCol, topRow, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+          canvasCropped.width = croppedWidth > targetWidth ? croppedWidth : targetWidth;
+          //Initialise to white background
+          ctxCropped.fillStyle = "white";
+          ctxCropped.fillRect(0, 0, canvasCropped.width, canvasCropped.height);
+          ctxCropped.drawImage(canvasFull, leftCol, topRow, croppedWidth, croppedHeight, xOffset, 0, croppedWidth, croppedHeight);
 
           //Save to zip
           const blob = await new Promise((resolve) => { canvasCropped.toBlob(resolve); });
@@ -3221,7 +3288,7 @@ function tcTemplate() {
 
           pageNum++;
           taskCount++;
-          this.statusBox.textContent = "Splitting into images (" + (taskCount / this.compileUnitsItems * 100).toFixed() + "%).";
+          this.statusBox.textContent = "Splitting into images (" + (taskCount / numImages * 100).toFixed() + "%).";
         }
       } else {
         pageNum += numTasks;

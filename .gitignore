@@ -1,6 +1,8 @@
 TemplateParameters.tex
 .DS_Store
-*.aux
-*.gz
-*.log
 *.pdf
+*.aux
+*.log
+*.synctex(busy)
+*.synctex.gz
+TemplateParameters.tex
