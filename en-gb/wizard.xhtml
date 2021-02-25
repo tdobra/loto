@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
 <head>
-  <script src="headerfooter.js"></script>
-  <!--FIXME: Bug in Chrome: defer is ignored-->
-  <script>let domLoad = new Promise(() => {}); document.addEventListener("DOMContentLoaded", () => { domLoad = Promise.resolve(); }, { once: true });</script>
+  <script src="footertext.js"></script>
+  <script src="../headerfooter.js"></script>
   <script async="async" src="messages.js"></script>
   <script async="async" src="../wizard.js"></script>
   <title>TCTemplate</title>
@@ -54,13 +53,14 @@
         <p id="paramReadStatus"></p>
 
         <details open="open">
-          <summary>Autosave</summary>
+          <summary>Autosave backup</summary>
           <ul>
             <li class="tickRow">
               <input id="enableAutoSave" type="checkbox" />
               <label for="enableAutoSave">Enable — stores in a cookie</label>
             </li>
           </ul>
+          <p><strong>Warning:</strong> Do not rely on autosave, as some browsers might clear your cookies without obvious warning; use the main file save to your downloads folder instead.</p>
           <details>
             <summary>Options</summary>
             <ul class="fieldList">

@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
+
 <head>
-  <script src="../headerfooter.js"></script>
+  <script src="../footertext.js"></script>
+  <script src="../../headerfooter.js"></script>
   <title>TCTemplate Help: Security</title>
 </head>
+
 <body>
   <header>
     <h1>TCTemplate Help</h1>
@@ -11,30 +14,54 @@
   </header>
   <main>
     <h3>Security Statement</h3>
-    <p>TCTemplate is secure, so it is very difficult for a hacker to steal your competition maps. Purple Pen (used for map and control description preparation) is third-party software that is not known to transfer your data across the internet. The TCTemplate web wizard is delivered over the internet using a secure connection and only the author is able to change the version of the software presented, so tampering of the code is very unlikely. Although you select your competition map files from your computer and the web page reads them, all of this is performed locally on your computer and no data is uploaded to the internet. The final step of compiling the LaTeX file is performed using third-party software, either on a secure website (recommended) or locally on your computer (advanced users), so should be secure.</p>
+    <p>TCTemplate is secure, so it is very difficult for a hacker to steal your competition maps. Purple Pen (used for
+      map and control description preparation) is third-party software that is not known to transfer your data across
+      the internet. The TCTemplate web wizard is delivered over the internet using a secure connection and only the
+      author is able to change the version of the software presented, so tampering of the code is very unlikely.
+      Although you select your competition map files from your computer and the web page reads them, all of this is
+      performed locally on your computer and no data is uploaded to the internet. The final step of compiling the LaTeX
+      file is performed using third-party software, either on a secure website (recommended) or locally on your computer
+      (advanced users), so should be secure.</p>
     <h3>Extra Security/Running Offline</h3>
-    <p>For extra security, it is possible to download the software to your computer and prepare printed map cards locally with your computer disconnected from the internet. However, the online TempO template cannot be run offline, because it depends on pdf.js and jszip, which are downloaded at runtime from other servers. Running offline is also useful when assisting with software development. Instructions:</p>
+    <p>For extra security, it is possible to download the software to your computer and prepare printed map cards
+      locally with your computer disconnected from the internet. However, the online TempO template cannot be run
+      offline, because it depends on pdf.js and jszip, which are downloaded at runtime from other servers. Running
+      offline is also useful when assisting with software development. Instructions:</p>
     <ol>
       <li>
         Download the source code:
         <ul>
-          <li>Software developers (and those who know about Git): Install <a href="https://githowto.com" target="prequisites" rel="external">Git</a>, then open the terminal, use the <code>cd</code> command to navigate to the target folder and run <code>git clone --recursive https://github.com/tdobra/tctemplate.git</code>.</li>
-          <li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip" download="TCTemplate.zip">main ZIP</a>, then download and extract <a href="https://github.com/tdobra/texlive.js/archive/master.zip" download="texlive.js.zip">TeX Live</a> into the <code>texlive.js</code> folder. Take care to avoid double subfolders. It is necessary to repeat these steps when installing updates.</li>
+          <li>Software developers (and those who know about Git): Install <a href="https://githowto.com"
+              target="prequisites" rel="external">Git</a>, then open the terminal, use the <code>cd</code> command to
+            navigate to the target folder and run
+            <code>git clone --recursive https://github.com/tdobra/tctemplate.git</code>.</li>
+          <li>Others: Download and extract the <a href="https://github.com/tdobra/tctemplate/archive/master.zip"
+              download="TCTemplate.zip">main ZIP</a>, then download and extract <a
+              href="https://github.com/tdobra/texlive.js/archive/master.zip" download="texlive.js.zip">TeX Live</a> into
+            the <code>texlive.js</code> folder. Take care to avoid double subfolders. It is necessary to repeat these
+            steps when installing updates.</li>
         </ul>
       </li>
       <li>
         Download and save these scripts into the root folder:
         <ol>
-          <li><a href="https://cdn.jsdelivr.net/npm/jszip@3.4.0/dist/jszip.min.js" download="jszip.min.js" rel="external">JSZip</a></li>
-          <li><a href="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.min.js" download="pdf.min.js" rel="external">PDF.js source</a></li>
-          <li><a href="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.worker.min.js" download="pdf.worker.min.js" rel="external">PDF.js worker</a></li>
+          <li><a href="https://cdn.jsdelivr.net/npm/jszip@3.4.0/dist/jszip.min.js" download="jszip.min.js"
+              rel="external">JSZip</a></li>
+          <li><a href="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.min.js" download="pdf.min.js"
+              rel="external">PDF.js source</a></li>
+          <li><a href="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.4.456/build/pdf.worker.min.js"
+              download="pdf.worker.min.js" rel="external">PDF.js worker</a></li>
         </ol>
       </li>
       <li>
         Install Web Server for Chrome (if not using the Python option below):
         <ol>
-          <li>Install <a href="https://www.google.com/chrome/" target="prerequisites" rel="external">Google Chrome</a>.</li>
-          <li>In Chrome, install <a href="https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb" target="prerequisites" rel="external">Web Server for Chrome</a> by clicking on <em>Add to Chrome</em> in the top-right corner.</li>
+          <li>Install <a href="https://www.google.com/chrome/" target="prerequisites" rel="external">Google Chrome</a>.
+          </li>
+          <li>In Chrome, install <a
+              href="https://chrome.google.com/webstore/detail/web-server-for-chrome/ofhbbkphhbklhfoeikjpcbhemlocgigb"
+              target="prerequisites" rel="external">Web Server for Chrome</a> by clicking on <em>Add to Chrome</em> in
+            the top-right corner.</li>
         </ol>
       </li>
       <li>You may now disconnect your computer from the internet if extra security is required.</li>
@@ -53,12 +80,16 @@
           <li>
             Alternative: Python HTTP server
             <ol>
-              <li>Install <a href="https://www.python.org/downloads/" target="prerequisites" rel="external">Python</a> version 3.</li>
+              <li>Install <a href="https://www.python.org/downloads/" target="prerequisites" rel="external">Python</a>
+                version 3.</li>
               <li>
                 Run <em>Start.py</em>.
                 <ul>
-                  <li>Windows: Double click on <em>Start</em> in the TCTemplate source code (or use the command prompt as below).</li>
-                  <li>MacOS, Linux and other Unix: Open the terminal, change to the correct directory and make <code>Start.py</code> executable using <code>chmod u+x Start.py</code>, then run using <code>./Start.py</code>.</li>
+                  <li>Windows: Double click on <em>Start</em> in the TCTemplate source code (or use the command prompt
+                    as below).</li>
+                  <li>MacOS, Linux and other Unix: Open the terminal, change to the correct directory and make
+                    <code>Start.py</code> executable using <code>chmod u+x Start.py</code>, then run using
+                    <code>./Start.py</code>.</li>
                 </ul>
               </li>
               <li>TCTemplate appears automatically, or navigate to the URL shown.</li>
@@ -69,4 +100,5 @@
     </ol>
   </main>
 </body>
+
 </html>

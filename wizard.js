@@ -3,7 +3,7 @@
 //TODO: Chrome has bug that defer script loading doesn't work with XHTML
 //This function is currently called by DOMContentLoaded event
 //Once fixed, load messages.js then this script both with defer, delete domLoad and change tcTemplate() to anonymous IIFE
-domLoad.then(async () => {
+tothf.domLoad.then(async () => {
   //Wait until tcTemplateMsg is defined, then run tcTemplate to make page dynamic
   while (typeof tcTemplateMsg === "undefined") {
     await new Promise((resolve) => setTimeout(resolve, 100));
