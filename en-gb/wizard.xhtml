@@ -53,14 +53,18 @@
         <p id="paramReadStatus"></p>
 
         <details open="open">
-          <summary>Autosave backup</summary>
+          <summary>Autosave</summary>
           <ul>
             <li class="tickRow">
+              <input id="saveOnGenerate" type="checkbox" />
+              <label for="saveOnGenerate">To downloads when generating map cards</label>
+            </li>
+            <li class="tickRow">
               <input id="enableAutoSave" type="checkbox" />
-              <label for="enableAutoSave">Enable — stores in a cookie</label>
+              <label for="enableAutoSave">Backup — stores data in your browser</label>
             </li>
           </ul>
-          <p><strong>Warning:</strong> Do not rely on autosave, as some browsers might clear your cookies without obvious warning; use the main file save to your downloads folder instead.</p>
+          <p><strong>Warning:</strong> Do not rely on backup, as browsers might clear data without warning; use the main file save to your downloads folder instead.</p>
           <details>
             <summary>Options</summary>
             <ul class="fieldList">
@@ -75,12 +79,6 @@
                 <label for="autoSaveSize">History size</label>
                 <span class="inputBlock"><input id="autoSaveSize" type="number" min="1" /></span>
                 <span id="autoSaveSizeError"></span>
-              </li>
-            </ul>
-            <ul>
-              <li class="tickRow">
-                <input id="saveOnGenerate" type="checkbox" checked="checked" />
-                <label for="saveOnGenerate">Save parameters when generating map cards</label>
               </li>
             </ul>
           </details>
