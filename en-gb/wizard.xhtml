@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">
+
 <head>
   <script src="footertext.js"></script>
   <script src="../headerfooter.js"></script>
   <script async="async" src="messages.js"></script>
   <script async="async" src="../wizard.js"></script>
-  <title>TCTemplate</title>
+  <title>TOT</title>
 </head>
+
 <body>
   <header>
-    <h1>TCTemplate: TrailO Timed Control Map Cards Generator</h1>
+    <h1>TOT: TrailO Template</h1>
     <p id="missingAPIs">Error: Web browser does not support required APIs, or Javascript is disabled. Need to update to newer browser to use TCTemplate.</p>
   </header>
   <nav class="right"><a href="help/index.xhtml" target="help" rel="help">Help</a> <a href="index.xhtml">Home</a></nav>
@@ -33,54 +35,84 @@
     <section id="fields">
       <!--Initial view has only essential fields visible-->
       <details open="open">
-        <summary>File</summary>
+        <summary>Files</summary>
+        <p>TOT requires both a <a href="http://purplepen.golde.org" target="prequisites" rel="external">Purple Pen</a> file and its own JSON file, and updates both of them. If you do not already have a Purple Pen file, create one now, including opening a base map, but keep the event name short enough to fit on one line of the control descriptions.</p>
         <ul class="fieldList">
           <li>
-            <button id="newFile" type="button">New</button>
-          </li>
-          <li>
-            <label for="paramFileSelector">Open</label>
-            <span class="inputBlock"><input id="paramFileSelector" type="file" accept=".tex" /></span>
-          </li>
-          <li>
-            <label for="recoverSelect">Recover</label>
-            <span class="inputBlock"><select id="recoverSelect"></select></span>
-          </li>
-          <li>
-            <button id="saveParameters" type="button">Save</button>
+            <button id="clearAll" type="button">Clear all</button>
           </li>
         </ul>
-        <p id="paramReadStatus"></p>
-
         <details open="open">
-          <summary>Autosave</summary>
-          <ul>
-            <li class="tickRow">
-              <input id="saveOnGenerate" type="checkbox" />
-              <label for="saveOnGenerate">To downloads when generating map cards</label>
+          <summary>Purple Pen</summary>
+          <p>To avoid file version clash, always close Purple Pen before loading its file here.</p>
+          <ul class="fieldList">
+            <li>
+              <label for="ppenSelector">Open</label>
+              <input id="ppenSelector" type="file" accept=".ppen" />
             </li>
-            <li class="tickRow">
-              <input id="enableAutoSave" type="checkbox" />
-              <label for="enableAutoSave">Backup — stores data in your browser</label>
+            <li>
+              <button id="ppenSave" type="button">Save</button>
             </li>
           </ul>
-          <p><strong>Warning:</strong> Do not rely on backup, as browsers might clear data without warning; use the main file save to your downloads folder instead.</p>
+          <div id="ppenStatus"></div>
           <details>
-            <summary>Options</summary>
-            <ul class="fieldList">
-              <li>
-                <label for="autoSaveFrequency">Frequency</label>
-                <span class="inputBlock">
-                  <input id="autoSaveFrequency" type="number" min="1" step="any" /><span>s</span>
-                </span>
-                <span id="autoSaveFrequencyError"></span>
+            <summary>Save options</summary>
+            <ul>
+              <li class="tickRow">
+                <input id="ppenReorder" type="checkbox" /><label for="ppenReorder">Reorder courses in Purple Pen file to match station and task order</label>
               </li>
-              <li>
-                <label for="autoSaveSize">History size</label>
-                <span class="inputBlock"><input id="autoSaveSize" type="number" min="1" /></span>
-                <span id="autoSaveSizeError"></span>
+              <li class="tickRow">
+                <input id="ppenClean" type="checkbox" /><label for="ppenClean">Remove unused courses and controls from Purple Pen file</label>
               </li>
             </ul>
+          </details>
+        </details>
+        <details open="open">
+          <summary>TOT JSON</summary>
+          <ul class="fieldList">
+            <li>
+              <label for="paramFileSelector">Open</label>
+              <span class="inputBlock"><input id="paramFileSelector" type="file" accept=".tex" /></span>
+            </li>
+            <li>
+              <label for="recoverSelect">Recover</label>
+              <span class="inputBlock"><select id="recoverSelect"></select></span>
+            </li>
+            <li>
+              <button id="saveParameters" type="button">Save</button>
+            </li>
+          </ul>
+          <p id="paramReadStatus"></p>
+          <details open="open">
+            <summary>Autosave</summary>
+            <ul>
+              <li class="tickRow">
+                <input id="saveOnGenerate" type="checkbox" />
+                <label for="saveOnGenerate">To downloads when generating map cards</label>
+              </li>
+              <li class="tickRow">
+                <input id="enableAutoSave" type="checkbox" />
+                <label for="enableAutoSave">Backup — stores data in your browser</label>
+              </li>
+            </ul>
+            <p><strong>Warning:</strong> Do not rely on backup, as browsers might clear data without warning; use the main file save to your downloads folder instead.</p>
+            <details>
+              <summary>Backup options</summary>
+              <ul class="fieldList">
+                <li>
+                  <label for="autoSaveFrequency">Frequency</label>
+                  <span class="inputBlock">
+                    <input id="autoSaveFrequency" type="number" min="1" step="any" /><span>s</span>
+                  </span>
+                  <span id="autoSaveFrequencyError"></span>
+                </li>
+                <li>
+                  <label for="autoSaveSize">History size</label>
+                  <span class="inputBlock"><input id="autoSaveSize" type="number" min="1" /></span>
+                  <span id="autoSaveSizeError"></span>
+                </li>
+              </ul>
+            </details>
           </details>
         </details>
       </details>
@@ -408,7 +440,7 @@
               <label for="autoOrderKites" class="hideIfDefault">Auto order</label>
               <button id="setAllAutoOrderKites" class="setAllCourses" type="button">Set all stations</button>
               <button id="resetAutoOrderKites" class="hideIfDefault" type="button">Reset</button>
-          </li>
+            </li>
           </ul>
           <ul class="fieldList hideIfDefault">
             <li>
@@ -684,29 +716,17 @@
       </details>
 
       <details open="open">
-        <summary>Calculate positions and make maps in Purple Pen</summary>
-        <ul>
-          <li><label for="ppenSelector">Open Purple Pen file <input id="ppenSelector" type="file" accept=".ppen" /></label></li>
-          <li><button id="ppenSave" type="button">Save modified Purple Pen file</button></li>
-        </ul>
-        <div id="ppenStatus"></div>
-        <details>
-          <summary>Save options</summary>
-          <ul>
-            <li class="tickRow"><input id="ppenReorder" type="checkbox" /><label for="ppenReorder">Reorder courses in Purple Pen file to match station and task order</label></li>
-            <li class="tickRow"><input id="ppenClean" type="checkbox" /><label for="ppenClean">Remove unused courses and controls from Purple Pen file</label></li>
-          </ul>
-        </details>
-      </details>
-
-      <details open="open">
         <summary>Compile map cards</summary>
         <fieldset>
           <legend>Input PDFs</legend>
           <ul class="fieldList">
             <li>
-              <label for="coursePDFSelector">Maps</label>
-              <span class="inputBlock"><input id="coursePDFSelector" type="file" accept=".pdf" /></span>
+              <label for="coursePDFCYMKSelector">Maps CMYK</label>
+              <span class="inputBlock"><input id="coursePDFCMYKSelector" type="file" accept=".pdf" /></span>
+            </li>
+            <li>
+              <label for="coursePDFRGBSelector">Maps RGB</label>
+              <span class="inputBlock"><input id="coursePDFRGBSelector" type="file" accept=".pdf" /></span>
             </li>
             <li>
               <label for="CDPDFSelector">Control descriptions</label>
@@ -758,7 +778,9 @@
       <table>
         <thead>
           <tr>
-            <th>Station name<!--Also includes several hidden fields:--></th>
+            <th>Station name
+              <!--Also includes several hidden fields:-->
+            </th>
             <th>Show</th>
             <th>Kites</th>
             <th>Zeroes</th>
@@ -775,7 +797,9 @@
             <td class="setAll"><input class="showStation" type="checkbox" /></td>
             <td class="setAll"><input class="kites" type="number" min="1" max="6" step="1" required="required" /></td>
             <td class="setAll"><input class="zeroes" type="checkbox" /></td>
-            <td class="setAll"><!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg--></td>
+            <td class="setAll">
+              <!--<input class="heading" type="number" step="any" onchange="setAllCourses(this)" /> &deg-->
+            </td>
             <td class="setAll">
               <select class="mapShape">
                 <option></option>
@@ -870,4 +894,5 @@
     </section>
   </main>
 </body>
+
 </html>
