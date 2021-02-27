@@ -42,6 +42,11 @@ const tcTemplate = (() => {
     letterFontSize: 1.8,
     phoneticFontSize: 0.6
   };
+  const defaultOnlineLayout = {
+    resolution: 200,
+    pngWidth: 1000,
+    pngHeight: 300
+  };
 
   function loadppen(fileInput) {
     //Reads a Purple Pen file
@@ -1224,11 +1229,19 @@ const tcTemplate = (() => {
   }
 
   function resetField(btn) {
-    //Resets the corresponding field to its default value
+    //Resets the corresponding field to its default value for print template
     //Get the corresponding input element class of the button
     var btnClass = btn.className;
     //Look up corresponding input element and value
     document.getElementById("layoutSetAllRow").getElementsByClassName(btnClass)[0].value = defaultLayout[btnClass];
+  }
+
+  function resetOnlineField(btn) {
+    //Resets the corresponding field to its default value for online template
+    //Get the corresponding input element class of the button
+    var btnClass = btn.className;
+    //Look up corresponding input element and value
+    document.getElementById("onlineLayout").getElementsByClassName(btnClass)[0].value = defaultOnlineLayout[btnClass];
   }
 
   function updateTemplate() {
@@ -1520,13 +1533,15 @@ const tcTemplate = (() => {
 
     this.statusBox.textContent = "Splitting into images (0%).";
     const numImages = this.compileUnitsItems + numStations;
+    const imDPI = Number(document.getElementsByClassName("resolution")[1].value) || defaultOnlineLayout.resolution;
+    const targetWidth = Number(document.getElementsByClassName("pngWidth")[1].value) || defaultOnlineLayout.pngWidth;
+    const targetHeight = Number(document.getElementsByClassName("pngHeight")[1].value) || defaultOnlineLayout.pngHeight;
     for (let stationId = 1; stationId <= numStations; stationId++) {
       const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].textContent);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
         const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].textContent;
 
         //Image resolution
-        const imDPI = 200;
         const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
 
         for (let taskId = 0; taskId <= numTasks; taskId++) {
@@ -1590,16 +1605,15 @@ const tcTemplate = (() => {
           let croppedHeight = bottomRow - topRow + 1;
           const croppedWidth = rightCol - leftCol + 1;
 
-          //Crop map to max height 300px
-          if (croppedHeight > 300) {
-            const cropAmount = Math.ceil((croppedHeight - 300) / 2);
+          //Crop map to max height targetHeight
+          if (croppedHeight > targetHeight) {
+            const cropAmount = Math.ceil((croppedHeight - targetHeight) / 2);
             bottomRow -= cropAmount;
             topRow += cropAmount;
             croppedHeight -= 2 * cropAmount;
           }
 
-          //Expand to width 1000px, keeping centred
-          const targetWidth = 1000;
+          //Expand to width targetWidth, keeping centred
           const xOffset = croppedWidth < targetWidth ? Math.floor((targetWidth - croppedWidth) / 2) : 0;
 
           canvasCropped.height = croppedHeight;
@@ -1658,6 +1672,12 @@ const tcTemplate = (() => {
   document.getElementById("selectTemplate").addEventListener("change", updateTemplate);
   updateTemplate.call(document.getElementById("selectTemplate"));
   document.getElementById("compileLaTeXBtn").addEventListener("click", Compiler.generateAll, { passive: true });
+  ["resolution", "pngWidth", "pngHeight"].forEach((className) => {
+    const btn = document.getElementsByClassName(className)[0];
+    btn.addEventListener("click", (ev) => { resetOnlineField(ev.target); }, { passive: true });
+    //Set default value in text box
+    resetOnlineField(btn);
+  });
 
   //Make required functions globally visible
   return {
