@@ -36,7 +36,7 @@
       <!--Initial view has only essential fields visible-->
       <details open="open">
         <summary>Files</summary>
-        <p>TOT requires both a <a href="http://purplepen.golde.org" target="prequisites" rel="external">Purple Pen</a> file and its own JSON file, and updates both of them. If you do not already have a Purple Pen file, create one now, including opening a base map, but keep the event name short enough to fit on one line of the control descriptions.</p>
+        <p>TOT requires both a <a href="http://purplepen.golde.org" target="prequisites" rel="external">Purple Pen</a> file and its own JSON file, and updates both of them. You cannot edit anything in TOT until you have loaded the Purple Pen file. If you do not already have a Purple Pen file, create one now, including opening a base map, but keep the event name short enough to fit on one line of the control descriptions.</p>
         <ul class="fieldList">
           <li>
             <button id="clearAll" type="button">Clear all</button>
@@ -44,7 +44,7 @@
         </ul>
         <details open="open">
           <summary>Purple Pen</summary>
-          <p>To avoid file version clash, always close Purple Pen before loading its file here.</p>
+          <p>To avoid file version clash, do not edit anything in Purple Pen once you have loaded its file here.</p>
           <ul class="fieldList">
             <li>
               <label for="ppenSelector">Open</label>
@@ -55,6 +55,27 @@
             </li>
           </ul>
           <div id="ppenStatus"></div>
+          <details>
+            <summary>Event map scales</summary>
+            <ul class="fieldList">
+              <li>
+                <label for="mapFileScale">Map file scale</label>
+                <span class="inputBlock">
+                  <input id="mapFileScaleAuto" type="checkbox" /><label for="mapFileScaleAuto">Auto</label>
+                  <span class="withUnit">1:<input id="mapFileScale" type="number" min="0" step="any" /></span>
+                </span>
+                <span id="mapFileScaleError"></span>
+              </li>
+              <li>
+                <label for="printScale">Print scale</label>
+                <span class="inputBlock">
+                  <input id="printScaleAuto" type="checkbox" /><label for="printScaleAuto">Auto</label>
+                  <span class="withUnit">1:<input id="printScale" type="number" min="0" step="any" /></span>
+                </span>
+                <span id="printScaleError"></span>
+              </li>
+            </ul>
+          </details>
           <details>
             <summary>Save options</summary>
             <ul>
@@ -72,7 +93,7 @@
           <ul class="fieldList">
             <li>
               <label for="paramFileSelector">Open</label>
-              <span class="inputBlock"><input id="paramFileSelector" type="file" accept=".tex" /></span>
+              <span class="inputBlock"><input id="paramFileSelector" type="file" accept=".json" /></span>
             </li>
             <li>
               <label for="recoverSelect">Recover</label>
@@ -118,7 +139,7 @@
       </details>
 
       <details open="open">
-        <summary>Courses</summary>
+        <summary>Course parts</summary>
         <details>
           <summary>Name and order</summary>
           <ul>
