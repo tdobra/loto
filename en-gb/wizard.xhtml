@@ -839,7 +839,7 @@
       <details>
         <summary>Customise layout</summary>
         <p><input id="debugCircle" type="checkbox" /><label for="debugCircle">Show construction marks to verify position of control circle</label></p>
-        <p>All measurements are in cm. There are no sanity checks here, so check the output carefully.</p>
+        <p><strong>Print layout:</strong> All measurements are in cm. There are no sanity checks here, so check the output carefully.</p>
         <table>
           <thead>
             <tr>
@@ -881,6 +881,28 @@
               <td class="setAll"><input class="pointHeight layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
               <td class="setAll"><input class="letterFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
               <td class="setAll"><input class="phoneticFontSize layoutLength" type="number" min="0" max="29.7" step="any" required="required" /></td>
+            </tr>
+          </tbody>
+        </table>
+        <p><strong>Online layout:</strong> Files for TempO Simulator should have aspect ratio 1000:300 and be no more than 200 kB.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Resolution (DPI)</th>
+              <th>Width (px)</th>
+              <th>Height (px)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input class="resolution" type="button" value="Default" /></td>
+              <td><input class="pngWidth" type="button" value="Default" /></td>
+              <td><input class="pngHeight" type="button" value="Default" /></td>
+            </tr>
+            <tr id="onlineLayout">
+              <td><input class="resolution layoutLength" type="number" min="1" step="any" required="required" /></td>
+              <td><input class="pngWidth layoutLength" type="number" min="1" required="required" /></td>
+              <td><input class="pngHeight layoutLength" type="number" min="1" required="required" /></td>
             </tr>
           </tbody>
         </table>
