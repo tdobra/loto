@@ -733,36 +733,11 @@ function tcTemplate() {
     errorElement: "courseNameError"
   });
 
-  class TasksFile extends RadioField {
-    saveInput() {
-      super.saveInput();
-      this.parentItem.checkValidity(true);
-      this.parentItem.refreshAllInput(false);
-    }
-  }
-  Object.assign(TasksFile, {
-    fieldName: "tasksFile",
-    originalValue: "newFile",
-    inputElement: {
-      newFile: "newTasksFile",
-      append: "appendTasksFile",
-      hide: "hideTasksFile"
-    },
-    resetBtn: "resetTasksFile",
-    setAllBtn: "setAllTasksFile"
-  });
-
   class TasksTemplate extends Field { }
   Object.assign(TasksTemplate, {
     fieldName: "tasksTemplate",
     originalValue: "printA5onA4",
     inputElement: "tasksTemplate"
-  });
-
-  class AppendTasksCourse extends Field { }
-  Object.assign(AppendTasksCourse, {
-    fieldName: "appendTasksCourse",
-    inputElement: "appendTasksCourse"
   });
 
   class Zeroes extends BooleanField {
@@ -851,8 +826,6 @@ function tcTemplate() {
     fieldName: "contourInterval",
     checkSiblings: true,
     inputElement: "contourInterval",
-    ruleElement: "contourIntervalRule",
-    resetBtn: "resetContourInterval",
     setAllBtn: "setAllContourInterval",
     errorElement: "contourIntervalError"
   });
@@ -1048,11 +1021,6 @@ function tcTemplate() {
     deleteThis() {
       super.deleteThis();
       this.parentList.refreshOtherCourseLists();
-      //Change any stationCourse entries that point to this deleted station
-      if (stationList.default.stationCourse === this) { stationList.default.stationCourse = StationCourse.originalValue; }
-      stationList.items.forEach((station) => {
-        if (station.stationCourse === this) { station.stationCourse = stationList.default.stationCourse; }
-      });
     }
 
     move(offset) {
@@ -1094,7 +1062,7 @@ function tcTemplate() {
     updateMsgs() {
       //Show/hide any buttons as required
       dynamicCSS.hide(this.value, "#mainView .hideIfDefault");
-      dynamicCSS.hide(!this.value, ".setAllCourses");
+      dynamicCSS.hide(!this.value, ".setAll");
     }
   }
   Object.assign(ViewDefault, {
@@ -1133,10 +1101,6 @@ function tcTemplate() {
       this.viewDefault.refreshInput(false, true);
       super.refreshItem();
     }
-
-    refreshOtherCourseLists() {
-      StationCourse.refreshList();
-    }
   }
   Object.assign(CourseList, {
     selector: "courseSelect",
@@ -1159,40 +1123,6 @@ function tcTemplate() {
   Object.assign(StationName, {
     inputElement: "stationName",
     errorElement: "stationNameError"
-  });
-
-  class StationCourse extends Field {
-    static get originalValue() {
-      return courseList.items[courseList.itemInFocus];
-    }
-
-    get inputValue() {
-      return courseList.items[this.inputElement.selectedIndex];
-    }
-
-    set inputValue(val) {
-      this.inputElement.value = val.itemName.value;
-    }
-
-    static refreshList() {
-      //Remove existing contents
-      while (this.inputElement.hasChildNodes()) { this.inputElement.removeChild(this.inputElement.lastChild); }
-      //Repopulate
-      courseList.items.forEach((course) => { this.inputElement.appendChild(course.optionCopies[0]); });
-    }
-
-    updateMsgs() {
-      super.updateMsgs();
-      //Show relevant course
-      CourseList.selector.selectedIndex = this.value.index;
-      courseList.refreshItem();
-    }
-  }
-  Object.assign(StationCourse, {
-    fieldName: "stationCourse",
-    inputElement: "stationCourse",
-    resetBtn: "resetStationCourse",
-    setAllBtn: "setAllStationCourse"
   });
 
   class ShowStationTasks extends BooleanField {
@@ -1489,12 +1419,12 @@ function tcTemplate() {
     }
 
     isHidden() {
+      //FIXME: stationCourse needs to point to the parent course
       return !this.showStationTasks.value || this.stationCourse.value.isHidden();
     }
   }
   Station.fieldClasses = [
     StationName,
-    StationCourse,
     ShowStationTasks,
     AutoPopulateKites,
     AutoOrderKites,
@@ -1525,6 +1455,7 @@ function tcTemplate() {
     add() {
       //Never called for default station
       const station = super.add();
+      //FIXME: stationCourse is the parent course
       const course = station.stationCourse.value;
       for (let i = 0; i < course.numKites.value; ++i) { station.kites.add(); }
       for (let i = 0; i < course.numTasks.value; ++i) { station.tasks.add(); }
