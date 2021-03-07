@@ -1533,10 +1533,11 @@ const tcTemplate = (() => {
     const imDPI = Number(document.getElementsByClassName("resolution")[1].value) || defaultOnlineLayout.resolution;
     const targetWidth = Number(document.getElementsByClassName("pngWidth")[1].value) || defaultOnlineLayout.pngWidth;
     const targetHeight = Number(document.getElementsByClassName("pngHeight")[1].value) || defaultOnlineLayout.pngHeight;
+    let stationsAdded = 0;
     for (let stationId = 1; stationId <= numStations; stationId++) {
       const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].textContent);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
-        const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].textContent;
+        stationsAdded++;
 
         //Image resolution
         const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
@@ -1622,7 +1623,7 @@ const tcTemplate = (() => {
 
           //Save to zip
           const blob = await new Promise((resolve) => { canvasCropped.toBlob(resolve); });
-          imPromises.push(zip.file("map-" + stationName + "." + taskId + "z.png", blob));
+          imPromises.push(zip.file("map-" + stationsAdded + "." + taskId + "z.png", blob));
 
           pageNum++;
           taskCount++;
