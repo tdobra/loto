@@ -3,7 +3,7 @@
 
 "use strict";
 
-const tothf = (() => {
+const lotoHF = (() => {
   //TODO: Bug in Chrome: defer script load doesn't work with XHTML, so load async and await domLoad promise
   const domLoad = new Promise((res) => { document.addEventListener("DOMContentLoaded", () => { res(); }, { once: true }); });
   // document.addEventListener("DOMContentLoaded", () => { domLoad = Promise.resolve(); }, { once: true });
@@ -61,15 +61,15 @@ const tothf = (() => {
 
 (async () => {
   //Footer: modification date, copyright, license
-  await tothf.domLoad;
+  await lotoHF.domLoad;
   const footer = document.createElement("footer");
-  let pEl = tothf.addElement("p", footer);
+  let pEl = lotoHF.addElement("p", footer);
   pEl.classList.add("right");
-  pEl.textContent = tottext.lastUpdated + " " + tothf.modDate.toLocaleString("en-GB", { dateStyle: "long", timeStyle: "long" });
-  pEl = tothf.addElement("p", footer);
+  pEl.textContent = tottext.lastUpdated + " " + lotoHF.modDate.toLocaleString("en-GB", { dateStyle: "long", timeStyle: "long" });
+  pEl = lotoHF.addElement("p", footer);
   pEl.classList.add("right");
-  pEl.textContent = tottext.copyright + " © 2017–" + tothf.modDate.getFullYear() + " " + tottext.copyrightName + " ";
-  const aEl = tothf.addElement("a", pEl, { href: tothf.pathPrefix + "license.xhtml", target: "help", rel: "license" });
+  pEl.textContent = tottext.copyright + " © 2017–" + lotoHF.modDate.getFullYear() + " " + tottext.copyrightName + " ";
+  const aEl = lotoHF.addElement("a", pEl, { href: lotoHF.pathPrefix + "license.xhtml", target: "help", rel: "license" });
   aEl.textContent = tottext.license;
   document.body.appendChild(footer);
 })();

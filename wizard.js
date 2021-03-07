@@ -3,9 +3,9 @@
 //TODO: Chrome has bug that defer script loading doesn't work with XHTML
 //This function is currently called by DOMContentLoaded event
 //Once fixed, load messages.js then this script both with defer, delete domLoad and change tcTemplate() to anonymous IIFE
-tothf.domLoad.then(async () => {
-  //Wait until tcTemplateMsg is defined, then run tcTemplate to make page dynamic
-  while (typeof tcTemplateMsg === "undefined") {
+lotoHF.domLoad.then(async () => {
+  //Wait until lotoMsg is defined, then run tcTemplate to make page dynamic
+  while (typeof lotoMsg === "undefined") {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   tcTemplate();
@@ -277,7 +277,7 @@ function tcTemplate() {
     deleteThis(checkFirst = true) {
       //Deletes this item
       if (checkFirst) {
-        if (!confirm(tcTemplateMsg.confirmDelete)) {
+        if (!confirm(lotoMsg.confirmDelete)) {
           return;
         }
       }
@@ -532,7 +532,7 @@ function tcTemplate() {
     updateMsgs() {
       const contentFieldClass = this.inputElement.classList;
       const autoEnabled = this.auto !== undefined && this.auto.value;
-      const errorMsg = autoEnabled ? tcTemplateMsg.awaitingData : this.errorMsg;
+      const errorMsg = autoEnabled ? lotoMsg.awaitingData : this.errorMsg;
       if (this.valid || (this.topItem.isDefault() && autoEnabled)) {
         //Don't flag error on defaults if setting automatically
         contentFieldClass.remove("error");
@@ -619,7 +619,7 @@ function tcTemplate() {
   class NumberField extends Field {
     constructor(obj) {
       super(obj);
-      this.errorMsg = tcTemplateMsg.numberFieldError;
+      this.errorMsg = lotoMsg.numberFieldError;
     }
 
     get inputValue() {
@@ -654,7 +654,7 @@ function tcTemplate() {
   class NonNegativeField extends NumberField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = tcTemplateMsg.nonNegativeFieldError;
+      this.errorMsg = lotoMsg.nonNegativeFieldError;
     }
 
     checkValidity() {
@@ -666,7 +666,7 @@ function tcTemplate() {
   class StrictPositiveField extends NonNegativeField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
+      this.errorMsg = lotoMsg.strictPositiveFieldError;
     }
 
     checkValidity() {
@@ -679,7 +679,7 @@ function tcTemplate() {
   class NaturalNumberField extends NonNegativeField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = tcTemplateMsg.naturalNumberFieldError;
+      this.errorMsg = lotoMsg.naturalNumberFieldError;
     }
 
     checkValidity() {
@@ -715,7 +715,7 @@ function tcTemplate() {
         const syntaxError = !stringFormat.test(this.value);
         const duplicateError = this.isDuplicate(false);
         this.valid = !(syntaxError || duplicateError);
-        if (!this.valid) { this.errorMsg = syntaxError ? tcTemplateMsg.nameSyntax : tcTemplateMsg.notUnique; }
+        if (!this.valid) { this.errorMsg = syntaxError ? lotoMsg.nameSyntax : lotoMsg.notUnique; }
         //Update station list
         this.parentItem.setOptionText(this.value);
       } //Else remains valid
@@ -758,7 +758,7 @@ function tcTemplate() {
       if (this.valid) {
         for (const station of this.stationList.items) {
           if (this.value < station.numTasks.value) {
-            if (!confirm(tcTemplateMsg.confirmRemoveTasks(station.itemName.value))) {
+            if (!confirm(lotoMsg.confirmRemoveTasks(station.itemName.value))) {
               continue;
             }
           }
@@ -788,13 +788,13 @@ function tcTemplate() {
         if (this.ruleCompliant) {
           //Permitted map scales is should, so don't throw error
           this.ruleCompliant = this.value === 4000 || this.value === 5000;
-          this.errorMsg = tcTemplateMsg.mapScaleRule;
+          this.errorMsg = lotoMsg.mapScaleRule;
         } else {
-          this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+          this.errorMsg = lotoMsg.notSameForAllCourses;
           this.valid = this.ignoreRules.value;
         }
       } else {
-        this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
+        this.errorMsg = lotoMsg.strictPositiveFieldError;
       }
     }
   }
@@ -816,9 +816,9 @@ function tcTemplate() {
         //Check all values match
         this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true, !this.ignoreRules.value);
         this.valid = this.ignoreRules.value || this.ruleCompliant;
-        this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+        this.errorMsg = lotoMsg.notSameForAllCourses;
       } else {
-        this.errorMsg = tcTemplateMsg.strictPositiveFieldError;
+        this.errorMsg = lotoMsg.strictPositiveFieldError;
       }
     }
   }
@@ -833,7 +833,7 @@ function tcTemplate() {
   class MapShape extends Field {
     constructor(obj) {
       super(obj);
-      this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+      this.errorMsg = lotoMsg.notSameForAllCourses;
     }
 
     static init() {
@@ -850,9 +850,9 @@ function tcTemplate() {
       super.updateMsgs();
       //Update labels for map size description
       if (this.value === "circle") {
-        this.constructor.sizeTypeElement.textContent = tcTemplateMsg.diameter;
+        this.constructor.sizeTypeElement.textContent = lotoMsg.diameter;
       } else {
-        this.constructor.sizeTypeElement.textContent = tcTemplateMsg.sideLength;
+        this.constructor.sizeTypeElement.textContent = lotoMsg.sideLength;
       }
     }
   }
@@ -877,13 +877,13 @@ function tcTemplate() {
         if (this.ruleCompliant) {
           //Don't throw error for not matching
           this.ruleCompliant = this.parentItem.isDefault() || this.matchesAll(true, false);
-          this.errorMsg = tcTemplateMsg.notSameForAllCourses;
+          this.errorMsg = lotoMsg.notSameForAllCourses;
         } else {
-          this.errorMsg = tcTemplateMsg.mapSizeRule;
+          this.errorMsg = lotoMsg.mapSizeRule;
           this.valid = this.ignoreRules.value;
         }
       } else {
-        this.errorMsg = tcTemplateMsg.mapSizeError;
+        this.errorMsg = lotoMsg.mapSizeError;
       }
     }
   }
@@ -901,7 +901,7 @@ function tcTemplate() {
   class NumKites extends NumberField {
     constructor(obj) {
       super(obj);
-      this.errorMsg = tcTemplateMsg.numKitesRule;
+      this.errorMsg = lotoMsg.numKitesRule;
     }
 
     checkValidity() {
@@ -1251,7 +1251,7 @@ function tcTemplate() {
           (this.value === "Kites" || this.value === "VP" || this.value === "Zs")
         ) {
           this.valid = false;
-          this.errorMsg = tcTemplateMsg.taskNameKeywords;
+          this.errorMsg = lotoMsg.taskNameKeywords;
         }
       }
     }
@@ -1375,7 +1375,7 @@ function tcTemplate() {
         //Only permit change of station if the name is valid and unique
         if (this.activeItem.itemName.valid === false) {
           //Abort
-          alert(tcTemplateMsg.taskNameAlert);
+          alert(lotoMsg.taskNameAlert);
           //Change radio buttons and selectors back to original values
           this.selector.selectedIndex = this.itemInFocus;
           return;

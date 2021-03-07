@@ -2,7 +2,7 @@
 
 "use strict";
 
-const tcTemplateMsg = {
+const lotoMsg = {
   confirmDelete: "Are you sure you want to delete? This cannot be undone.",
   awaitingData: "Awaiting other data",
   numberFieldError: "Must be a number",
