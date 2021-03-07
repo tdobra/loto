@@ -51,7 +51,6 @@ const tcTemplate = (() => {
   function loadppen(fileInput) {
     //Reads a Purple Pen file
     var fileobj, freader;
-    var courseOrderUsed = [];
 
     function getNodeByID(xmlDoc, tagName, ID) {
       //Returns course-control node with given ID
@@ -139,14 +138,12 @@ const tcTemplate = (() => {
             courseNodes[courseNodesId].parentNode.removeChild(courseNodes[courseNodesId]);
           }
         }
-        courseNodes = xmlobj.getElementsByTagName("course");
-        courseNodesNum = courseNodes.length;
 
-        //Make list of all course order attributes used - to determine print page, so must be completed before rest of file reading
-        for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
-          courseOrderUsed.push(courseNodes[courseNodesId].getAttribute("order"));
-        }
-        courseOrderUsed.sort(function (a, b) { return a - b; });
+        //Reorder to match the order attribute
+        courseNodes = [...xmlobj.getElementsByTagName("course")].sort(
+          (a, b) => Number(a.getAttribute("order")) - Number(b.getAttribute("order"))
+          );
+        courseNodesNum = courseNodes.length;
 
         //Find courses with name *.1. xpath doesn't appear to be working in Safari, iterate over nodes.
         for (courseNodesId = 0; courseNodesId < courseNodesNum; courseNodesId++) {
@@ -391,8 +388,8 @@ const tcTemplate = (() => {
               tableColNode.getElementsByClassName("circlex")[0].innerHTML += printCentrex.toString() + ",";
               tableColNode.getElementsByClassName("circley")[0].innerHTML += printCentrey.toString() + ",";
 
-              //Read course order attribute, then find its position in list of course order values used. Adding one onto this gives the page number when all courses, except blank, are printed in a single PDF.
-              tableColNode.getElementsByClassName("printPage")[0].innerHTML += (courseOrderUsed.indexOf(courseNodes[existingRowID].getAttribute("order")) + 1).toString() + ",";
+              //Adding one onto existingRowID gives the page number when all courses, except blank, are printed in a single PDF.
+              tableColNode.getElementsByClassName("printPage")[0].innerHTML += (existingRowID + 1).toString() + ",";
               tableColNode.getElementsByClassName("controlsSkipped")[0].innerHTML += controlsSkipped + ",";
 
               //Find next control at station: course with name *.?
@@ -1536,10 +1533,11 @@ const tcTemplate = (() => {
     const imDPI = Number(document.getElementsByClassName("resolution")[1].value) || defaultOnlineLayout.resolution;
     const targetWidth = Number(document.getElementsByClassName("pngWidth")[1].value) || defaultOnlineLayout.pngWidth;
     const targetHeight = Number(document.getElementsByClassName("pngHeight")[1].value) || defaultOnlineLayout.pngHeight;
+    let stationsAdded = 0;
     for (let stationId = 1; stationId <= numStations; stationId++) {
       const numTasks = Number(tableRows[stationId].getElementsByClassName("numProblems")[0].textContent);
       if (tableRows[stationId].getElementsByClassName("showStation")[0].checked) {
-        const stationName = tableRows[stationId].getElementsByClassName("stationName")[0].textContent;
+        stationsAdded++;
 
         //Image resolution
         const pdfScale = imDPI / 72; //PDF renders at 72 DPI by default
@@ -1625,7 +1623,7 @@ const tcTemplate = (() => {
 
           //Save to zip
           const blob = await new Promise((resolve) => { canvasCropped.toBlob(resolve); });
-          imPromises.push(zip.file("map-" + stationName + "." + taskId + "z.png", blob));
+          imPromises.push(zip.file("map-" + stationsAdded + "." + taskId + "z.png", blob));
 
           pageNum++;
           taskCount++;
