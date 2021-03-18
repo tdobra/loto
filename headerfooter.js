@@ -63,13 +63,13 @@ const matHF = (() => {
   //Footer: modification date, copyright, license
   await matHF.domLoad;
   const footer = document.createElement("footer");
-  let pEl = lotoHF.addElement("p", footer);
+  let pEl = matHF.addElement("p", footer);
   pEl.classList.add("right");
-  pEl.textContent = matText.lastUpdated + " " + lotoHF.modDate.toLocaleString("en-GB", { dateStyle: "long", timeStyle: "long" });
-  pEl = lotoHF.addElement("p", footer);
+  pEl.textContent = matText.lastUpdated + " " + matHF.modDate.toLocaleString("en-GB", { dateStyle: "long", timeStyle: "long" });
+  pEl = matHF.addElement("p", footer);
   pEl.classList.add("right");
-  pEl.textContent = matText.copyright + " © 2017–" + lotoHF.modDate.getFullYear() + " " + matText.copyrightName + " ";
-  const aEl = lotoHF.addElement("a", pEl, { href: lotoHF.pathPrefix + "license.xhtml", target: "help", rel: "license" });
+  pEl.textContent = matText.copyright + " © 2017–" + matHF.modDate.getFullYear() + " " + matText.copyrightName + " ";
+  const aEl = matHF.addElement("a", pEl, { href: matHF.pathPrefix + "license.xhtml", target: "help", rel: "license" });
   aEl.textContent = matText.license;
   document.body.appendChild(footer);
 })();
