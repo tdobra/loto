@@ -2,7 +2,7 @@
 
 "use strict";
 
-const lotoMsg = {
+const matMsg = {
   confirmDelete: "Are you sure you want to delete? This cannot be undone.",
   awaitingData: "Awaiting other data",
   numberFieldError: "Must be a number",

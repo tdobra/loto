@@ -6,13 +6,13 @@
   <script src="../headerfooter.js"></script>
   <script async="async" src="messages.js"></script>
   <script async="async" src="../wizard.js"></script>
-  <title>TOT</title>
+  <title>MAT</title>
 </head>
 
 <body>
   <header>
-    <h1>LOTO: Layout of Trail Orienteering</h1>
-    <p id="missingAPIs">Error: Web browser does not support required APIs, or Javascript is disabled. Need to update to newer browser to use TCTemplate.</p>
+    <h1>MAT: Maps And TrailO</h1>
+    <p id="missingAPIs">Error: Web browser does not support required APIs, or Javascript is disabled. Need to update to newer browser to use MAT.</p>
   </header>
   <nav class="right"><a href="help/index.xhtml" target="help" rel="help">Help</a> <a href="index.xhtml">Home</a></nav>
   <main id="mainView">
@@ -36,7 +36,7 @@
       <!--Initial view has only essential fields visible-->
       <details open="open">
         <summary>Files</summary>
-        <p>TOT requires both a <a href="http://purplepen.golde.org" target="prequisites" rel="external">Purple Pen</a> file and its own JSON file, and updates both of them. You cannot edit anything in TOT until you have loaded the Purple Pen file. If you do not already have a Purple Pen file, create one now, including opening a base map, but keep the event name short enough to fit on one line of the control descriptions.</p>
+        <p>MAT requires both a <a href="http://purplepen.golde.org" target="prequisites" rel="external">Purple Pen</a> file and its own .mat file, and updates both of them. You cannot edit anything in MAT until you have loaded the Purple Pen file. If you do not already have a Purple Pen file, create one now, including opening a base map, but keep the event name short enough to fit on one line of the control descriptions.</p>
         <ul class="fieldList">
           <li>
             <button id="clearAll" type="button">Clear all</button>
@@ -68,11 +68,11 @@
           </details>
         </details>
         <details open="open">
-          <summary>TOT JSON</summary>
+          <summary>MAT</summary>
           <ul class="fieldList">
             <li>
               <label for="paramFileSelector">Open</label>
-              <span class="inputBlock"><input id="paramFileSelector" type="file" accept=".json" /></span>
+              <span class="inputBlock"><input id="paramFileSelector" type="file" accept=".mat" /></span>
             </li>
             <li>
               <label for="recoverSelect">Recover</label>

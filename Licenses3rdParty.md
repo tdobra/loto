@@ -2,7 +2,7 @@
 
 This software is released under the GNU GPLv3 license.
 
-Copyright (c) 2017-2021 TCTemplate contributors, maintained by Tom Dobra
+Copyright (c) 2017-2021 MAT contributors, maintained by Tom Dobra
 
 This software depends on other packages, which have their own licenses to which you must agree. Here is a list of known dependencies:
 

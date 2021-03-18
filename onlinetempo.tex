@@ -122,8 +122,8 @@
 \begin{scope}[shift={(\DescriptionLeft,\DescriptionBaseyCoordinate)}]
 \ifthenelse{\SheetNumber = 0}{
 \draw (0,0) rectangle (\DescriptionWidth,\DescriptionHeight);
-% Print TCTemplate stamp
-\node[anchor=north west] at (0,0) {\fontsize{0.25cm}{0.25cm}\selectfont Made in TCTemplate};
+% Print MAT stamp
+\node[anchor=north west] at (0,0) {\fontsize{0.25cm}{0.25cm}\selectfont Made in MAT};
 }{
 \clip (0,0) rectangle (\DescriptionWidth,\DescriptionHeight);
 \node[anchor=south west, inner sep=0] at (-\DescriptionxCoordinate*\DescriptionPDFScale,-\DescriptionyCoordinate*\DescriptionPDFScale) {\includegraphics[page=\DescriptionPage, scale=\DescriptionPDFScale]{\DescriptionFile}};
@@ -142,9 +142,9 @@
 }
 \end{scope}
 
-% Print TCTemplate stamp
+% Print MAT stamp
 %\ifthenelse{\SheetNumber = 0}{
-%\node[anchor=north west] at (\DescriptionLeft,\CircleRadius) {\fontsize{0.35cm}{0.35cm}\selectfont Made in TCTemplate};
+%\node[anchor=north west] at (\DescriptionLeft,\CircleRadius) {\fontsize{0.35cm}{0.35cm}\selectfont Made in MAT};
 %}{}
 
 % North arrow
