@@ -118,16 +118,35 @@
       </details>
 
       <details open="open">
-        <summary>Map</summary>
-        <ul class="fieldList">
-          <li>
-            <label for="mapFileScale">Map file scale</label>
-            <span class="inputBlock">
-              <input id="mapFileScaleAuto" type="checkbox" /><label for="mapFileScaleAuto">Auto</label>
-              <span class="withUnit">1:<input id="mapFileScale" type="number" min="0" step="any" /></span>
-            </span>
-            <span id="mapFileScaleError"></span>
-          </li>
+        <summary>Map file</summary>
+        <table>
+          <colgroup>
+            <col />
+            <col />
+            <col />
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th></th>
+              <th scope="col">Default</th>
+              <th scope="col">Automatic</th>
+              <th scope="col">Value</th>
+              <th scope="col">Error/Warning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="mapFileScale">
+              <th scope="row">File scale</th>
+              <td></td>
+              <td></td>
+              <td>1:<input type="number" min="0" step="any" /></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+        <!--<ul class="fieldList">
           <li>
             <label for="contourInterval">Contour interval</label>
             <span class="inputBlock">
@@ -137,15 +156,16 @@
             </span>
             <span id="contourIntervalError"></span>
           </li>
-        </ul>
+        </ul>-->
       </details>
 
       <details open="open">
         <summary>Course parts</summary>
+        <p>Changing values away from their default may violate the IOF rules — check for warnings.</p>
         <ul>
           <li class="tickRow">
             <input id="viewDefaultCourse" type="checkbox" />
-            <label for="viewDefaultCourse">View defaults for all course parts</label>
+            <label for="viewDefaultCourse">View defaults for event</label>
           </li>
         </ul>
         <ul class="hideIfDefault">

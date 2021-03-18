@@ -1,5 +1,8 @@
 :root {
   --space: 0.5em;
+  --oorange: #f56600;
+  --light-oorange: #ffba36;
+  --oblue: #0014f5;
 }
 
 * {
@@ -10,19 +13,44 @@ body {
   font-family: sans-serif;
 }
 
-/* Tables will be removed */
 table {
   border-collapse: collapse;
+  margin: 1em 0;
+  width: 100%;
 }
 
-th, td {
-  border-style: solid;
-  border-color: black;
-  border-width: 1px;
+thead {
+  background-color: var(--oorange);
+  color: var(--oblue);
 }
 
 th {
-  text-align: center;
+  font-weight: normal;
+}
+
+tr:nth-child(even) {
+  background-color: var(--light-oorange);
+}
+
+tbody th {
+  text-align: left;
+}
+
+/* Fixed column widths for fields */
+col:nth-child(1) {
+  width: 14ch;
+}
+
+col:nth-child(2) {
+  width: 8ch;
+}
+
+col:nth-child(3) {
+  width: 10ch;
+}
+
+col:nth-child(4) {
+  width: 10ch;
 }
 
 .centre {
@@ -38,12 +66,12 @@ ol ol {
 }
 
 summary, .warning {
-  background-color: #ffba36;
+  background-color: var(--light-oorange);
 }
 
 .error {
-  color: white;
-  background-color: #f56600;
+  color: var(--oblue);
+  background-color: var(--oorange);
 }
 
 /* Progressively indent nested levels in menu */
