@@ -20,23 +20,33 @@ table {
 }
 
 thead {
-  background-color: var(--oorange);
-  color: var(--oblue);
+  background-color: var(--light-oorange);
 }
 
 th {
   font-weight: normal;
 }
 
-tr:nth-child(even) {
-  background-color: var(--light-oorange);
-}
-
 tbody th {
   text-align: left;
 }
 
-/* Fixed column widths for fields */
+td:nth-of-type(1), td:nth-of-type(2) {
+  text-align: center;
+}
+
+@media (max-width: 40ch) {
+  td:nth-of-type(1), td:nth-of-type(2) {
+    text-align: initial;
+  }
+}
+
+table input {
+  width: 100%;
+}
+
+/* TODO: Set fixed column widths for fields */
+
 col:nth-child(1) {
   width: 14ch;
 }
@@ -51,6 +61,62 @@ col:nth-child(3) {
 
 col:nth-child(4) {
   width: 10ch;
+}
+
+td > span {
+  display: inline-flex;
+}
+
+.spaceBefore {
+  padding-left: var(--space);
+}
+
+@media (max-width: 40ch) {
+  /* Force table to not be like tables anymore */
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  /* Hide table headers (but not display: none;, for accessibility) */
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  tbody th {
+    background-color: var(--light-oorange);
+  }
+
+  td {
+    /* Behave  like a "row" */
+    border: none;
+    position: relative;
+    padding-left: 12ch;
+  }
+
+  td::before {
+    /* Now like a table header */
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  /*
+      Label the data
+      You could also use a data-* attribute and content for this. That way "bloats" the HTML, this way means you need to keep HTML and CSS in sync. Lea Verou has a clever way to handle with text-shadow.
+      */
+  td:nth-of-type(1):not(:empty):before {
+    content: "Default";
+  }
+  td:nth-of-type(2):not(:empty):before {
+    content: "Automatic";
+  }
+  td:nth-of-type(3):not(:empty):before {
+    content: "Value";
+  }
+  td:nth-of-type(4):not(:empty):before {
+    content: "Error/Warning";
+  }
 }
 
 .centre {
@@ -75,13 +141,15 @@ summary, .warning {
 }
 
 /* Progressively indent nested levels in menu */
+
 details details {
   margin-left: 1ch;
 }
 
 /* Unformatted list */
+
 #fields ul {
-  list-style-type:none;
+  list-style-type: none;
   padding: 0;
 }
 
@@ -94,32 +162,35 @@ select {
 }
 
 /* Allow fieldset to shrink beyond minimum content size */
+
 fieldset {
   min-width: 0;
   margin-bottom: 2ex;
 }
 
-summary + fieldset {
+summary+fieldset {
   margin-top: 2ex;
 }
 
-fieldset > ul {
+fieldset>ul {
   margin-top: 0ex;
 }
 
-fieldset > ul:last-child {
+fieldset>ul:last-child {
   margin-bottom: 0ex;
 }
 
 /* Keep group of buttons on same line as far as possible */
+
 .btnGroup {
   display: inline-flex;
   flex-wrap: wrap;
 }
 
-.btnGroup > * {
+.btnGroup>* {
   flex: auto;
-  margin-right: var(--space); /* One space */
+  margin-right: var(--space);
+  /* One space */
 }
 
 .autoOrder {
@@ -139,6 +210,7 @@ fieldset > ul:last-child {
 }
 
 /* Use long compact lines on large screens, otherwise space out with many line breaks */
+
 .fieldList li {
   display: flex;
   align-items: center;
@@ -154,12 +226,14 @@ fieldset > ul:last-child {
 }
 
 /* Labels are fixed width to align contents nicely - still won't exceed page width */
-.fieldList li > label {
+
+.fieldList li>label {
   width: 15ch;
   flex: none;
 }
 
 /* Buttons and input fields after label arranged into nice block where input expands to fill space */
+
 .inputBlock {
   width: 33ch;
   display: inline-flex;
@@ -175,6 +249,7 @@ fieldset > ul:last-child {
 }
 
 /* Sub-flex box to keep unit on same line as input */
+
 .inputBlock .withUnit {
   min-width: 0;
   flex: auto;
@@ -193,11 +268,11 @@ input[id$="Auto"], input[id$="Rule"] {
   min-width: 6ch;
 }
 
-.inputBlock > *, .autoOrder > *, .withUnit > * {
+.inputBlock>*, .autoOrder>*, .withUnit>* {
   margin-right: var(--space);
 }
 
-.withUnit > *:last-child {
+.withUnit>*:last-child {
   margin-right: 0;
 }
 
@@ -206,7 +281,7 @@ input[id$="Auto"], input[id$="Rule"] {
   align-items: center;
 }
 
-.autoBtnList li > * {
+.autoBtnList li>* {
   display: block;
 }
 
@@ -220,13 +295,13 @@ input[id$="Auto"], input[id$="Rule"] {
     margin-bottom: initial;
     display: flex;
   }
-
-  .autoBtnList li > * {
+  .autoBtnList li>* {
     margin-right: var(--space);
   }
 }
 
 /* Keep tick box label as a multiline to right of tick box */
+
 .tickRow {
   display: flex;
 }
@@ -235,11 +310,11 @@ span.tickRow {
   display: inline-flex;
 }
 
-.tickRow > input {
+.tickRow>input {
   margin-right: var(--space);
 }
 
-.tickRow > button {
+.tickRow>button {
   margin-left: var(--space);
 }
 

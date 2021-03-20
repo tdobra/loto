@@ -120,6 +120,7 @@
       <details open="open">
         <summary>Map file</summary>
         <table>
+          <!--Add the colgroup, col, thead and tickboxes using Javascript-->
           <colgroup>
             <col />
             <col />
@@ -141,7 +142,7 @@
               <th scope="row">File scale</th>
               <td></td>
               <td></td>
-              <td>1:<input type="number" min="0" step="any" /></td>
+              <td><span>1:<input type="number" min="0" step="any" /></span></td>
               <td></td>
             </tr>
           </tbody>
@@ -151,7 +152,7 @@
             <label for="contourInterval">Contour interval</label>
             <span class="inputBlock">
               <span class="withUnit">
-                <input id="contourInterval" type="number" min="0" step="any" /><span>m</span>
+                <input id="contourInterval" type="number" min="0" step="any" /><span class="spaceBefore">m</span>
               </span>
             </span>
             <span id="contourIntervalError"></span>
